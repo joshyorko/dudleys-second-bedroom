@@ -10,7 +10,16 @@ set -ouex pipefail
 # https://mirrors.rpmfusion.org/mirrorlist?path=free/fedora/updates/39/x86_64/repoview/index.html&protocol=https&redirect=1
 
 # this installs a package from fedora repos
-dnf5 install -y tmux 
+dnf5 install -y tmux curl
+
+### Install rcc CLI
+
+RCC_VERSION="v18.7.0"
+RCC_URL="https://github.com/joshyorko/rcc/releases/download/${RCC_VERSION}/rcc-linux64"
+
+curl -fsSL "${RCC_URL}" -o /tmp/rcc
+install -Dm755 /tmp/rcc /usr/local/bin/rcc
+rcc version || rcc --version
 
 # Use a COPR Example:
 #
