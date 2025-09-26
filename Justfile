@@ -68,29 +68,6 @@ sudoif command *args:
     }
     sudoif {{ command }} {{ args }}
 
-# Ensure the host Bluefin system is switched into Developer Mode
-[group('Setup')]
-ensure-devmode:
-    #!/usr/bin/bash
-    set -euo pipefail
-
-    if ! command -v ujust &> /dev/null; then
-        echo "The 'ujust' helper isn't available. This target is intended for Bluefin hosts." >&2
-        exit 1
-    fi
-
-    echo "Enabling Bluefin Developer Mode..."
-    ujust devmode
-
-    if ujust --list 2>/dev/null | grep -q "dx-group"; then
-        echo "Adding the current user to the required developer groups (if needed)..."
-        if ! ujust dx-group; then
-            echo "Warning: 'ujust dx-group' did not complete successfully. You may need to run it manually." >&2
-        fi
-    fi
-
-    echo "Done. Reboot the machine to finish applying Developer Mode."
-
 # This Justfile recipe builds a container image using Podman.
 #
 # Arguments:
