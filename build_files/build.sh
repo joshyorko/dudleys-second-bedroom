@@ -18,8 +18,13 @@ RCC_VERSION="v18.7.0"
 RCC_URL="https://github.com/joshyorko/rcc/releases/download/${RCC_VERSION}/rcc-linux64"
 
 curl -fsSL "${RCC_URL}" -o /tmp/rcc
-install -Dm755 /tmp/rcc /usr/local/bin/rcc
-rcc version || rcc --version
+install -m755 /tmp/rcc /usr/bin/rcc
+rm -f /tmp/rcc
+
+ROBOCORP_HOME="/tmp/robocorp"
+mkdir -p "${ROBOCORP_HOME}"
+ROBOCORP_HOME="${ROBOCORP_HOME}" rcc version
+rm -rf "${ROBOCORP_HOME}"
 
 # Use a COPR Example:
 #
