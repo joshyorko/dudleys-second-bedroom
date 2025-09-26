@@ -23,18 +23,6 @@ These steps assume you have the following:
 - A machine running a bootc image (e.g. Bazzite, Bluefin, Aurora, or Fedora Atomic)
 - Experience installing and using CLI programs
 
-### Step 0b: Enable Developer Mode (Bluefin)
-
-If you're developing on a Bluefin system, flip on the Developer Experience before you continue. Run the helper target bundled with this repo and it will take care of the steps for you:
-
-```bash
-just ensure-devmode
-```
-
-Behind the scenes this wraps `ujust devmode` and, when available, `ujust dx-group`. After the commands finish, reboot to switch fully into the DX environment.
-
-Prefer to run the commands yourself? Invoke `ujust devmode` (and, on non-LTS builds, `ujust dx-group`) manually, then reboot before proceeding.
-
 ## Step 1: Preparing the Template
 
 ### Step 1a: Copying the Template
