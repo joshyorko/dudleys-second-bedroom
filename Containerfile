@@ -5,6 +5,9 @@ COPY build_files /
 # Base Image
 FROM ghcr.io/ublue-os/bluefin-dx:latest
 
+# Ensure ostree.bootable label is present
+LABEL ostree.bootable="true"
+
 ## Other possible base images include:
 # FROM ghcr.io/ublue-os/bazzite:latest
 # FROM ghcr.io/ublue-os/bluefin-nvidia:stable
