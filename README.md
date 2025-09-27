@@ -2,11 +2,15 @@
 
 # Dudley's Second Bedroom
 
-A custom bootc image based on [Bluefin-DX](https://github.com/ublue-os/bluefin) with personalized modifications and configurations.
+A custom bootc image based on [Bluefin](https://github.com/ublue-os/bluefin) with personalized modifications and the System76 COSMIC desktop.
 
 ## About This Image
 
-This is a customized Universal Blue OS image that extends `ghcr.io/ublue-os/bluefin-dx:latest` with additional packages, configurations, and tweaks tailored for my specific workflow and preferences.
+This is a customized Universal Blue OS image that extends `ghcr.io/ublue-os/bluefin:stable` with:
+
+- The System76 COSMIC desktop environment (from the `ryanabx/cosmic-epoch` COPR).
+- Developer tooling like `tmux`, `curl`, `gcc-c++`, and the Robocorp `rcc` CLI.
+- Additional quality-of-life tweaks tailored for my specific workflow.
 
 ## Installation
 
