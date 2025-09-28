@@ -11,7 +11,7 @@ MARKER="$MARKER_DIR/$MARKER_FILE"
 # Auto re-run if version changes (bump MARKER_VERSION when logic changes).
 
 DESIRED_URI="file://$BG_PRIMARY"
-DESIRED_MODE="scaled"
+DESIRED_MODE="zoom"
 
 mkdir -p "$MARKER_DIR"
 
