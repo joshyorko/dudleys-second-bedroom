@@ -1,4 +1,4 @@
-![Dudley's Second Bedroom](./logo.png)
+![Dudley's Second Bedroom](./custom_wallpapers/dudleys-second-bedroom-1.png)
 
 # Dudley's Second Bedroom
 
