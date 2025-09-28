@@ -3,7 +3,7 @@ set -euo pipefail
 
 BG_PRIMARY="/usr/share/backgrounds/dudley/dudleys-second-bedroom-1.png"
 MARKER_DIR="$HOME/.config"
-MARKER_VERSION="1"
+MARKER_VERSION="2"
 MARKER_FILE=".dudley-wallpaper-applied"
 MARKER="$MARKER_DIR/$MARKER_FILE"
 
@@ -11,7 +11,7 @@ MARKER="$MARKER_DIR/$MARKER_FILE"
 # Auto re-run if version changes (bump MARKER_VERSION when logic changes).
 
 DESIRED_URI="file://$BG_PRIMARY"
-DESIRED_MODE="stretched"
+DESIRED_MODE="scaled"
 
 mkdir -p "$MARKER_DIR"
 
