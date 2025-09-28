@@ -1,18 +1,10 @@
-![Dudley's Second Bedroom](Dynamic multi-image background setup (Bluefin "Jorge style") for **desktop sessions only**:
+![Dudley's Second Bedroom](./logo.png)
 
-Assets:
+# Dudley's Second Bedroom
 
-- `dudleys-second-bedroom-1.png` (primary background used for both light & dark sessions)
-- `dudleys-second-bedroom-2.png` (secondary background available for user selection)
+A step up from the closet under the stairs, but not quite the Room of Requirement yet.
 
-Build logic (see `build_files/build.sh`):
-
-1. Copies `system_files/shared/...` for schema overrides.
-2. Installs both wallpaper images to `/usr/share/backgrounds/dudley/`.
-3. GNOME schema override (`zz0-dudley-background.gschema.override`) points both `picture-uri` & `picture-uri-dark` to the `-1` image.
-4. Login screen (GDM) uses default Bluefin branding - only desktop sessions get custom wallpaper. Dudley's Second Bedroom
-
-A custom bootc image based on [Bluefin](https://github.com/ublue-os/bluefin) with personalized modifications and the System76 COSMIC desktop.
+This [Universal Blue](https://github.com/ublue-os/main) image extends the [Bluefin](https://github.com/ublue-os/bluefin) flavor with personalized modifications - your own space that's better than where you started, but with room to grow into something even better.
 
 ## VS Code Insiders (RPM)
 
@@ -35,7 +27,7 @@ To pin a specific version, adjust the install script to request `code-insiders-<
 
 ## Default Wallpaper & Branding
 
-**Dynamic multi-image wallpaper system** (Bluefin "Jorge style") for desktop sessions only:
+**Dynamic multi-image wallpaper system** for desktop sessions only:
 
 ### How It Works
 
