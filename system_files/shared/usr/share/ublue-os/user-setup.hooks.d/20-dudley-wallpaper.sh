@@ -3,7 +3,7 @@ set -euo pipefail
 
 BG_PRIMARY="/usr/share/backgrounds/dudley/dudleys-second-bedroom-1.png"
 MARKER_DIR="$HOME/.config"
-MARKER_VERSION="2"
+MARKER_VERSION="3"
 MARKER_FILE=".dudley-wallpaper-applied"
 MARKER="$MARKER_DIR/$MARKER_FILE"
 
