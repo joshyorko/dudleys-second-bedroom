@@ -1,4 +1,4 @@
-![Dudley's Second Bedroom](./logo.png)
+<img src="./logo.png" alt="Dudley's Second Bedroom" width="450">
 
 # Dudley's Second Bedroom
 
