@@ -54,6 +54,9 @@ fi
 if [ -d "$SYS_SHARED" ]; then
 	echo "Rsyncing branding/system overrides from $SYS_SHARED"
 	rsync -a "$SYS_SHARED"/ /
+	if [ -d /usr/share/ublue-os/user-setup.hooks.d ]; then
+		find /usr/share/ublue-os/user-setup.hooks.d -type f -name '*.sh' -exec chmod 0755 {} +
+	fi
 else
 	echo "WARN: Expected system_files shared directory not found (checked /ctx/system_files/shared and /ctx/shared)"
 fi

@@ -42,7 +42,8 @@ The build system automatically discovers and installs **any PNG/JPG images** fro
 1. **Discovery**: Scans `custom_wallpapers/` for `*.png`, `*.jpg`, `*.jpeg` files
 2. **Installation**: Copies all found images to `/usr/share/backgrounds/dudley/`  
 3. **Schema Override**: Points desktop background to `dudleys-second-bedroom-1.png`
-4. **Login Screen**: Uses default Bluefin branding (no custom wallpaper)
+4. **User Hook**: On first login a user-setup hook forces GNOME to adopt the branded wallpaper (and then exits on future logins)
+5. **Login Screen**: Uses default Bluefin branding (no custom wallpaper)
 
 ### Adding/Changing Wallpapers
 
