@@ -1,8 +1,77 @@
-![Dudley's Second Bedroom](./logo.png)
+![Dudley's Second Bedroom](Dynamic multi-image background setup (Bluefin "Jorge style") for **desktop sessions only**:
 
-# Dudley's Second Bedroom
+Assets:
+
+- `dudleys-second-bedroom-1.png` (primary background used for both light & dark sessions)
+- `dudleys-second-bedroom-2.png` (secondary background available for user selection)
+
+Build logic (see `build_files/build.sh`):
+
+1. Copies `system_files/shared/...` for schema overrides.
+2. Installs both wallpaper images to `/usr/share/backgrounds/dudley/`.
+3. GNOME schema override (`zz0-dudley-background.gschema.override`) points both `picture-uri` & `picture-uri-dark` to the `-1` image.
+4. Login screen (GDM) uses default Bluefin branding - only desktop sessions get custom wallpaper. Dudley's Second Bedroom
 
 A custom bootc image based on [Bluefin](https://github.com/ublue-os/bluefin) with personalized modifications and the System76 COSMIC desktop.
+
+## VS Code Insiders (RPM)
+
+Flatpak Insiders (flathub-beta) is unreliable right now for this workflow, so this image layers the official Microsoft `code-insiders` RPM.
+
+After rebasing:
+```bash
+code-insiders --version
+```
+
+User extensions (Remote Containers, Remote SSH, Remote Repositories, C++ tools pack) are auto-installed on first login via a user setup hook.
+
+If you later want to switch to the Flatpak variant, you can remove the RPM:
+```bash
+sudo rpm-ostree override remove code-insiders
+```
+…then install the Flatpak manually.
+
+To pin a specific version, adjust the install script to request `code-insiders-<version>` and rebuild.
+
+## Default Wallpaper & Branding
+
+**Dynamic multi-image wallpaper system** (Bluefin "Jorge style") for desktop sessions only:
+
+### How It Works
+
+The build system automatically discovers and installs **any PNG/JPG images** from the `custom_wallpapers/` directory.
+
+**Current wallpapers:**
+- `custom_wallpapers/dudleys-second-bedroom-1.png` → Primary desktop background  
+- `custom_wallpapers/dudleys-second-bedroom-2.png` → Secondary wallpaper (available for user selection)
+
+### Build Process
+
+1. **Discovery**: Scans `custom_wallpapers/` for `*.png`, `*.jpg`, `*.jpeg` files
+2. **Installation**: Copies all found images to `/usr/share/backgrounds/dudley/`  
+3. **Schema Override**: Points desktop background to `dudleys-second-bedroom-1.png`
+4. **Login Screen**: Uses default Bluefin branding (no custom wallpaper)
+
+### Adding/Changing Wallpapers
+
+**Simple method:**
+1. Add/replace images in `custom_wallpapers/` directory
+2. Keep `dudleys-second-bedroom-1.{png|jpg}` as your primary wallpaper
+3. Add numbered variants like `dudleys-second-bedroom-3.png`, etc.
+4. Rebuild & rebase
+
+**Advanced options:**
+- Create XML slideshow definitions for rotating backgrounds
+- Modify schema overrides for different light/dark wallpapers
+- Add wallpaper categories or themes
+
+Runtime user override (doesn’t modify the image):
+
+```bash
+gsettings set org.gnome.desktop.background picture-uri "file:///path/to/custom.png"
+```
+
+If removing branding entirely, delete the schema + dconf override files and rebuild.
 
 ## About This Image
 

@@ -1,9 +1,13 @@
 # Allow build scripts to be referenced without being copied into the final image
 FROM scratch AS ctx
 COPY build_files /
+# Provide static system files (wallpaper, schema overrides, dconf overrides)
+COPY system_files /system_files
+# Copy custom wallpaper directory for dynamic backgrounds
+COPY custom_wallpapers /custom_wallpapers
 
 # Base Image
-FROM ghcr.io/ublue-os/bluefin-dx:latest
+FROM ghcr.io/ublue-os/bluefin-dx:stable
 
 ## Other possible base images include:
 # FROM ghcr.io/ublue-os/bazzite:latest
