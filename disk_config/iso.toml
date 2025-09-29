@@ -1,3 +1,11 @@
+# Default Anaconda ISO configuration for this image.
+#
+# The kickstart post section switches the installed system to the
+# published container image for this repository. If you need to build a
+# variant ISO (for example KDE), use one of the sibling files in this
+# directory as a starting point (iso-gnome.toml, iso-kde.toml) and update
+# the GitHub Action or Just recipe to point at the desired file.
+
 [customizations.installer.kickstart]
 contents = """
 %post
