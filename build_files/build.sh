@@ -18,6 +18,9 @@ bash /ctx/20-install-code-insiders-rpm.sh
 # User extension hook for code-insiders
 bash /ctx/60-user-hook-code-insiders.sh
 
+# Sema4.ai Action Server
+bash /ctx/30-install-action-server.sh
+
 ### Install rcc CLI
 
 RCC_VERSION="v18.7.0"
