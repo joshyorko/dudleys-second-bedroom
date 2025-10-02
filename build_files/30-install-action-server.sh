@@ -1,25 +1,32 @@
-#!/usr/bin/bash
+#!/usr/bin/env bash
 set -euo pipefail
 
 echo "::group:: Install Sema4.ai Action Server"
 
-ACTION_SERVER_URL="https://cdn.sema4.ai/action-server/releases/latest/linux64/action-server"
+# Download and install action-server
+curl -fsSL https://cdn.sema4.ai/action-server/releases/latest/linux64/action-server \
+  -o /tmp/action-server
 
-# Download Action Server binary
-curl -fsSL "${ACTION_SERVER_URL}" -o /tmp/action-server
-
-# Install to /usr/bin (standard location for system binaries)
+# Make executable and install to /usr/bin
+chmod +x /tmp/action-server
 install -m755 /tmp/action-server /usr/bin/action-server
-
-# Clean up
 rm -f /tmp/action-server
 
-# Verify installation
-if action-server version 2>&1 | grep -q "^[0-9]"; then
-    echo "Action Server installed successfully"
-    action-server version 2>&1 | head -n 1
+# Create a temporary home directory for initialization
+TEMP_HOME=$(mktemp -d)
+export HOME="$TEMP_HOME"
+export ROBOCORP_HOME="$TEMP_HOME/.robocorp"
+mkdir -p "$ROBOCORP_HOME"
+
+# Initialize action-server by running version check
+# This extracts internal assets to the home directory
+if /usr/bin/action-server version 2>&1 | grep -q '[0-9]'; then
+    echo "Action Server initialized successfully"
 else
-    echo "Warning: Action Server version check produced unexpected output" >&2
+    echo "Warning: Action Server version check produced unexpected output"
 fi
+
+# Clean up temporary home
+rm -rf "$TEMP_HOME"
 
 echo "::endgroup::"
