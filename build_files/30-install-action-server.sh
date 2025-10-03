@@ -4,7 +4,7 @@ set -euo pipefail
 echo "::group:: Install Sema4.ai Action Server"
 
 # Download and install action-server
-curl -fsSL https://cdn.sema4.ai/action-server/releases/2.14.2/linux64/action-server \
+curl -fsSL https://cdn.sema4.ai/action-server/releases/2.14.1/linux64/action-server \
   -o /tmp/action-server
 
 # Make executable and install to /usr/bin
