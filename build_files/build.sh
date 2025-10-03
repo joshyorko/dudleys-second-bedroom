@@ -23,7 +23,7 @@ bash /ctx/30-install-action-server.sh
 
 ### Install rcc CLI
 
-RCC_VERSION="v18.7.0"
+RCC_VERSION="v18.8.0"
 RCC_URL="https://github.com/joshyorko/rcc/releases/download/${RCC_VERSION}/rcc-linux64"
 
 curl -fsSL "${RCC_URL}" -o /tmp/rcc
