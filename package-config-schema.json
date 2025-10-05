@@ -1,0 +1,123 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/joshyorko/dudleys-second-bedroom/schemas/packages.json",
+  "title": "Package Configuration Schema",
+  "description": "Schema for centralized package management in Dudley's Second Bedroom",
+  "type": "object",
+  "properties": {
+    "all": {
+      "description": "Packages applied to all Fedora versions",
+      "type": "object",
+      "properties": {
+        "install": {
+          "description": "List of packages to install",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^[a-zA-Z0-9._+-]+$"
+          },
+          "uniqueItems": true
+        },
+        "remove": {
+          "description": "List of packages to remove/exclude",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^[a-zA-Z0-9._+-]+$"
+          },
+          "uniqueItems": true
+        },
+        "copr_repos": {
+          "description": "COPR repositories to enable",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9_-]+/[a-zA-Z0-9_-]+$"
+          },
+          "uniqueItems": true
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "patternProperties": {
+    "^[0-9]{2}$": {
+      "description": "Fedora version-specific overrides (e.g., '41', '42')",
+      "type": "object",
+      "properties": {
+        "install": {
+          "description": "Additional packages for this Fedora version",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^[a-zA-Z0-9._+-]+$"
+          },
+          "uniqueItems": true
+        },
+        "remove": {
+          "description": "Additional packages to remove for this Fedora version",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^[a-zA-Z0-9._+-]+$"
+          },
+          "uniqueItems": true
+        },
+        "install_overrides": {
+          "description": "Package substitutions for this Fedora version",
+          "type": "object",
+          "patternProperties": {
+            "^[a-zA-Z0-9._+-]+$": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "^[a-zA-Z0-9._+-]+$"
+            }
+          },
+          "additionalProperties": false
+        },
+        "copr_repos": {
+          "description": "Additional COPR repos for this Fedora version",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9_-]+/[a-zA-Z0-9_-]+$"
+          },
+          "uniqueItems": true
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "required": ["all"],
+  "additionalProperties": false,
+  "examples": [
+    {
+      "all": {
+        "install": [
+          "tmux",
+          "htop",
+          "git",
+          "curl"
+        ],
+        "remove": [
+          "gnome-tour"
+        ],
+        "copr_repos": [
+          "user/project"
+        ]
+      },
+      "41": {
+        "install": [
+          "fedora41-specific-package"
+        ],
+        "install_overrides": {
+          "old-package": "new-package"
+        }
+      }
+    }
+  ]
+}

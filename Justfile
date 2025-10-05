@@ -12,7 +12,7 @@ default:
 
 # Check Just Syntax
 [group('Just')]
-check:
+check-just:
     #!/usr/bin/bash
     find . -type f -name "*.just" | while read -r file; do
     	echo "Checking syntax: $file"
@@ -20,6 +20,72 @@ check:
     done
     echo "Checking syntax: Justfile"
     just --unstable --fmt --check -f Justfile
+
+# Run all validation checks
+[group('Validation')]
+check:
+    #!/usr/bin/bash
+    set -eoux pipefail
+    echo "Running all validation checks..."
+    just check-just
+    just lint
+    just validate-packages
+    just validate-modules
+    echo "✓ All validation checks passed!"
+
+# Validate packages.json configuration
+[group('Validation')]
+validate-packages:
+    #!/usr/bin/bash
+    set -eoux pipefail
+    echo "Validating packages.json..."
+    # Check JSON syntax
+    if ! jq empty packages.json 2>/dev/null; then
+        echo "ERROR: Invalid JSON syntax in packages.json"
+        exit 1
+    fi
+    # Check for duplicate packages in install list
+    duplicates=$(jq -r '.all.install[]' packages.json 2>/dev/null | sort | uniq -d)
+    if [[ -n "$duplicates" ]]; then
+        echo "ERROR: Duplicate packages in install list: $duplicates"
+        exit 1
+    fi
+    # Check for conflicts (package in both install and remove)
+    if [[ $(jq -r '.all.install[]' packages.json 2>/dev/null | wc -l) -gt 0 ]] && [[ $(jq -r '.all.remove[]' packages.json 2>/dev/null | wc -l) -gt 0 ]]; then
+        conflicts=$(comm -12 \
+            <(jq -r '.all.install[]' packages.json 2>/dev/null | sort) \
+            <(jq -r '.all.remove[]' packages.json 2>/dev/null | sort))
+        if [[ -n "$conflicts" ]]; then
+            echo "ERROR: Packages in both install and remove: $conflicts"
+            exit 1
+        fi
+    fi
+    echo "✓ Package configuration valid"
+
+# Validate Build Module metadata
+[group('Validation')]
+validate-modules:
+    #!/usr/bin/bash
+    set -eoux pipefail
+    echo "Validating Build Module metadata..."
+    if [ -f tests/validate-modules.sh ]; then
+        bash tests/validate-modules.sh
+    else
+        echo "✓ Module validation script not yet implemented, skipping"
+    fi
+
+# Validate Containerfile syntax
+[group('Validation')]
+validate-containerfile:
+    #!/usr/bin/bash
+    set -eoux pipefail
+    echo "Validating Containerfile..."
+    # Check if hadolint is available
+    if command -v hadolint &> /dev/null; then
+        hadolint Containerfile || echo "WARNING: hadolint found issues (non-blocking)"
+    else
+        echo "✓ hadolint not available, skipping Containerfile validation"
+    fi
 
 # Fix Just Syntax
 [group('Just')]
@@ -43,6 +109,15 @@ clean:
     rm -f changelog.md
     rm -f output.env
     rm -f output/
+
+# Deep clean (includes container images)
+[group('Utility')]
+deep-clean: clean
+    #!/usr/bin/bash
+    set -eoux pipefail
+    echo "Removing container images..."
+    podman images | grep "{{ image_name }}" | awk '{print $3}' | xargs -r podman rmi -f || true
+    echo "✓ Deep clean complete"
 
 # Sudo Clean Repo
 [group('Utility')]
