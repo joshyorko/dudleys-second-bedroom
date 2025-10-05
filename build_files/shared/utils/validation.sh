@@ -143,9 +143,14 @@ validate_category_match() {
     local declared_category
     declared_category=$(grep "^# Category:" "$script" | cut -d: -f2 | xargs)
     
-    # Extract actual category from path
+    # Extract actual category from path (remove build_files/ prefix)
     local actual_category
-    actual_category=$(dirname "$script" | sed 's|.*/build_files/||')
+    actual_category=$(dirname "$script" | sed 's|^build_files/||' | sed 's|^\./build_files/||')
+    
+    # Normalize paths - if script is in build_files directly, it's the root
+    if [[ "$actual_category" == "build_files" ]] || [[ "$actual_category" == "." ]]; then
+        actual_category=""
+    fi
     
     if [[ "$declared_category" != "$actual_category" ]]; then
         log "ERROR" "Category mismatch in $script: declared '$declared_category' but in directory '$actual_category'"
