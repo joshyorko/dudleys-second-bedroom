@@ -1,0 +1,8 @@
+# Additional DX (Developer Experience) Flatpak applications
+# One app ID per line, blank lines and lines starting with # are ignored
+
+# Container/Pod Management
+app/io.podman_desktop.PodmanDesktop
+
+# Development Tools
+app/me.iepure.devtoolbox
