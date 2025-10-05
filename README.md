@@ -6,6 +6,51 @@ A step up from the closet under the stairs, but not quite the Room of Requiremen
 
 This [Universal Blue](https://github.com/ublue-os/main) image extends the [Bluefin](https://github.com/ublue-os/bluefin) flavor with personalized modifications - your own space that's better than where you started, but with room to grow into something even better.
 
+## ✨ What's New: Modular Build System
+
+This image uses a **modular build architecture** that makes customization easier and builds faster:
+
+### Key Benefits
+
+- **🔧 Easy to Customize**: Add or modify features by editing modular scripts in `build_files/`
+- **⚡ Fast Rebuilds**: Intelligent caching means most changes rebuild in <10 minutes (vs 30+ minutes)
+- **✅ Validated**: Automatic validation ensures your customizations are correct before building
+- **📦 Organized**: Build modules categorized by function: shared, desktop, developer, user-hooks
+
+### Quick Customization
+
+**Add a package:**
+```bash
+# Edit packages.json
+{
+  "all": {
+    "install": ["your-package-here"]
+  }
+}
+```
+
+**Add a custom build module:**
+```bash
+# Create build_files/developer/my-tool.sh
+#!/usr/bin/bash
+# Script: my-tool.sh
+# Purpose: Install my custom tool
+# Category: developer
+# Dependencies: none
+# Parallel-Safe: yes
+# ...
+```
+
+**Validate and build:**
+```bash
+just check    # Validate changes
+just build    # Build image
+```
+
+### Architecture
+
+See [ARCHITECTURE.md](./ARCHITECTURE.md) for complete documentation of the modular build system.
+
 ## VS Code Insiders (RPM)
 
 Flatpak Insiders (flathub-beta) is unreliable right now for this workflow, so this image layers the official Microsoft `code-insiders` RPM.
@@ -173,8 +218,7 @@ This template comes with the necessary tooling to index your image on [artifacth
 
 # Justfile Documentation
 
-The `Justfile` contains various commands and configurations for building and managing container images and virtual machine images using Podman and other utilities.
-To use it, you must have installed [just](https://just.systems/man/en/introduction.html) from your package manager or manually. It is available by default on all Universal Blue images.
+The `Justfile` contains various commands and configurations for building and managing container images. It uses [just](https://just.systems/man/en/introduction.html), a command runner available by default on all Universal Blue images.
 
 ## Environment Variables
 
@@ -182,11 +226,29 @@ To use it, you must have installed [just](https://just.systems/man/en/introducti
 - `default_tag`: The default tag for the image (default: "latest").
 - `bib_image`: The Bootc Image Builder (BIB) image (default: "quay.io/centos-bootc/bootc-image-builder:latest").
 
+## Validation Commands
+
+### `just check`
+
+Runs all validation checks (syntax, configuration, modules).
+
+### `just lint`
+
+Runs shellcheck on all Bash scripts.
+
+### `just validate-packages`
+
+Validates packages.json against schema and checks for conflicts.
+
+### `just validate-modules`
+
+Validates Build Module metadata and headers.
+
 ## Building The Image
 
 ### `just build`
 
-Builds a container image using Podman.
+Builds a container image using Podman with caching enabled.
 
 ```bash
 just build $target_image $tag
@@ -195,6 +257,16 @@ just build $target_image $tag
 Arguments:
 - `$target_image`: The tag you want to apply to the image (default: `$image_name`).
 - `$tag`: The tag for the image (default: `$default_tag`).
+
+## File Management
+
+### `just clean`
+
+Cleans the repository by removing build artifacts.
+
+### `just deep-clean`
+
+Cleans build artifacts and removes container images.
 
 ## Building and Running Virtual Machines and ISOs
 
