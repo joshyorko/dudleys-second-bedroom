@@ -29,8 +29,9 @@ fi
 
 # Test 3: Check for duplicate packages in install list
 echo "Test 3: Checking for duplicate packages..."
-if [[ $(jq -r '.all.install[]' "$PACKAGES_FILE" 2>/dev/null | wc -l) -gt 0 ]]; then
-    duplicates=$(jq -r '.all.install[]' "$PACKAGES_FILE" | sort | uniq -d)
+install_packages=$(jq -r '.all.install[]' "$PACKAGES_FILE" 2>/dev/null || true)
+if [[ -n "$install_packages" ]]; then
+    duplicates=$(echo "$install_packages" | sort | uniq -d)
     if [[ -n "$duplicates" ]]; then
         echo "✗ ERROR: Duplicate packages found: $duplicates"
         exit 1
