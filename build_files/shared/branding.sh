@@ -13,6 +13,7 @@ set -eoux pipefail
 # Module metadata
 readonly MODULE_NAME="branding"
 readonly CATEGORY="shared"
+readonly PRIMARY_WALLPAPER_NAME="dudleys-second-bedroom-1"
 
 # Logging helper
 log() {
@@ -72,8 +73,8 @@ main() {
         log "INFO" "Total wallpapers installed: $wallpaper_count"
         
         # Verify the primary wallpaper exists
-        if [[ ! -f "$bg_dir/dudleys-second-bedroom-1.png" ]] && [[ ! -f "$bg_dir/dudleys-second-bedroom-1.jpg" ]]; then
-            log "WARNING" "No primary wallpaper (dudleys-second-bedroom-1.png/jpg) found for schema override"
+        if [[ ! -f "$bg_dir/${PRIMARY_WALLPAPER_NAME}.png" ]] && [[ ! -f "$bg_dir/${PRIMARY_WALLPAPER_NAME}.jpg" ]]; then
+            log "WARNING" "No primary wallpaper (${PRIMARY_WALLPAPER_NAME}.png/jpg) found for schema override"
         fi
     else
         log "WARNING" "No custom_wallpapers directory found at /ctx/custom_wallpapers"
