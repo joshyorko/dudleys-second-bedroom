@@ -1,7 +1,7 @@
 #!/usr/bin/bash
 # Script: validation.sh
-# Purpose: Validation utilities for build system
-# Category: shared
+# Purpose: Provides validation functions for Build Module metadata
+# Category: shared/utils
 # Dependencies: none
 # Parallel-Safe: yes
 # Usage: Source this file to use validation functions

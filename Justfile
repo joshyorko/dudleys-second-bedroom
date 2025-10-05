@@ -1,4 +1,4 @@
-export image_name := env("IMAGE_NAME", "image-template") # output image name, usually same as repo name, change as needed
+export image_name := env("IMAGE_NAME", "image-template")
 export default_tag := env("DEFAULT_TAG", "latest")
 export bib_image := env("BIB_IMAGE", "quay.io/centos-bootc/bootc-image-builder:latest")
 
@@ -86,6 +86,14 @@ validate-containerfile:
     else
         echo "✓ hadolint not available, skipping Containerfile validation"
     fi
+
+# Verify built image has all expected components
+[group('Validation')]
+verify-build $target_image=("localhost/" + image_name) $tag=default_tag:
+    #!/usr/bin/bash
+    set -eoux pipefail
+    echo "Verifying built image..."
+    bash tests/verify-build.sh "{{ target_image }}:{{ tag }}"
 
 # Fix Just Syntax
 [group('Just')]
@@ -367,7 +375,6 @@ spawn-vm rebuild="0" type="qcow2" ram="6G":
       --network-user-mode \
       --vsock=false --pass-ssh-key=false \
       -i ./output/**/*.{{ type }}
-
 
 # Runs shell check on all Bash scripts
 lint:
