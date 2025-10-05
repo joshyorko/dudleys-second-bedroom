@@ -183,16 +183,29 @@ main() {
         done < <(discover_modules "developer")
     fi
     
-    # Phase 4: User hooks (installed but not executed during build)
+    # Phase 4: User hooks (executed during build to install hook scripts)
     log "INFO" "Phase 4: Installing user hooks..."
     if [[ -d "user-hooks" ]]; then
-        # User hooks are copied to the image but not executed during build
-        # They will run on first boot for each user
-        log "INFO" "User hooks will be executed on first user login"
-        # Count them for statistics
+        # User hooks modules install scripts that will run on first user login
+        log "INFO" "User hook modules will install scripts for first-boot execution"
         while IFS= read -r module; do
             total_modules=$((total_modules + 1))
-            log "INFO" "Installed user hook: $(basename "$module")"
+            
+            if execute_module "$module"; then
+                successful_modules=$((successful_modules + 1))
+            else
+                exit_code=$?
+                if [[ $exit_code -eq 2 ]]; then
+                    skipped_modules=$((skipped_modules + 1))
+                else
+                    failed_modules=$((failed_modules + 1))
+                    log "ERROR" "Build failed in module: $(basename "$module")"
+                    if [[ -f "shared/cleanup.sh" ]]; then
+                        bash shared/cleanup.sh || log "WARNING" "Cleanup failed"
+                    fi
+                    exit 1
+                fi
+            fi
         done < <(discover_modules "user-hooks")
     fi
     
