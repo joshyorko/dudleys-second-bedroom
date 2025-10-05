@@ -81,12 +81,21 @@ run_check "wallpaper directory" "podman run --rm ${IMAGE_NAME} test -d /usr/shar
 run_check "wallpaper files" "podman run --rm ${IMAGE_NAME} ls /usr/share/backgrounds/dudley/ | wc -l" "4"
 run_check "GNOME schema override" "podman run --rm ${IMAGE_NAME} test -f /usr/share/glib-2.0/schemas/zz0-dudley-background.gschema.override && echo exists" "exists"
 
-# Check 6: User Hooks
+# Check 6: Flatpaks Configuration
+echo ""
+echo "=== Flatpaks Configuration ==="
+run_check "flatpaks directory" "podman run --rm ${IMAGE_NAME} test -d /usr/share/ublue-os/flatpaks && echo exists" "exists"
+run_check "system flatpaks list" "podman run --rm ${IMAGE_NAME} test -f /usr/share/ublue-os/flatpaks/system-flatpaks.list && echo exists" "exists"
+run_check "DX flatpaks list" "podman run --rm ${IMAGE_NAME} test -f /usr/share/ublue-os/flatpaks/system-flatpaks-dx.list && echo exists" "exists"
+
+# Check 7: User Hooks
 echo ""
 echo "=== User Setup Hooks ==="
 run_check "wallpaper hook" "podman run --rm ${IMAGE_NAME} test -f /usr/share/ublue-os/user-setup.hooks.d/20-dudley-wallpaper.sh && echo exists" "exists"
+run_check "VS Code extensions hook" "podman run --rm ${IMAGE_NAME} test -f /usr/share/ublue-os/user-setup.hooks.d/20-vscode-extensions.sh && echo exists" "exists"
+run_check "VS Code extensions list" "podman run --rm ${IMAGE_NAME} test -f /etc/skel/.config/vscode-extensions.list && echo exists" "exists"
 
-# Check 7: Image Metadata
+# Check 8: Image Metadata
 echo ""
 echo "=== Image Metadata ==="
 IMAGE_SIZE=$(podman inspect ${IMAGE_NAME} | jq -r '.[0].Size')
