@@ -75,6 +75,17 @@ discover_modules() {
     find "$category_dir" -maxdepth 1 -type f -name "*.sh" | sort
 }
 
+# Trigger cleanup on failure
+trigger_cleanup() {
+    local failed_module=$1
+    log "ERROR" "Build failed in module: $(basename "$failed_module")"
+    log "INFO" "Triggering cleanup due to failure..."
+    if [[ -f "shared/cleanup.sh" ]]; then
+        bash shared/cleanup.sh || log "WARNING" "Cleanup failed"
+    fi
+    exit 1
+}
+
 # Main function
 main() {
     local build_start
@@ -118,13 +129,7 @@ main() {
                     skipped_modules=$((skipped_modules + 1))
                 else
                     failed_modules=$((failed_modules + 1))
-                    log "ERROR" "Build failed in module: $(basename "$module")"
-                    # Trigger cleanup on failure
-                    log "INFO" "Triggering cleanup due to failure..."
-                    if [[ -f "shared/cleanup.sh" ]]; then
-                        bash shared/cleanup.sh || log "WARNING" "Cleanup failed"
-                    fi
-                    exit 1
+                    trigger_cleanup "$module"
                 fi
             fi
         done < <(discover_modules "shared")
@@ -149,11 +154,7 @@ main() {
                     skipped_modules=$((skipped_modules + 1))
                 else
                     failed_modules=$((failed_modules + 1))
-                    log "ERROR" "Build failed in module: $(basename "$module")"
-                    if [[ -f "shared/cleanup.sh" ]]; then
-                        bash shared/cleanup.sh || log "WARNING" "Cleanup failed"
-                    fi
-                    exit 1
+                    trigger_cleanup "$module"
                 fi
             fi
         done < <(discover_modules "desktop")
@@ -173,11 +174,7 @@ main() {
                     skipped_modules=$((skipped_modules + 1))
                 else
                     failed_modules=$((failed_modules + 1))
-                    log "ERROR" "Build failed in module: $(basename "$module")"
-                    if [[ -f "shared/cleanup.sh" ]]; then
-                        bash shared/cleanup.sh || log "WARNING" "Cleanup failed"
-                    fi
-                    exit 1
+                    trigger_cleanup "$module"
                 fi
             fi
         done < <(discover_modules "developer")
@@ -199,11 +196,7 @@ main() {
                     skipped_modules=$((skipped_modules + 1))
                 else
                     failed_modules=$((failed_modules + 1))
-                    log "ERROR" "Build failed in module: $(basename "$module")"
-                    if [[ -f "shared/cleanup.sh" ]]; then
-                        bash shared/cleanup.sh || log "WARNING" "Cleanup failed"
-                    fi
-                    exit 1
+                    trigger_cleanup "$module"
                 fi
             fi
         done < <(discover_modules "user-hooks")
