@@ -32,6 +32,31 @@ main() {
     install -d "$hook_dir"
     
     log "INFO" "Creating VS Code extensions hook..."
+    
+    # Get build context path
+    local build_context="${BUILD_CONTEXT:-/ctx}"
+    
+    # Copy the extensions list to the system
+    local extensions_list="/etc/skel/.config/vscode-extensions.list"
+    install -d "$(dirname "$extensions_list")"
+    if [[ -f "$build_context/vscode-extensions.list" ]]; then
+        cp "$build_context/vscode-extensions.list" "$extensions_list"
+        chmod 0644 "$extensions_list"
+        log "INFO" "VS Code extensions list copied to $extensions_list"
+    else
+        log "WARNING" "vscode-extensions.list not found, creating default list"
+        cat >"$extensions_list" <<'EXTENSIONS_EOF'
+# VS Code Insiders Extensions - one per line
+ms-vscode-remote.remote-containers
+ms-vscode-remote.remote-ssh
+ms-vscode.remote-repositories
+ms-vscode.cpptools-extension-pack
+GitHub.copilot
+GitHub.copilot-chat
+EXTENSIONS_EOF
+        chmod 0644 "$extensions_list"
+    fi
+    
     cat >"$hook_dir/20-vscode-extensions.sh" <<'HOOK_EOF'
 #!/usr/bin/env bash
 # VS Code Insiders extensions user hook
@@ -50,18 +75,30 @@ if [[ -f "$MARKER" ]]; then
   exit 0
 fi
 
-EXTENSIONS=( \
-  ms-vscode-remote.remote-containers \
-  ms-vscode-remote.remote-ssh \
-  ms-vscode.remote-repositories \
-  ms-vscode.cpptools-extension-pack \
-)
+# Read extensions from list file
+EXTENSIONS_LIST="/etc/skel/.config/vscode-extensions.list"
+if [[ ! -f "$EXTENSIONS_LIST" ]]; then
+  echo "Warning: $EXTENSIONS_LIST not found"
+  exit 0
+fi
 
-for ext in "${EXTENSIONS[@]}"; do
-  if ! "$CMD" --list-extensions --user-data-dir "$USER_DATA_DIR" --no-sandbox 2>/dev/null | grep -q "^${ext}$"; then
-    "$CMD" --install-extension "$ext" --user-data-dir "$USER_DATA_DIR" --no-sandbox || true
+# Install each extension from the list
+while IFS= read -r ext || [[ -n "$ext" ]]; do
+  # Skip empty lines and comments
+  [[ -z "$ext" ]] && continue
+  [[ "$ext" =~ ^#.*$ ]] && continue
+  
+  # Trim whitespace
+  ext=$(echo "$ext" | xargs)
+  [[ -z "$ext" ]] && continue
+  
+  echo "Installing extension: $ext"
+  if ! "$CMD" --list-extensions --user-data-dir "$USER_DATA_DIR" --no-sandbox 2>/dev/null | grep -qi "^${ext}$"; then
+    "$CMD" --install-extension "$ext" --user-data-dir "$USER_DATA_DIR" --no-sandbox || echo "Failed to install $ext"
+  else
+    echo "Extension $ext already installed"
   fi
-done
+done < "$EXTENSIONS_LIST"
 
 touch "$MARKER" || true
 HOOK_EOF
