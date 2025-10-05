@@ -102,7 +102,15 @@ install_packages() {
             if [[ -n "$old_pkg" ]] && [[ -n "$new_pkg" ]]; then
                 log "INFO" "Override: $old_pkg -> $new_pkg"
                 # Remove old package from list
-                packages_to_install=("${packages_to_install[@]/$old_pkg}")
+                {
+                    local filtered_packages=()
+                    for pkg_in_list in "${packages_to_install[@]}"; do
+                        if [[ "$pkg_in_list" != "$old_pkg" ]]; then
+                            filtered_packages+=("$pkg_in_list")
+                        fi
+                    done
+                    packages_to_install=("${filtered_packages[@]}")
+                }
                 # Add new package
                 packages_to_install+=("$new_pkg")
             fi
