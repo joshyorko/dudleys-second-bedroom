@@ -70,10 +70,39 @@ mkdir -p "$HOME/.config" || true
 USER_DATA_DIR="$HOME/.config/Code - Insiders"
 mkdir -p "$USER_DATA_DIR" || true
 
-MARKER="$HOME/.config/.vscode-insiders.done"
+# Version tracking for re-installation when hook changes
+readonly MARKER_VERSION=2
+MARKER="$USER_DATA_DIR/.extensions-installed"
+
+# Check if we should run
+SHOULD_RUN=false
+
+# Force flag for manual re-installation
+if [[ "${VSCODE_EXTENSIONS_FORCE:-}" == "1" ]]; then
+  echo "Force flag set, will reinstall extensions"
+  SHOULD_RUN=true
+  rm -f "$MARKER" || true
+fi
+
+# Check marker version
 if [[ -f "$MARKER" ]]; then
+  INSTALLED_VERSION=$(grep -oP '(?<=VERSION=)\d+' "$MARKER" 2>/dev/null || echo "0")
+  if [[ "$INSTALLED_VERSION" -lt "$MARKER_VERSION" ]]; then
+    echo "Hook updated (v$INSTALLED_VERSION -> v$MARKER_VERSION), will reinstall extensions"
+    SHOULD_RUN=true
+    rm -f "$MARKER" || true
+  fi
+else
+  # No marker exists, first run
+  SHOULD_RUN=true
+fi
+
+# Skip if not needed
+if [[ "$SHOULD_RUN" == "false" ]]; then
   exit 0
 fi
+
+echo "Installing VS Code Insiders extensions..."
 
 # Read extensions from list file
 EXTENSIONS_LIST="/etc/skel/.config/vscode-extensions.list"
@@ -100,7 +129,14 @@ while IFS= read -r ext || [[ -n "$ext" ]]; do
   fi
 done < "$EXTENSIONS_LIST"
 
-touch "$MARKER" || true
+# Write marker with version
+cat >"$MARKER" <<MARKER_CONTENT
+# VSCode Insiders extensions installed
+# VERSION=$MARKER_VERSION
+# Date: $(date -Iseconds)
+MARKER_CONTENT
+
+echo "VS Code Insiders extensions installation complete"
 HOOK_EOF
     
     chmod 0755 "$hook_dir/20-vscode-extensions.sh"

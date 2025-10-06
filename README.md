@@ -146,6 +146,32 @@ MARKER_VERSION_BUMP=$(sudo grep -n 'MARKER_VERSION' /usr/share/ublue-os/user-set
 bash /usr/share/ublue-os/user-setup.hooks.d/20-dudley-wallpaper.sh
 ```
 
+### VS Code Insiders Extensions
+
+VS Code Insiders extensions are automatically installed from the list at `/etc/skel/.config/vscode-extensions.list` on first login. The hook will:
+- Install all extensions listed in the file
+- Track installation with a version marker in `~/.config/Code - Insiders/.extensions-installed`
+- Re-run automatically if the hook version is updated
+- Skip installation if already completed
+
+The marker is stored inside the VSCode directory, so if you delete `~/.config/Code - Insiders/`, the extensions will be reinstalled on the next hook run.
+
+Manual force reinstall (deletes marker and reinstalls):
+```bash
+VSCODE_EXTENSIONS_FORCE=1 bash /usr/share/ublue-os/user-setup.hooks.d/20-vscode-extensions.sh
+```
+
+Reset and reapply cleanly:
+```bash
+rm -f ~/.config/Code\ -\ Insiders/.extensions-installed
+bash /usr/share/ublue-os/user-setup.hooks.d/20-vscode-extensions.sh
+```
+
+Check which extensions are configured:
+```bash
+cat /etc/skel/.config/vscode-extensions.list
+```
+
 ## About This Image
 
 This is a customized Universal Blue OS image that extends `ghcr.io/ublue-os/bluefin:stable` with:
