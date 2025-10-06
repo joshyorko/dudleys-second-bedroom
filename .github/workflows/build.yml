@@ -12,6 +12,9 @@ on:
     paths-ignore:
       - '**/README.md'
       - '**/logo.png'
+      - 'specs/**'
+      - '.github/**'
+      - '.specify/**'
   workflow_dispatch:
 
 env:
