@@ -148,28 +148,36 @@ bash /usr/share/ublue-os/user-setup.hooks.d/20-dudley-wallpaper.sh
 
 ### VS Code Insiders Extensions
 
-VS Code Insiders extensions are automatically installed from the list at `/etc/skel/.config/vscode-extensions.list` on first login. The hook will:
-- Install all extensions listed in the file
-- Track installation with a version marker in `~/.config/Code - Insiders/.extensions-installed`
-- Re-run automatically if the hook version is updated
-- Skip installation if already completed
+VS Code Insiders extensions are automatically installed from the list at `/etc/skel/.config/vscode-extensions.list` on first login. The hook uses the ublue versioning system to track installation state in `~/.local/share/ublue/setup_versioning.json`.
 
-The marker is stored inside the VSCode directory, so if you delete `~/.config/Code - Insiders/`, the extensions will be reinstalled on the next hook run.
+The hook will:
+- Install all extensions listed in the file on first run
+- Track installation with version `2` in the ublue setup system
+- Also create a marker at `~/.config/Code - Insiders/.extensions-installed` for debugging
+- Skip installation on subsequent boots (version already recorded)
+- Re-run automatically if the hook version is updated in a new image
 
-Manual force reinstall (deletes marker and reinstalls):
+Manual force reinstall (resets version tracking and reinstalls):
 ```bash
 VSCODE_EXTENSIONS_FORCE=1 bash /usr/share/ublue-os/user-setup.hooks.d/20-vscode-extensions.sh
 ```
 
-Reset and reapply cleanly:
+Reset version tracking manually:
 ```bash
-rm -f ~/.config/Code\ -\ Insiders/.extensions-installed
+# Edit the setup versioning file to remove vscode-extensions entry
+jq 'del(.version.user."vscode-extensions")' ~/.local/share/ublue/setup_versioning.json > /tmp/setup.json && mv /tmp/setup.json ~/.local/share/ublue/setup_versioning.json
+# Then run the hook
 bash /usr/share/ublue-os/user-setup.hooks.d/20-vscode-extensions.sh
 ```
 
 Check which extensions are configured:
 ```bash
 cat /etc/skel/.config/vscode-extensions.list
+```
+
+Check current version tracking:
+```bash
+jq '.version.user."vscode-extensions"' ~/.local/share/ublue/setup_versioning.json
 ```
 
 ## About This Image

@@ -62,6 +62,13 @@ EXTENSIONS_EOF
 # VS Code Insiders extensions user hook
 set -euo pipefail
 
+# Source ublue setup library for version tracking
+source /usr/lib/ublue/setup-services/libsetup.sh
+
+# Use ublue's version-script mechanism - exit 0 if already at this version
+# This returns 1 (and we exit 0) if already at version 2, or returns 0 if we need to run
+version-script vscode-extensions user 2 || exit 0
+
 CMD="code-insiders"
 command -v "$CMD" >/dev/null 2>&1 || exit 0
 
@@ -70,36 +77,19 @@ mkdir -p "$HOME/.config" || true
 USER_DATA_DIR="$HOME/.config/Code - Insiders"
 mkdir -p "$USER_DATA_DIR" || true
 
-# Version tracking for re-installation when hook changes
-readonly MARKER_VERSION=2
+# Keep marker file for manual tracking/debugging
 MARKER="$USER_DATA_DIR/.extensions-installed"
 
-# Check if we should run
-SHOULD_RUN=false
-
-# Force flag for manual re-installation
+# Force flag for manual re-installation (deletes marker and resets version)
 if [[ "${VSCODE_EXTENSIONS_FORCE:-}" == "1" ]]; then
   echo "Force flag set, will reinstall extensions"
-  SHOULD_RUN=true
   rm -f "$MARKER" || true
-fi
-
-# Check marker version
-if [[ -f "$MARKER" ]]; then
-  INSTALLED_VERSION=$(grep -oP '(?<=VERSION=)\d+' "$MARKER" 2>/dev/null || echo "0")
-  if [[ "$INSTALLED_VERSION" -lt "$MARKER_VERSION" ]]; then
-    echo "Hook updated (v$INSTALLED_VERSION -> v$MARKER_VERSION), will reinstall extensions"
-    SHOULD_RUN=true
-    rm -f "$MARKER" || true
+  # Reset the version in setup_versioning.json to trigger reinstall
+  SETUP_FILE="$HOME/.local/share/ublue/setup_versioning.json"
+  if [[ -f "$SETUP_FILE" ]]; then
+    TEMP_FILE=$(mktemp)
+    jq 'del(.version.user."vscode-extensions")' "$SETUP_FILE" > "$TEMP_FILE" && mv "$TEMP_FILE" "$SETUP_FILE"
   fi
-else
-  # No marker exists, first run
-  SHOULD_RUN=true
-fi
-
-# Skip if not needed
-if [[ "$SHOULD_RUN" == "false" ]]; then
-  exit 0
 fi
 
 echo "Installing VS Code Insiders extensions..."
@@ -132,7 +122,7 @@ done < "$EXTENSIONS_LIST"
 # Write marker with version
 cat >"$MARKER" <<MARKER_CONTENT
 # VSCode Insiders extensions installed
-# VERSION=$MARKER_VERSION
+# VERSION=2
 # Date: $(date -Iseconds)
 MARKER_CONTENT
 
