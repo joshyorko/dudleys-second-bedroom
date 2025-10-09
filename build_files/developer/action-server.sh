@@ -16,7 +16,8 @@ readonly CATEGORY="developer"
 # Determine Action Server version: use env var if set, else read from config file, else fallback to default
 if [[ -z "${ACTION_SERVER_VERSION:-}" ]]; then
     if [[ -f "./action-server-version.txt" ]]; then
-        readonly ACTION_SERVER_VERSION="$(cat ./action-server-version.txt)"
+        ACTION_SERVER_VERSION="$(cat ./action-server-version.txt)"
+        readonly ACTION_SERVER_VERSION
     else
         readonly ACTION_SERVER_VERSION="2.14.1"
     fi

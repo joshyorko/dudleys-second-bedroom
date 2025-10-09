@@ -87,6 +87,7 @@ echo "=== Flatpaks Configuration ==="
 run_check "flatpaks directory" "podman run --rm ${IMAGE_NAME} test -d /usr/share/ublue-os/flatpaks && echo exists" "exists"
 run_check "system flatpaks list" "podman run --rm ${IMAGE_NAME} test -f /usr/share/ublue-os/flatpaks/system-flatpaks.list && echo exists" "exists"
 run_check "DX flatpaks list" "podman run --rm ${IMAGE_NAME} test -f /usr/share/ublue-os/flatpaks/system-flatpaks-dx.list && echo exists" "exists"
+run_check "DevPod entry present" "podman run --rm ${IMAGE_NAME} grep -q 'app/sh.loft.devpod' /usr/share/ublue-os/flatpaks/system-flatpaks-dx.list && echo exists" "exists"
 
 # Check 7: User Hooks
 echo ""
@@ -94,6 +95,14 @@ echo "=== User Setup Hooks ==="
 run_check "wallpaper hook" "podman run --rm ${IMAGE_NAME} test -f /usr/share/ublue-os/user-setup.hooks.d/20-dudley-wallpaper.sh && echo exists" "exists"
 run_check "VS Code extensions hook" "podman run --rm ${IMAGE_NAME} test -f /usr/share/ublue-os/user-setup.hooks.d/20-vscode-extensions.sh && echo exists" "exists"
 run_check "VS Code extensions list" "podman run --rm ${IMAGE_NAME} test -f /etc/skel/.config/vscode-extensions.list && echo exists" "exists"
+run_check "Holotree init hook" "podman run --rm ${IMAGE_NAME} test -f /usr/share/ublue-os/user-setup.hooks.d/30-holotree-init.sh && echo exists" "exists"
+
+# Check 9: Shared Holotree
+# Note: Shared holotree directory may not exist at build time in container builds
+# RCC creates it on first actual use. Verify RCC is available instead.
+echo ""
+echo "=== Shared Holotree ==="
+run_check "RCC available for holotree" "podman run --rm ${IMAGE_NAME} command -v rcc" "rcc"
 
 # Check 8: Image Metadata
 echo ""
