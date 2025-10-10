@@ -38,8 +38,11 @@ echo "[dudley-versioning] ========================================" >&2
 IMAGE_NAME="${IMAGE_NAME:-ghcr.io/joshyorko/dudleys-second-bedroom:latest}"
 BASE_IMAGE="${BASE_IMAGE:-ghcr.io/ublue-os/bluefin-dx:40}"
 
-# Get git commit (handle both git repo and non-git contexts)
-if git rev-parse --git-dir >/dev/null 2>&1; then
+# Get git commit from environment variable (set during build) or fall back to git
+if [[ -n "${GIT_COMMIT:-}" && "$GIT_COMMIT" != "unknown" ]]; then
+    # Already set via environment variable from build arg
+    : # no-op
+elif git rev-parse --git-dir >/dev/null 2>&1; then
     GIT_COMMIT=$(git rev-parse --short=7 HEAD 2>/dev/null || echo "unknown")
 else
     GIT_COMMIT="unknown"

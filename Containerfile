@@ -40,11 +40,13 @@ FROM ghcr.io/ublue-os/bluefin-dx:stable AS base
 # Build arguments
 ARG FEDORA_MAJOR_VERSION="41"
 ARG IMAGE_NAME="dudleys-second-bedroom"
+ARG SHA_HEAD_SHORT="unknown"
 
 # Environment variables for build modules
 ENV FEDORA_VERSION="${FEDORA_MAJOR_VERSION}"
 ENV IMAGE_NAME="${IMAGE_NAME}"
 ENV BUILD_CONTEXT="/ctx"
+ENV GIT_COMMIT="${SHA_HEAD_SHORT}"
 
 ## Alternative base images (commented out):
 # FROM ghcr.io/ublue-os/bazzite:latest

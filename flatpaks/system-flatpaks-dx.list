@@ -8,6 +8,5 @@ app/io.podman_desktop.PodmanDesktop
 app/me.iepure.devtoolbox
 
 # Dev Environments
-# DevPod from Flathub (app ID: sh.loft.devpod). Flathub does not expose pre-release pinning like v0.7.0-alpha.34.
-# If you must pin a specific alpha, prefer installing via GitHub release (AppImage/CLI) outside Flatpak.
-app/sh.loft.devpod
+# DevPod: Installed from GitHub releases (v0.7.0-alpha.34) via build_files/developer/devpod-alpha.sh
+# Flatpak version removed because Flathub only provides stable releases, not alpha versions

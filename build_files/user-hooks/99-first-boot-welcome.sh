@@ -105,6 +105,30 @@ mkdir -p "$DOC_DIR"
 
 # Create README
 cat >"$DOC_DIR/README.md" <<'README'
+    # Display welcome message to terminal (if interactive)
+    if [[ -t 1 ]]; then
+        cat <<'WELCOME'
+
+╔════════════════════════════════════════════════════════════╗
+║                                                            ║
+║        Welcome to Dudley's Second Bedroom!                 ║
+║                                                            ║
+╚════════════════════════════════════════════════════════════╝
+
+Your customized Universal Blue OS is ready!
+
+  Build Info: Run 'dudley-build-info' to see version details
+  VS Code:    Launch with 'code-insiders'
+  Tools:      rcc, action-server, and container tools installed
+
+Documentation saved to: ~/.local/share/dudley/README.md
+
+WELCOME
+    fi
+
+    # Create README for user
+    install -d "$user_docs"
+    cat >"$user_docs/README.md" <<'README'
 # Dudley's Second Bedroom
 
 Welcome to your customized Universal Blue OS!
