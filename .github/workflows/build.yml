@@ -59,6 +59,43 @@ jobs:
       - name: Mount BTRFS for podman storage
         uses: ublue-os/container-storage-action@main
 
+      # Cache the container layers to speed up builds
+      # This caches the base image layers and intermediate build layers
+      - name: Cache container layers
+        uses: actions/cache@1bd1e32a3bdc45362d1e726936510720a7c30a57 # v4
+        with:
+          path: |
+            ~/.local/share/containers
+            /var/lib/containers
+          key: ${{ runner.os }}-containers-${{ hashFiles('Containerfile', 'packages.json', 'build_files/**') }}
+          restore-keys: |
+            ${{ runner.os }}-containers-
+
+      # Cache DNF/RPM packages to speed up package installations
+      # This complements the in-Containerfile cache mounts
+      - name: Cache DNF packages
+        uses: actions/cache@1bd1e32a3bdc45362d1e726936510720a7c30a57 # v4
+        with:
+          path: |
+            ~/.cache/dnf
+            /var/cache/dnf5
+            /var/cache/yum
+          key: ${{ runner.os }}-dnf-${{ hashFiles('packages.json') }}
+          restore-keys: |
+            ${{ runner.os }}-dnf-
+
+      # Cache downloaded release binaries and GitHub artifacts
+      # This helps with tools installed via github-release-install.sh
+      - name: Cache downloaded binaries
+        uses: actions/cache@1bd1e32a3bdc45362d1e726936510720a7c30a57 # v4
+        with:
+          path: |
+            ~/.cache/github-releases
+            /tmp/downloads
+          key: ${{ runner.os }}-binaries-${{ hashFiles('build_files/developer/*.sh') }}
+          restore-keys: |
+            ${{ runner.os }}-binaries-
+
       - name: Get current date
         id: date
         run: |
@@ -113,6 +150,12 @@ jobs:
           tags: ${{ steps.metadata.outputs.tags }}
           labels: ${{ steps.metadata.outputs.labels }}
           oci: false
+          # Enable layer caching to speed up builds
+          layers: true
+          # Use cache from previous builds
+          extra-args: |
+            --cache-from=type=registry,ref=${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:cache
+            --cache-to=type=inline
 
       # Rechunk is a script that we use on Universal Blue to make sure there isnt a single huge layer when your image gets published.
       # This does not make your image faster to download, just provides better resumability and fixes a few errors.
