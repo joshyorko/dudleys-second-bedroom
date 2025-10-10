@@ -76,6 +76,31 @@ RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     /ctx/build_files/shared/build-base.sh
 
 # =============================================================================
+# Content-Based Versioning Integration
+# =============================================================================
+# Generate build manifest with content hashes for all hooks, then replace
+# __CONTENT_VERSION__ placeholders in hook scripts with computed hashes.
+
+# Copy versioning utilities to temporary location
+COPY build_files/shared/utils/*.sh /tmp/dudley-versioning/
+
+# Generate manifest (output includes computed version hashes)
+RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
+    cd /ctx && \
+    bash /tmp/dudley-versioning/generate-manifest.sh > /tmp/versions.env && \
+    . /tmp/versions.env && \
+    echo "Computed versions:" && \
+    echo "  Wallpaper: $WALLPAPER_VERSION" && \
+    echo "  VS Code: $VSCODE_VERSION" && \
+    echo "  Welcome: $WELCOME_VERSION" && \
+    bash /tmp/dudley-versioning/content-versioning.sh && \
+    bash /tmp/dudley-versioning/replace_version_placeholder /usr/share/ublue-os/user-setup.hooks.d/10-wallpaper-enforcement.sh "$WALLPAPER_VERSION" && \
+    bash /tmp/dudley-versioning/replace_version_placeholder /usr/share/ublue-os/user-setup.hooks.d/20-vscode-extensions.sh "$VSCODE_VERSION" && \
+    bash /tmp/dudley-versioning/replace_version_placeholder /usr/share/ublue-os/user-setup.hooks.d/99-first-boot-welcome.sh "$WELCOME_VERSION" && \
+    install -D -m 0755 /tmp/dudley-versioning/show-build-info.sh /usr/local/bin/dudley-build-info && \
+    rm -rf /tmp/dudley-versioning /tmp/versions.env
+
+# =============================================================================
 # Final Validation
 # =============================================================================
 # Verify the image meets bootc container standards

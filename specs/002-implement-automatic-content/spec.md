@@ -85,13 +85,13 @@ As a developer adding new user hooks to the build system, I want a documented pa
 - **FR-009**: System MUST integrate with existing Universal Blue `version-script` functionality for version tracking
 - **FR-009a**: Hook version MUST be recorded by version-script only AFTER successful hook completion (not at start), ensuring failed hooks automatically retry on next boot
 - **FR-010**: Welcome hook MUST read the build manifest and display formatted summary of changes on first boot
-- **FR-011**: Welcome hook summary MUST include: VS Code extension count and change status, wallpaper change status, package changes (added/removed/updated), base image information
+- **FR-011**: Welcome hook summary MUST include: VS Code extension count and change status, wallpaper change status, base image information. Package changes (added/removed/updated) SHOULD be included if feasible during Phase 2 implementation, otherwise deferred to future release per scope boundaries.
 - **FR-012**: System MUST provide reusable utility functions for: computing content hashes, generating build manifests, retrieving hook versions from manifests
 - **FR-013**: System MUST ensure deterministic hash generation - identical file content MUST produce identical hashes across builds
 - **FR-014**: VS Code extensions hook MUST use combined content hash of `vscode-extensions.list` AND the hook script file (`20-vscode-extensions.sh`) as its version identifier
 - **FR-015**: Wallpaper hook MUST use combined content hash of all wallpaper image file contents (ignoring filenames) AND the hook script file (`10-wallpaper-enforcement.sh`) as its version identifier
 - **FR-016**: Welcome hook MUST use content hash of its own script file (`99-first-boot-welcome.sh`) as its version identifier
-- **FR-017**: System MUST provide a command-line tool for users to view build information on demand after initial welcome
+- **FR-017**: System MUST provide a command-line tool installed at `/usr/local/bin/dudley-build-info` for users to view build information on demand after initial welcome
 - **FR-018**: Build manifest MUST track count of VS Code extensions for display purposes
 - **FR-019**: Build manifest MUST be valid JSON parseable by standard tools like `jq`
 - **FR-020**: System MUST fail the build with clear error message when dependency files are missing (missing dependencies are build-time configuration errors requiring resolution before image creation)
@@ -113,7 +113,7 @@ As a developer adding new user hooks to the build system, I want a documented pa
 
 - **SC-001**: Zero manual version number updates required in hook scripts after initial implementation
 - **SC-002**: Hooks re-execute only when their specific dependencies change, not on every rebuild (verified by testing 3 sequential builds: clean, no changes, single dependency change)
-- **SC-003**: Build manifest generation completes within 5 seconds for typical repository size (under 100MB of tracked files)
+- **SC-003**: Build manifest generation completes within 5 seconds for typical repository size (under 100MB of tracked files). Typical repository includes ~20 wallpaper images, ~50 VS Code extensions in list, ~300 packages in packages.json, and ~10 hook scripts.
 - **SC-004**: Welcome hook displays build summary in under 1 second on first boot
 - **SC-005**: Content hash computation produces identical results for unchanged files across 100 consecutive builds
 - **SC-006**: Users can view build information on demand after initial boot within 2 seconds

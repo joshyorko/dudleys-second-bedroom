@@ -37,10 +37,16 @@ main() {
 # Wallpaper enforcement user hook
 set -euo pipefail
 
-MARKER="$HOME/.config/.wallpaper-enforced.done"
-if [[ -f "$MARKER" ]]; then
-  exit 0
+# Source ublue setup library for version tracking
+source /usr/lib/ublue/setup-services/libsetup.sh
+
+# Check if hook should run based on content version
+if [[ "$(version-script wallpaper __CONTENT_VERSION__)" == "skip" ]]; then
+    echo "Dudley Hook: wallpaper already at version __CONTENT_VERSION__, skipping"
+    exit 0
 fi
+
+echo "Dudley Hook: wallpaper starting (version __CONTENT_VERSION__)"
 
 # Set custom wallpaper via gsettings
 if command -v gsettings &>/dev/null; then
@@ -53,7 +59,7 @@ if command -v gsettings &>/dev/null; then
     fi
 fi
 
-touch "$MARKER" || true
+echo "Dudley Hook: wallpaper completed successfully"
 HOOK_EOF
     
     chmod 0755 "$hook_dir/10-wallpaper-enforcement.sh"

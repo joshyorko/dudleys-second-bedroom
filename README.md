@@ -16,6 +16,7 @@ This image uses a **modular build architecture** that makes customization easier
 - **⚡ Fast Rebuilds**: Intelligent caching means most changes rebuild in <10 minutes (vs 30+ minutes)
 - **✅ Validated**: Automatic validation ensures your customizations are correct before building
 - **📦 Organized**: Build modules categorized by function: shared, desktop, developer, user-hooks
+- **🔄 Smart Updates**: Automatic content-based versioning - hooks only run when their dependencies change
 
 ### Quick Customization
 
@@ -50,6 +51,56 @@ just build    # Build image
 ### Architecture
 
 See [ARCHITECTURE.md](./ARCHITECTURE.md) for complete documentation of the modular build system.
+
+## 🔄 Automatic Content-Based Versioning
+
+**Zero-maintenance version management** - your hooks automatically track when they need to run.
+
+### How It Works
+
+The build system computes content hashes (SHA256) of each user hook and its dependencies. Hooks only re-execute when their content actually changes:
+
+- **Wallpaper hook**: Tracks wallpaper images + hook script
+- **VS Code extensions**: Tracks vscode-extensions.list + hook script  
+- **Welcome message**: Tracks only the hook script
+
+**No manual version bumping required!**
+
+### Build Manifest
+
+Every image includes a build manifest at `/etc/dudley/build-manifest.json` containing:
+- Build timestamp and git commit
+- Content version hash for each hook
+- List of tracked dependencies
+
+Example:
+```json
+{
+  "version": "1.0.0",
+  "build": {
+    "date": "2025-10-10T14:55:15Z",
+    "commit": "a55df81"
+  },
+  "hooks": {
+    "vscode-extensions": {
+      "version": "0dfa5280",
+      "dependencies": [
+        "build_files/user-hooks/20-vscode-extensions.sh",
+        "vscode-extensions.list"
+      ]
+    }
+  }
+}
+```
+
+### Benefits
+
+- **Smart Updates**: Hooks only run when needed
+- **Fast Reboots**: Unchanged hooks skip instantly
+- **Transparent**: See exactly what changed in each build
+- **Automatic**: No version numbers to manage manually
+
+See [specs/002-implement-automatic-content/](./specs/002-implement-automatic-content/) for complete documentation.
 
 ## VS Code Insiders (RPM)
 

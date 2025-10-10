@@ -65,9 +65,13 @@ set -euo pipefail
 # Source ublue setup library for version tracking
 source /usr/lib/ublue/setup-services/libsetup.sh
 
-# Use ublue's version-script mechanism - exit 0 if already at this version
-# This returns 1 (and we exit 0) if already at version 2, or returns 0 if we need to run
-version-script vscode-extensions user 2 || exit 0
+# Check if hook should run based on content version
+if [[ "$(version-script vscode-extensions __CONTENT_VERSION__)" == "skip" ]]; then
+    echo "Dudley Hook: vscode-extensions already at version __CONTENT_VERSION__, skipping"
+    exit 0
+fi
+
+echo "Dudley Hook: vscode-extensions starting (version __CONTENT_VERSION__)"
 
 CMD="code-insiders"
 command -v "$CMD" >/dev/null 2>&1 || exit 0
@@ -122,11 +126,11 @@ done < "$EXTENSIONS_LIST"
 # Write marker with version
 cat >"$MARKER" <<MARKER_CONTENT
 # VSCode Insiders extensions installed
-# VERSION=2
+# VERSION=__CONTENT_VERSION__
 # Date: $(date -Iseconds)
 MARKER_CONTENT
 
-echo "VS Code Insiders extensions installation complete"
+echo "Dudley Hook: vscode-extensions completed successfully"
 HOOK_EOF
     
     chmod 0755 "$hook_dir/20-vscode-extensions.sh"

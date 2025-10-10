@@ -22,9 +22,9 @@ description: "Task list for automatic content-based versioning implementation"
 
 **Purpose**: Project initialization and basic structure for content versioning utilities
 
-- [ ] **T001** [P] Create `build_files/shared/utils/` directory for versioning utilities
-- [ ] **T002** [P] Create `system_files/shared/etc/dudley/` directory for manifest storage
-- [ ] **T003** [P] Create `tests/` directory structure for test scripts
+- [X] **T001** [P] Create `build_files/shared/utils/` directory for versioning utilities
+- [X] **T002** [P] Create `system_files/shared/etc/dudley/` directory for manifest storage
+- [X] **T003** [P] Create `tests/` directory structure for test scripts
 
 ---
 
@@ -36,7 +36,7 @@ description: "Task list for automatic content-based versioning implementation"
 
 ### Utility Functions Implementation
 
-- [ ] **T004** Implement `build_files/shared/utils/content-versioning.sh` with header documentation:
+- [X] **T004** Implement `build_files/shared/utils/content-versioning.sh` with header documentation:
   - Function: `compute_content_hash <file1> [file2] ...` (compute 8-char SHA256 hash)
   - Function: `replace_version_placeholder <file> <hash>` (replace `__CONTENT_VERSION__`)
   - Function: `validate_hash_format <hash>` (validate 8 hex chars)
@@ -44,7 +44,7 @@ description: "Task list for automatic content-based versioning implementation"
   - Source with `set -euo pipefail` for fail-fast behavior (FR-020)
   - Log to stderr with `[dudley-versioning]` prefix for build-time visibility (FR-021)
 
-- [ ] **T005** Implement `build_files/shared/utils/manifest-builder.sh` with header documentation:
+- [X] **T005** Implement `build_files/shared/utils/manifest-builder.sh` with header documentation:
   - Function: `init_manifest <image_name> <base_image> <commit_sha>` (initialize manifest structure)
   - Function: `add_hook_to_manifest <manifest_json> <hook_name> <version_hash> <dependencies_json> [metadata_json]` (add hook entry)
   - Function: `write_manifest <manifest_json> <output_path>` (write to file with validation)
@@ -55,7 +55,7 @@ description: "Task list for automatic content-based versioning implementation"
 
 ### Test Suite for Utilities
 
-- [ ] **T006** [P] Implement `tests/test-content-versioning.sh`:
+- [X] **T006** [P] Implement `tests/test-content-versioning.sh`:
   - Test: Hash determinism (compute same hash 10 times, assert identical)
   - Test: Multi-file ordering (hash(a,b,c) == hash(c,b,a), verifies sorting)
   - Test: Missing file error (assert exit 1, error message contains filename)
@@ -64,7 +64,7 @@ description: "Task list for automatic content-based versioning implementation"
   - Test: Hash format validation (valid cases exit 0, invalid exit 1)
   - Use bash test framework with clear pass/fail output
 
-- [ ] **T007** [P] Implement `tests/test-manifest-generation.sh`:
+- [X] **T007** [P] Implement `tests/test-manifest-generation.sh`:
   - Test: `init_manifest` creates valid structure (parse with jq, assert fields)
   - Test: `add_hook_to_manifest` adds single hook (assert present, others unchanged)
   - Test: `add_hook_to_manifest` adds multiple hooks (assert all three present)
@@ -76,7 +76,7 @@ description: "Task list for automatic content-based versioning implementation"
   - Test: `validate_manifest_schema` fails on missing field (exit 1, error mentions field)
   - Test: `validate_manifest_schema` fails on empty hooks (exit 1)
 
-- [ ] **T008** Run utility tests and verify all pass before proceeding:
+- [X] **T008** Run utility tests and verify all pass before proceeding:
   ```bash
   bash tests/test-content-versioning.sh
   bash tests/test-manifest-generation.sh
@@ -94,7 +94,7 @@ description: "Task list for automatic content-based versioning implementation"
 
 ### Implementation for User Story 1
 
-- [ ] **T009** [US1] Create manifest generation orchestration script `build_files/shared/utils/generate-manifest.sh`:
+- [X] **T009** [US1] Create manifest generation orchestration script `build_files/shared/utils/generate-manifest.sh`:
   - Source `content-versioning.sh` and `manifest-builder.sh`
   - Get build metadata: `IMAGE_NAME`, `BASE_IMAGE`, `GIT_COMMIT` (from env or git)
   - Initialize manifest with `init_manifest`
@@ -107,7 +107,7 @@ description: "Task list for automatic content-based versioning implementation"
   - Add header documentation per constitution III
   - Ensure script is executable: `chmod +x`
 
-- [ ] **T010** [US1] Modify `build_files/user-hooks/10-wallpaper-enforcement.sh`:
+- [X] **T010** [US1] Modify `build_files/user-hooks/10-wallpaper-enforcement.sh`:
   - Replace hardcoded version number with `__CONTENT_VERSION__` placeholder
   - Ensure version-script call: `version-script "wallpaper" "__CONTENT_VERSION__"`
   - Ensure script uses `set -euo pipefail` (FR-009a: fail = no version recorded)
@@ -115,7 +115,7 @@ description: "Task list for automatic content-based versioning implementation"
   - Add logging: `echo "Dudley Hook: wallpaper completed successfully"` at end
   - Update header documentation to mention content versioning
 
-- [ ] **T011** [US1] Modify `build_files/user-hooks/20-vscode-extensions.sh`:
+- [X] **T011** [US1] Modify `build_files/user-hooks/20-vscode-extensions.sh`:
   - Replace hardcoded version number with `__CONTENT_VERSION__` placeholder
   - Ensure version-script call: `version-script "vscode-extensions" "__CONTENT_VERSION__"`
   - Ensure script uses `set -euo pipefail`
@@ -123,7 +123,7 @@ description: "Task list for automatic content-based versioning implementation"
   - Add logging: `echo "Dudley Hook: vscode-extensions completed successfully"` at end
   - Update header documentation to mention content versioning
 
-- [ ] **T012** [US1] Integrate versioning into `Containerfile`:
+- [X] **T012** [US1] Integrate versioning into `Containerfile`:
   - Copy utility scripts: `COPY build_files/shared/utils/*.sh /tmp/build-scripts/`
   - Run manifest generation: `RUN /tmp/build-scripts/generate-manifest.sh`
   - Replace version placeholders in wallpaper hook: `RUN /tmp/build-scripts/content-versioning.sh replace_version_placeholder /usr/share/ublue-os/user-setup.hooks.d/10-wallpaper-enforcement.sh $(compute_content_hash ...)`
@@ -132,7 +132,7 @@ description: "Task list for automatic content-based versioning implementation"
   - Clean up temp build scripts: `RUN rm -rf /tmp/build-scripts`
   - Add comments explaining each step
 
-- [ ] **T013** [US1] Implement `tests/test-hook-integration.sh` for end-to-end validation:
+- [X] **T013** [US1] Implement `tests/test-hook-integration.sh` for end-to-end validation:
   - Test: Build image, check manifest exists at `/etc/dudley/build-manifest.json`
   - Test: Verify manifest is valid JSON (parse with jq)
   - Test: Verify all three hooks present in manifest with valid version hashes
@@ -141,7 +141,7 @@ description: "Task list for automatic content-based versioning implementation"
   - Test: Count VS Code extensions in vscode-extensions.list, verify matches manifest metadata
   - Test: Verify hook scripts are executable (have execute permissions)
 
-- [ ] **T014** [US1] Run integration tests and verify User Story 1 acceptance scenarios:
+- [X] **T014** [US1] Run integration tests and verify User Story 1 acceptance scenarios:
   ```bash
   bash tests/test-hook-integration.sh
   ```
@@ -163,7 +163,7 @@ description: "Task list for automatic content-based versioning implementation"
 
 ### Implementation for User Story 2
 
-- [ ] **T015** [US2] Modify `build_files/user-hooks/99-first-boot-welcome.sh`:
+- [X] **T015** [US2] Modify `build_files/user-hooks/99-first-boot-welcome.sh`:
   - Replace hardcoded version with `__CONTENT_VERSION__` placeholder
   - Ensure version-script call: `version-script "welcome" "__CONTENT_VERSION__"`
   - Add logic to read `/etc/dudley/build-manifest.json` with jq
@@ -175,7 +175,7 @@ description: "Task list for automatic content-based versioning implementation"
   - Add logging: `echo "Dudley Hook: welcome starting"`
   - Update header documentation
 
-- [ ] **T016** [US2] Add metadata tracking to `build_files/shared/utils/generate-manifest.sh`:
+- [X] **T016** [US2] Add metadata tracking to `build_files/shared/utils/generate-manifest.sh`:
   - Compute "changed" flag for each hook (compare current hash to previous, default true)
   - Count VS Code extensions: `wc -l vscode-extensions.list` (FR-018)
   - Count wallpapers: `ls custom_wallpapers/* | wc -l`
@@ -184,12 +184,12 @@ description: "Task list for automatic content-based versioning implementation"
     - vscode-extensions: `{"extension_count": N, "changed": true/false}`
     - welcome: `{"changed": true/false}`
 
-- [ ] **T017** [US2] Update `Containerfile` to replace welcome hook placeholder:
+- [X] **T017** [US2] Update `Containerfile` to replace welcome hook placeholder:
   - Add placeholder replacement for `99-first-boot-welcome.sh`
   - Use computed hash of welcome script: `compute_content_hash build_files/user-hooks/99-first-boot-welcome.sh`
   - Ensure manifest includes welcome hook entry
 
-- [ ] **T018** [US2] Create command-line tool `build_files/shared/utils/show-build-info.sh` (FR-017):
+- [X] **T018** [US2] Create command-line tool `build_files/shared/utils/show-build-info.sh` (FR-017):
   - Read and display build manifest from `/etc/dudley/build-manifest.json`
   - Format output same as welcome hook display
   - Make executable and install to `/usr/local/bin/dudley-build-info`
@@ -267,7 +267,7 @@ description: "Task list for automatic content-based versioning implementation"
   - Verify `generate-manifest.sh` has: Purpose, Dependencies, Author, Date
   - Verify all modified hooks have updated headers mentioning content versioning
 
-- [ ] **T025** [P] Create `tests/run-all-tests.sh` orchestration script:
+- [X] **T025** [P] Create `tests/run-all-tests.sh` orchestration script:
   - Run `test-content-versioning.sh` and capture result
   - Run `test-manifest-generation.sh` and capture result
   - Run `test-hook-integration.sh` and capture result
