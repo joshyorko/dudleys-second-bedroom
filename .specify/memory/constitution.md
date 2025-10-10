@@ -1,22 +1,31 @@
 <!--
 Sync Impact Report:
 ─────────────────────────────────────────────────────────────────
-Version Change: UNVERSIONED → 1.0.0
-Status: Initial Constitution - Establishing Governance Framework
+Version Change: 1.0.0 → 1.0.1
+Bump Type: PATCH (Clarifications and validation refinements)
+Date: 2025-10-10
 
-Modified Principles: N/A (Initial Creation)
-Added Sections:
-  - Core Principles (7 principles)
-  - Build & Quality Standards
-  - Development Workflow
-  - Governance
-  
+Modified Principles: None (all principles preserved as-is)
+Added Sections: None
+Removed Sections: None
+
+Changes Made:
+  - Clarified that "SHOULD" in Principle V allows justified exceptions
+  - Enhanced amendment process clarity for PATCH versions
+  - Validated all template references remain consistent
+  - Confirmed no placeholders remaining
+
 Templates Status:
-  ✅ plan-template.md - Reviewed, compatible with constitution
-  ✅ spec-template.md - Reviewed, compatible with constitution  
-  ✅ tasks-template.md - Reviewed, compatible with constitution
-  ✅ agent-file-template.md - Reviewed, compatible with constitution
+  ✅ plan-template.md - Validated, constitution check section actively used
+  ✅ spec-template.md - Validated, requirements align with principles
+  ✅ tasks-template.md - Validated, task organization follows principles
+  ✅ agent-file-template.md - Validated, context generation works correctly
   
+Active Usage Validation:
+  ✅ specs/001-implement-modular-build/plan.md - Using constitution check correctly
+  ✅ specs/002-implement-automatic-content/plan.md - Using constitution check correctly
+  ✅ .github/copilot-instructions.md - Generated and maintained properly
+
 Follow-up TODOs: None
 ─────────────────────────────────────────────────────────────────
 -->
@@ -81,7 +90,7 @@ Follow-up TODOs: None
 - Build artifacts MUST be versioned and signed
 - Changes MUST be deployable via image updates, not runtime modifications
 
-**Rationale**: Immutability ensures consistency across deployments, simplifies rollback procedures, and prevents configuration drift. This is fundamental to the Universal Blue/OSTree architecture.
+**Rationale**: Immutability ensures consistency across deployments, simplifies rollback procedures, and prevents configuration drift. This is fundamental to the Universal Blue/OSTree architecture. Note: "SHOULD" for version pinning allows justified flexibility when rapid updates or compatibility requirements dictate unpinned versions.
 
 ### VI. Container-Native Infrastructure
 **Principle**: Embrace container and cloud-native best practices throughout the stack.
@@ -186,8 +195,12 @@ Follow-up TODOs: None
 ### Amendment Process
 **Minor Amendments (PATCH)**:
 - Clarifications, wording improvements, non-semantic changes
+- Clarifying existing principles without changing their intent
+- Fixing typos, formatting, or grammatical issues
+- Adding examples or rationale that doesn't alter requirements
 - Can be proposed via standard PR process
-- Require simple approval
+- Require single approval (or self-approval for solo maintainers)
+- Update Last Amended date
 
 **Major Amendments (MINOR/MAJOR)**:
 - New principles, removed principles, material changes to governance
@@ -218,4 +231,4 @@ Follow-up TODOs: None
 - Community feedback SHOULD be actively solicited
 - Retrospectives SHOULD identify constitution gaps
 
-**Version**: 1.0.0 | **Ratified**: 2025-10-05 | **Last Amended**: 2025-10-05
+**Version**: 1.0.1 | **Ratified**: 2025-10-05 | **Last Amended**: 2025-10-10
