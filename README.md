@@ -100,6 +100,27 @@ Example:
 - **Transparent**: See exactly what changed in each build
 - **Automatic**: No version numbers to manage manually
 
+### View Build Information
+
+Use the `dudley-build-info` command to view build details at any time:
+
+```bash
+# Formatted display
+dudley-build-info
+
+# Raw JSON output
+dudley-build-info --json
+```
+
+### Developer Documentation
+
+For developers adding new hooks or modifying the versioning system:
+
+- **Developer Guide**: [docs/DEVELOPER-GUIDE.md](./docs/DEVELOPER-GUIDE.md)
+- **Quickstart**: [specs/002-implement-automatic-content/quickstart.md](./specs/002-implement-automatic-content/quickstart.md)
+- **API Contracts**: [specs/002-implement-automatic-content/contracts/](./specs/002-implement-automatic-content/contracts/)
+- **Template Hook**: [build_files/user-hooks/TEMPLATE-new-hook.sh](./build_files/user-hooks/TEMPLATE-new-hook.sh)
+
 See [specs/002-implement-automatic-content/](./specs/002-implement-automatic-content/) for complete documentation.
 
 ## VS Code Insiders (RPM)

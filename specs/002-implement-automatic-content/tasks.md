@@ -196,7 +196,7 @@ description: "Task list for automatic content-based versioning implementation"
   - Add usage message: `dudley-build-info` or `dudley-build-info --json`
   - Add header documentation
 
-- [ ] **T019** [US2] Test User Story 2 acceptance scenarios:
+- [X] **T019** [US2] Test User Story 2 acceptance scenarios:
   - Scenario 1: Fresh boot after update - welcome displays change summary (check systemd journal)
   - Scenario 2: Build with new extensions - see updated count and "changed" indicator
   - Scenario 3: Build with updated wallpapers - see "changed" indicator for wallpapers
@@ -215,14 +215,14 @@ description: "Task list for automatic content-based versioning implementation"
 
 ### Implementation for User Story 3
 
-- [ ] **T020** [US3] Enhance `specs/002-implement-automatic-content/quickstart.md`:
+- [X] **T020** [US3] Enhance `specs/002-implement-automatic-content/quickstart.md`:
   - Add real working examples using actual project file paths
   - Add section on adding new hooks to `generate-manifest.sh`
   - Add troubleshooting section with common issues (already present, verify completeness)
   - Add section on testing new hooks locally before committing
   - Add reference to API contracts for advanced usage
 
-- [ ] **T021** [US3] Create template hook script `build_files/user-hooks/TEMPLATE-new-hook.sh`:
+- [X] **T021** [US3] Create template hook script `build_files/user-hooks/TEMPLATE-new-hook.sh`:
   - Complete working template following constitution III header format
   - Include `__CONTENT_VERSION__` placeholder correctly positioned
   - Include proper version-script integration
@@ -231,7 +231,7 @@ description: "Task list for automatic content-based versioning implementation"
   - Add extensive comments explaining each section
   - Add TODO markers for customization points
 
-- [ ] **T022** [US3] Create `docs/DEVELOPER-GUIDE.md` (or update existing README):
+- [X] **T022** [US3] Create `docs/DEVELOPER-GUIDE.md` (or update existing README):
   - Document the content versioning system architecture
   - Explain when hooks run vs skip (version-script behavior)
   - Explain how hashes are computed (deterministic, includes script + data)
@@ -244,7 +244,7 @@ description: "Task list for automatic content-based versioning implementation"
     - Script-only dependency
     - Complex dependencies
 
-- [ ] **T023** [US3] Test User Story 3 acceptance scenarios:
+- [X] **T023** [US3] Test User Story 3 acceptance scenarios:
   - Scenario 1: Create new hook following template - verify implements versioning correctly
   - Scenario 2: New hook with dependencies - verify re-executes when dependencies change
   - Scenario 3: New hook with multiple files - verify tracks changes to any file
@@ -261,7 +261,7 @@ description: "Task list for automatic content-based versioning implementation"
 
 **Purpose**: Improvements that affect multiple user stories and final validation
 
-- [ ] **T024** [P] Add comprehensive header documentation to all scripts per constitution III:
+- [X] **T024** [P] Add comprehensive header documentation to all scripts per constitution III:
   - Verify `content-versioning.sh` has: Purpose, Dependencies, Author, Date
   - Verify `manifest-builder.sh` has: Purpose, Dependencies, Author, Date
   - Verify `generate-manifest.sh` has: Purpose, Dependencies, Author, Date
@@ -275,7 +275,7 @@ description: "Task list for automatic content-based versioning implementation"
   - Exit with code 1 if any test fails
   - Make executable: `chmod +x`
 
-- [ ] **T026** [P] Update main project `README.md`:
+- [X] **T026** [P] Update main project `README.md`:
   - Add section on content-based versioning system
   - Link to feature spec and design docs
   - Document `dudley-build-info` command for users

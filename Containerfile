@@ -84,20 +84,28 @@ RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
 # Copy versioning utilities to temporary location
 COPY build_files/shared/utils/*.sh /tmp/dudley-versioning/
 
-# Generate manifest (output includes computed version hashes)
+# Generate manifest and replace version placeholders in hooks
 RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     cd /ctx && \
+    # Source the utilities
+    source /tmp/dudley-versioning/content-versioning.sh && \
+    source /tmp/dudley-versioning/manifest-builder.sh && \
+    # Generate manifest (creates /etc/dudley/build-manifest.json)
     bash /tmp/dudley-versioning/generate-manifest.sh > /tmp/versions.env && \
-    . /tmp/versions.env && \
-    echo "Computed versions:" && \
-    echo "  Wallpaper: $WALLPAPER_VERSION" && \
-    echo "  VS Code: $VSCODE_VERSION" && \
-    echo "  Welcome: $WELCOME_VERSION" && \
-    bash /tmp/dudley-versioning/content-versioning.sh && \
-    bash /tmp/dudley-versioning/replace_version_placeholder /usr/share/ublue-os/user-setup.hooks.d/10-wallpaper-enforcement.sh "$WALLPAPER_VERSION" && \
-    bash /tmp/dudley-versioning/replace_version_placeholder /usr/share/ublue-os/user-setup.hooks.d/20-vscode-extensions.sh "$VSCODE_VERSION" && \
-    bash /tmp/dudley-versioning/replace_version_placeholder /usr/share/ublue-os/user-setup.hooks.d/99-first-boot-welcome.sh "$WELCOME_VERSION" && \
+    # Load computed hashes
+    source /tmp/versions.env && \
+    echo "[dudley-versioning] Replacing version placeholders in hooks..." && \
+    echo "[dudley-versioning]   Wallpaper: $WALLPAPER_VERSION" && \
+    echo "[dudley-versioning]   VS Code: $VSCODE_VERSION" && \
+    echo "[dudley-versioning]   Welcome: $WELCOME_VERSION" && \
+    # Replace placeholders in installed hooks
+    replace_version_placeholder /usr/share/ublue-os/user-setup.hooks.d/10-wallpaper-enforcement.sh "$WALLPAPER_VERSION" && \
+    replace_version_placeholder /usr/share/ublue-os/user-setup.hooks.d/20-vscode-extensions.sh "$VSCODE_VERSION" && \
+    replace_version_placeholder /usr/share/ublue-os/user-setup.hooks.d/99-first-boot-welcome.sh "$WELCOME_VERSION" && \
+    # Install build-info CLI tool
     install -D -m 0755 /tmp/dudley-versioning/show-build-info.sh /usr/local/bin/dudley-build-info && \
+    echo "[dudley-versioning] Version placeholder replacement complete" && \
+    # Clean up
     rm -rf /tmp/dudley-versioning /tmp/versions.env
 
 # =============================================================================
