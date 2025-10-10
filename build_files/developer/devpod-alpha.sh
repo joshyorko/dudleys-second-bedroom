@@ -31,14 +31,17 @@ main() {
     # Determine architecture
     local arch
     arch=$(uname -m)
-    local download_pattern=""
+    local appimage_pattern=""
+    local cli_pattern=""
     
     case "$arch" in
         x86_64)
-            download_pattern="devpod-linux-amd64"
+            appimage_pattern="DevPod_linux_amd64.AppImage"
+            cli_pattern="devpod-linux-amd64"
             ;;
         aarch64)
-            download_pattern="devpod-linux-arm64"
+            appimage_pattern="DevPod_linux_arm64.AppImage"
+            cli_pattern="devpod-linux-arm64"
             ;;
         *)
             log "ERROR" "Unsupported architecture: $arch"
@@ -46,7 +49,7 @@ main() {
             ;;
     esac
 
-    log "INFO" "Detected architecture: $arch (pattern: $download_pattern)"
+    log "INFO" "Detected architecture: $arch"
 
     # Fetch release info for specific version
     local api_url="https://api.github.com/repos/loft-sh/devpod/releases/tags/${DEVPOD_VERSION}"
@@ -58,34 +61,53 @@ main() {
         return 1
     fi
 
-    # Extract download URL for the binary
-    local download_url
-    download_url=$(echo "$release_json" | jq -r ".assets[] | select(.name == \"$download_pattern\") | .browser_download_url" | head -n 1)
+    # Extract download URLs for both AppImage (GUI) and CLI binary
+    local appimage_url
+    appimage_url=$(echo "$release_json" | jq -r ".assets[] | select(.name == \"$appimage_pattern\") | .browser_download_url" | head -n 1)
+    
+    local cli_url
+    cli_url=$(echo "$release_json" | jq -r ".assets[] | select(.name == \"$cli_pattern\") | .browser_download_url" | head -n 1)
 
-    if [[ -z "$download_url" || "$download_url" == "null" ]]; then
-        log "ERROR" "No asset matching pattern '$download_pattern' found in release"
+    if [[ -z "$appimage_url" || "$appimage_url" == "null" ]]; then
+        log "ERROR" "No AppImage asset matching pattern '$appimage_pattern' found in release"
         log "INFO" "Available assets:"
         echo "$release_json" | jq -r '.assets[].name'
         return 1
     fi
 
-    log "INFO" "Found asset: $download_url"
+    log "INFO" "Found AppImage: $appimage_url"
+    log "INFO" "Found CLI binary: $cli_url"
 
-    # Download binary
-    local temp_file
-    temp_file=$(mktemp)
+    # Download and install AppImage (GUI application)
+    local temp_appimage
+    temp_appimage=$(mktemp)
     
-    log "INFO" "Downloading DevPod binary..."
-    if ! curl -fsSL "$download_url" -o "$temp_file"; then
-        log "ERROR" "Failed to download from $download_url"
-        rm -f "$temp_file"
+    log "INFO" "Downloading DevPod AppImage..."
+    if ! curl -fsSL "$appimage_url" -o "$temp_appimage"; then
+        log "ERROR" "Failed to download from $appimage_url"
+        rm -f "$temp_appimage"
         return 1
     fi
 
-    # Install to /usr/bin
-    log "INFO" "Installing DevPod to /usr/bin/devpod..."
-    install -m755 "$temp_file" /usr/bin/devpod
-    rm -f "$temp_file"
+    # Install AppImage to /usr/bin
+    log "INFO" "Installing DevPod AppImage to /usr/bin/devpod-gui..."
+    install -m755 "$temp_appimage" /usr/bin/devpod-gui
+    rm -f "$temp_appimage"
+
+    # Download and install CLI binary (for terminal use)
+    if [[ -n "$cli_url" && "$cli_url" != "null" ]]; then
+        local temp_cli
+        temp_cli=$(mktemp)
+        
+        log "INFO" "Downloading DevPod CLI binary..."
+        if curl -fsSL "$cli_url" -o "$temp_cli"; then
+            log "INFO" "Installing DevPod CLI to /usr/bin/devpod..."
+            install -m755 "$temp_cli" /usr/bin/devpod
+            rm -f "$temp_cli"
+        else
+            log "WARNING" "Failed to download CLI binary, skipping"
+        fi
+    fi
 
     # Install desktop entry so it shows in application menu
     log "INFO" "Installing desktop entry..."
@@ -94,7 +116,7 @@ main() {
 [Desktop Entry]
 Name=DevPod
 Comment=Codespaces but open-source, client-only and unopinionated
-Exec=/usr/bin/devpod ui
+Exec=/usr/bin/devpod-gui
 Icon=devpod
 Terminal=false
 Type=Application
@@ -120,12 +142,19 @@ DESKTOP
     fi
 
     # Verify installation
-    if /usr/bin/devpod version &>/dev/null; then
+    if [[ -x /usr/bin/devpod-gui ]]; then
+        log "INFO" "DevPod GUI installed successfully at /usr/bin/devpod-gui"
+    else
+        log "ERROR" "DevPod GUI installation verification failed"
+        return 1
+    fi
+    
+    if [[ -x /usr/bin/devpod ]] && /usr/bin/devpod version &>/dev/null; then
         local installed_version
         installed_version=$(/usr/bin/devpod version | head -n1 || echo "unknown")
-        log "INFO" "DevPod installed successfully: $installed_version"
+        log "INFO" "DevPod CLI installed successfully: $installed_version"
     else
-        log "WARNING" "DevPod installed but version check failed (may still work)"
+        log "WARNING" "DevPod CLI not available (GUI will still work)"
     fi
 
     local end_time duration
