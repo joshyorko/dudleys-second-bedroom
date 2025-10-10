@@ -102,8 +102,8 @@ RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     replace_version_placeholder /usr/share/ublue-os/user-setup.hooks.d/10-wallpaper-enforcement.sh "$WALLPAPER_VERSION" && \
     replace_version_placeholder /usr/share/ublue-os/user-setup.hooks.d/20-vscode-extensions.sh "$VSCODE_VERSION" && \
     replace_version_placeholder /usr/share/ublue-os/user-setup.hooks.d/99-first-boot-welcome.sh "$WELCOME_VERSION" && \
-    # Install build-info CLI tool
-    install -D -m 0755 /tmp/dudley-versioning/show-build-info.sh /usr/local/bin/dudley-build-info && \
+    # Install build-info CLI tool to /usr/bin (standard location in OSTree images)
+    install -m 0755 /tmp/dudley-versioning/show-build-info.sh /usr/bin/dudley-build-info && \
     echo "[dudley-versioning] Version placeholder replacement complete" && \
     # Clean up
     rm -rf /tmp/dudley-versioning /tmp/versions.env
