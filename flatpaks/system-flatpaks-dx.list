@@ -6,7 +6,3 @@ app/io.podman_desktop.PodmanDesktop
 
 # Development Tools
 app/me.iepure.devtoolbox
-
-# Dev Environments
-# DevPod: Installed from GitHub releases (v0.7.0-alpha.34) via build_files/developer/devpod-alpha.sh
-# Flatpak version removed because Flathub only provides stable releases, not alpha versions
