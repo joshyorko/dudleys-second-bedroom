@@ -27,8 +27,13 @@ ms-python.python
 ms-python.vscode-pylance
 ms-python.debugpy
 ms-python.vscode-python-envs
-ms-toolsai.jupyter-keymap
 
+# Jupyter & Notebooks
+ms-toolsai.jupyter
+ms-toolsai.jupyter-keymap
+ms-toolsai.jupyter-renderers
+ms-toolsai.vscode-jupyter-cell-tags
+ms-toolsai.vscode-jupyter-slideshow
 
 # Container & Docker
 ms-azuretools.vscode-containers
@@ -42,3 +47,13 @@ ms-toolsai.datawrangler
 ms-vscode.vscode-speech
 ms-vscode.vscode-websearchforcopilot
 ms-vscode.live-server
+ms-vscode.makefile-tools
+
+# AI & Chat
+openai.chatgpt
+
+# Configuration & Languages
+redhat.vscode-yaml
+
+# Document Viewers
+tomoki1207.pdf
