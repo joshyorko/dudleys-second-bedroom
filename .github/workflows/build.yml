@@ -152,10 +152,6 @@ jobs:
           oci: false
           # Enable layer caching to speed up builds
           layers: true
-          # Use cache from previous builds
-          extra-args: |
-            --cache-from=type=registry,ref=${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:cache
-            --cache-to=type=inline
 
       # Rechunk is a script that we use on Universal Blue to make sure there isnt a single huge layer when your image gets published.
       # This does not make your image faster to download, just provides better resumability and fixes a few errors.

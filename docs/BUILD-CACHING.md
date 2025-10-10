@@ -74,19 +74,13 @@ Relevant to these build modules:
 **Configuration:**
 ```yaml
 layers: true
-extra-args: |
-  --cache-from=type=registry,ref=ghcr.io/.../cache
-  --cache-to=type=inline
 ```
 
-This enables Buildah's built-in layer caching mechanism:
-- Stores layer cache inline with the pushed image
-- Pulls cache from previous registry builds
-- Optimizes layer reuse across builds
+Buildah supports native layer caching with `layers: true`. It does **not** support Docker BuildKit cache arguments like `--cache-from` or `--cache-to`. Layer caching is handled automatically by Buildah and the underlying storage driver.
 
 **Benefits:**
-- Most efficient caching mechanism
-- Works seamlessly with registry storage
+- Efficient reuse of unchanged layers
+- No need for extra cache arguments
 - **Estimated savings:** 3-7 minutes per build
 
 ## Cache Invalidation
