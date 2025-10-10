@@ -109,6 +109,30 @@ main() {
         fi
     fi
 
+    # Create wrapper script with proper flags for Wayland/GPU support
+    log "INFO" "Creating wrapper script..."
+    cat > /usr/bin/devpod-launcher <<'WRAPPER'
+#!/bin/bash
+# Wrapper for DevPod AppImage with proper Wayland/GPU flags
+
+# Set AppImage to not use FUSE (works better on immutable systems)
+export APPIMAGE_EXTRACT_AND_RUN=1
+
+# Disable GPU sandbox which causes issues on immutable systems
+export LIBGL_ALWAYS_SOFTWARE=0
+
+# Run the AppImage with flags that work on Wayland/immutable systems
+exec /usr/bin/devpod-gui \
+    --disable-gpu-sandbox \
+    --no-sandbox \
+    --enable-features=UseOzonePlatform \
+    --ozone-platform=wayland \
+    "$@"
+WRAPPER
+
+    chmod 0755 /usr/bin/devpod-launcher
+    log "INFO" "Wrapper script created"
+
     # Install desktop entry so it shows in application menu
     log "INFO" "Installing desktop entry..."
     install -d /usr/share/applications
@@ -116,7 +140,7 @@ main() {
 [Desktop Entry]
 Name=DevPod
 Comment=Codespaces but open-source, client-only and unopinionated
-Exec=/usr/bin/devpod-gui
+Exec=/usr/bin/devpod-launcher
 Icon=devpod
 Terminal=false
 Type=Application
