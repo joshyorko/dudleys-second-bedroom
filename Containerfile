@@ -40,11 +40,13 @@ FROM ghcr.io/ublue-os/bluefin-dx:stable AS base
 # Build arguments
 ARG FEDORA_MAJOR_VERSION="41"
 ARG IMAGE_NAME="dudleys-second-bedroom"
+ARG SHA_HEAD_SHORT="unknown"
 
 # Environment variables for build modules
 ENV FEDORA_VERSION="${FEDORA_MAJOR_VERSION}"
 ENV IMAGE_NAME="${IMAGE_NAME}"
 ENV BUILD_CONTEXT="/ctx"
+ENV GIT_COMMIT="${SHA_HEAD_SHORT}"
 
 ## Alternative base images (commented out):
 # FROM ghcr.io/ublue-os/bazzite:latest
@@ -74,6 +76,39 @@ RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     --mount=type=cache,dst=/var/cache/yum,sharing=locked \
     --mount=type=tmpfs,dst=/tmp \
     /ctx/build_files/shared/build-base.sh
+
+# =============================================================================
+# Content-Based Versioning Integration
+# =============================================================================
+# Generate build manifest with content hashes for all hooks, then replace
+# __CONTENT_VERSION__ placeholders in hook scripts with computed hashes.
+
+# Copy versioning utilities to temporary location
+COPY build_files/shared/utils/*.sh /tmp/dudley-versioning/
+
+# Generate manifest and replace version placeholders in hooks
+RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
+    cd /ctx && \
+    # Source the utilities
+    source /tmp/dudley-versioning/content-versioning.sh && \
+    source /tmp/dudley-versioning/manifest-builder.sh && \
+    # Generate manifest (creates /etc/dudley/build-manifest.json)
+    bash /tmp/dudley-versioning/generate-manifest.sh > /tmp/versions.env && \
+    # Load computed hashes
+    source /tmp/versions.env && \
+    echo "[dudley-versioning] Replacing version placeholders in hooks..." && \
+    echo "[dudley-versioning]   Wallpaper: $WALLPAPER_VERSION" && \
+    echo "[dudley-versioning]   VS Code: $VSCODE_VERSION" && \
+    echo "[dudley-versioning]   Welcome: $WELCOME_VERSION" && \
+    # Replace placeholders in installed hooks
+    replace_version_placeholder /usr/share/ublue-os/user-setup.hooks.d/10-wallpaper-enforcement.sh "$WALLPAPER_VERSION" && \
+    replace_version_placeholder /usr/share/ublue-os/user-setup.hooks.d/20-vscode-extensions.sh "$VSCODE_VERSION" && \
+    replace_version_placeholder /usr/share/ublue-os/user-setup.hooks.d/99-first-boot-welcome.sh "$WELCOME_VERSION" && \
+    # Install build-info CLI tool to /usr/bin (standard location in OSTree images)
+    install -m 0755 /tmp/dudley-versioning/show-build-info.sh /usr/bin/dudley-build-info && \
+    echo "[dudley-versioning] Version placeholder replacement complete" && \
+    # Clean up
+    rm -rf /tmp/dudley-versioning /tmp/versions.env
 
 # =============================================================================
 # Final Validation

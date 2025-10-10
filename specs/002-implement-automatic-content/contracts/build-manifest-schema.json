@@ -1,0 +1,144 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/joshyorko/dudleys-second-bedroom/schemas/build-manifest.json",
+  "title": "Dudley Build Manifest",
+  "description": "Content-based version tracking manifest for user hooks",
+  "version": "1.0.0",
+  "type": "object",
+  "required": ["version", "build", "hooks"],
+  "additionalProperties": false,
+  "properties": {
+    "version": {
+      "type": "string",
+      "description": "Manifest schema version following semantic versioning",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "examples": ["1.0.0"]
+    },
+    "build": {
+      "type": "object",
+      "description": "Build environment metadata",
+      "required": ["date", "image", "base", "commit"],
+      "additionalProperties": false,
+      "properties": {
+        "date": {
+          "type": "string",
+          "description": "ISO 8601 build timestamp (UTC recommended)",
+          "format": "date-time",
+          "examples": ["2025-10-10T14:30:00Z"]
+        },
+        "image": {
+          "type": "string",
+          "description": "Full OCI image reference with tag",
+          "pattern": "^[a-z0-9.-]+(/[a-z0-9._-]+)*:[a-z0-9._-]+$",
+          "examples": ["ghcr.io/joshyorko/dudleys-second-bedroom:latest"]
+        },
+        "base": {
+          "type": "string",
+          "description": "Base image reference",
+          "pattern": "^[a-z0-9.-]+(/[a-z0-9._-]+)*:[a-z0-9._-]+$",
+          "examples": ["ghcr.io/ublue-os/bluefin-dx:40"]
+        },
+        "commit": {
+          "type": "string",
+          "description": "Git commit SHA (7 or 40 hex characters)",
+          "pattern": "^[a-f0-9]{7}([a-f0-9]{33})?$",
+          "examples": ["a3f2c1b", "a3f2c1b8e7d4f9c2a1b3e5d7f9c2a1b3e5d7f9c2"]
+        }
+      }
+    },
+    "hooks": {
+      "type": "object",
+      "description": "Map of hook name to hook version metadata",
+      "minProperties": 1,
+      "patternProperties": {
+        "^[a-zA-Z0-9_-]+$": {
+          "type": "object",
+          "description": "Hook version metadata",
+          "required": ["version", "dependencies"],
+          "additionalProperties": false,
+          "properties": {
+            "version": {
+              "type": "string",
+              "description": "8-character truncated SHA256 content hash",
+              "pattern": "^[a-f0-9]{8}$",
+              "examples": ["8f7a2c3d"]
+            },
+            "dependencies": {
+              "type": "array",
+              "description": "File paths used in hash computation (relative to repository root)",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "description": "Relative file path",
+                "pattern": "^[^/].*$"
+              },
+              "examples": [
+                ["build_files/user-hooks/20-vscode-extensions.sh", "vscode-extensions.list"]
+              ]
+            },
+            "metadata": {
+              "type": "object",
+              "description": "Hook-specific metadata (extensible, no fixed schema)",
+              "additionalProperties": true,
+              "examples": [
+                {
+                  "extension_count": 15,
+                  "changed": true
+                },
+                {
+                  "wallpaper_count": 2,
+                  "changed": false
+                }
+              ]
+            }
+          }
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "version": "1.0.0",
+      "build": {
+        "date": "2025-10-10T14:30:00Z",
+        "image": "ghcr.io/joshyorko/dudleys-second-bedroom:latest",
+        "base": "ghcr.io/ublue-os/bluefin-dx:40",
+        "commit": "a3f2c1b"
+      },
+      "hooks": {
+        "vscode-extensions": {
+          "version": "8f7a2c3d",
+          "dependencies": [
+            "build_files/user-hooks/20-vscode-extensions.sh",
+            "vscode-extensions.list"
+          ],
+          "metadata": {
+            "extension_count": 15,
+            "changed": true
+          }
+        },
+        "wallpaper": {
+          "version": "1c4e9f2a",
+          "dependencies": [
+            "build_files/user-hooks/10-wallpaper-enforcement.sh",
+            "custom_wallpapers/default.jpg",
+            "custom_wallpapers/secondary.png"
+          ],
+          "metadata": {
+            "wallpaper_count": 2,
+            "changed": false
+          }
+        },
+        "welcome": {
+          "version": "5b8d3e1f",
+          "dependencies": [
+            "build_files/user-hooks/99-first-boot-welcome.sh"
+          ],
+          "metadata": {
+            "changed": false
+          }
+        }
+      }
+    }
+  ]
+}

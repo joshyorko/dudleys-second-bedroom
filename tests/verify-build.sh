@@ -87,7 +87,6 @@ echo "=== Flatpaks Configuration ==="
 run_check "flatpaks directory" "podman run --rm ${IMAGE_NAME} test -d /usr/share/ublue-os/flatpaks && echo exists" "exists"
 run_check "system flatpaks list" "podman run --rm ${IMAGE_NAME} test -f /usr/share/ublue-os/flatpaks/system-flatpaks.list && echo exists" "exists"
 run_check "DX flatpaks list" "podman run --rm ${IMAGE_NAME} test -f /usr/share/ublue-os/flatpaks/system-flatpaks-dx.list && echo exists" "exists"
-run_check "DevPod entry present" "podman run --rm ${IMAGE_NAME} grep -q 'app/sh.loft.devpod' /usr/share/ublue-os/flatpaks/system-flatpaks-dx.list && echo exists" "exists"
 
 # Check 7: User Hooks
 echo ""

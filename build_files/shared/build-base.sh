@@ -72,7 +72,10 @@ discover_modules() {
         return 0
     fi
     
-    find "$category_dir" -maxdepth 1 -type f -name "*.sh" | sort
+    # Find all .sh files but exclude TEMPLATE files and NN- prefixed files
+    find "$category_dir" -maxdepth 1 -type f -name "*.sh" \
+        ! -name "TEMPLATE-*.sh" \
+        ! -name "NN-*.sh" | sort
 }
 
 # Trigger cleanup on failure

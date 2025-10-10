@@ -1,14 +1,14 @@
-#!/usr/bin/bash
+#!/usr/bin/env bash
 # Integration test runner - runs all validation tests
 
 set -euo pipefail
 
 echo "========================================"
-echo "  Integration Test Suite"
+echo "  Dudley's Content Versioning Test Suite"
 echo "========================================"
 echo
 
-TEST_DIR="tests"
+TEST_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PASSED=0
 FAILED=0
 TOTAL=0
@@ -16,9 +16,22 @@ TOTAL=0
 # Array to store failed tests
 declare -a FAILED_TESTS
 
-# Run each test script
-for test_script in "$TEST_DIR"/validate-*.sh; do
-    if [[ -f "$test_script" ]]; then
+# Test patterns to run
+TEST_PATTERNS=(
+    "test-content-versioning.sh"
+    "test-manifest-generation.sh"
+    "test-hook-integration.sh"
+    "validate-*.sh"
+)
+
+# Run each test pattern
+for pattern in "${TEST_PATTERNS[@]}"; do
+    for test_script in "$TEST_DIR"/$pattern; do
+        # Check if file exists (glob may not match)
+        if [[ ! -f "$test_script" ]]; then
+            continue
+        fi
+        
         TOTAL=$((TOTAL + 1))
         test_name=$(basename "$test_script")
         
@@ -35,7 +48,7 @@ for test_script in "$TEST_DIR"/validate-*.sh; do
         fi
         
         echo
-    fi
+    done
 done
 
 # Print summary
