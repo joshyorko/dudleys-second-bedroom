@@ -35,7 +35,7 @@ COPY cosign.pub /cosign.pub
 # Inherits from Universal Blue's Bluefin-DX (Developer Experience) image
 # with Fedora 41 and desktop environment pre-configured.
 
-FROM ghcr.io/ublue-os/bluefin-dx:stable AS base
+FROM ghcr.io/ublue-os/bluefin-dx:latest AS base
 
 # Build arguments
 ARG FEDORA_MAJOR_VERSION="41"
