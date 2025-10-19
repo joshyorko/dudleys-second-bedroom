@@ -33,17 +33,15 @@ COPY cosign.pub /cosign.pub
 # Stage 2: Base Customizations
 # =============================================================================
 # Inherits from Universal Blue's Bluefin-DX (Developer Experience) image
-# with Fedora 41 and desktop environment pre-configured.
+# with desktop environment pre-configured.
 
 FROM ghcr.io/ublue-os/bluefin-dx:latest AS base
 
 # Build arguments
-ARG FEDORA_MAJOR_VERSION="41"
 ARG IMAGE_NAME="dudleys-second-bedroom"
 ARG SHA_HEAD_SHORT="unknown"
 
 # Environment variables for build modules
-ENV FEDORA_VERSION="${FEDORA_MAJOR_VERSION}"
 ENV IMAGE_NAME="${IMAGE_NAME}"
 ENV BUILD_CONTEXT="/ctx"
 ENV GIT_COMMIT="${SHA_HEAD_SHORT}"
