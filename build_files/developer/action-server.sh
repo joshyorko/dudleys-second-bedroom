@@ -19,7 +19,7 @@ if [[ -z "${ACTION_SERVER_VERSION:-}" ]]; then
         ACTION_SERVER_VERSION="$(cat ./action-server-version.txt)"
         readonly ACTION_SERVER_VERSION
     else
-        readonly ACTION_SERVER_VERSION="2.16.3"
+        readonly ACTION_SERVER_VERSION="latest"
     fi
 else
     readonly ACTION_SERVER_VERSION="$ACTION_SERVER_VERSION"
