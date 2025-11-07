@@ -25,6 +25,7 @@ COPY build_files /build_files
 COPY system_files /system_files
 COPY custom_wallpapers /custom_wallpapers
 COPY flatpaks /flatpaks
+COPY brew /brew
 COPY packages.json /packages.json
 COPY vscode-extensions.list /vscode-extensions.list
 COPY cosign.pub /cosign.pub
