@@ -252,6 +252,56 @@ Check current version tracking:
 jq '.version.user."vscode-extensions"' ~/.local/share/ublue/setup_versioning.json
 ```
 
+## Homebrew Package Installation
+
+The image includes curated Brewfile configurations for installing additional tools via Homebrew. These packages are organized by category and can be installed using `ujust` commands.
+
+### Available Brewfile Categories
+
+- **CLI Tools** (`dudley-cli.Brewfile`): Terminal utilities like `bat`, `eza`, `ripgrep`, `starship`, `zoxide`
+- **Development Tools** (`dudley-dev.Brewfile`): Development environments including Python, Node.js, Ansible, UV
+- **Fonts** (`dudley-fonts.Brewfile`): Nerd Fonts collection for terminal and code editors
+- **Kubernetes/Cloud-Native** (`dudley-k8s.Brewfile`): kubectl, helm, k9s, kind, and container tools
+
+### Installation Commands
+
+Install packages by category:
+```bash
+# Install CLI tools and utilities
+ujust dudley-brews-cli
+
+# Install development tools
+ujust dudley-brews-dev
+
+# Install fonts
+ujust dudley-brews-fonts
+
+# Install Kubernetes and cloud-native tools
+ujust dudley-brews-k8s
+
+# Install everything at once
+ujust dudley-brews-all
+```
+
+List available Brewfiles:
+```bash
+ujust dudley-brews-list
+```
+
+### Manual Installation
+
+Brewfiles are stored at `/usr/share/ublue-os/homebrew/` and can be installed manually:
+```bash
+brew bundle --file=/usr/share/ublue-os/homebrew/dudley-cli.Brewfile
+```
+
+### Customizing Brewfiles
+
+To add or modify packages:
+1. Edit the appropriate Brewfile in the `brew/` directory
+2. Rebuild the image
+3. After rebasing, run the corresponding `ujust` command
+
 ## About This Image
 
 This is a customized Universal Blue OS image that extends `ghcr.io/ublue-os/bluefin:stable` with:
