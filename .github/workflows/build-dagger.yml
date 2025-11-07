@@ -71,17 +71,7 @@ jobs:
         with:
           version: "latest"
           verb: call
-          args: |
-            ci-pipeline \
-              --source=. \
-              --registry=${{ env.IMAGE_REGISTRY }} \
-              --repository=${{ github.repository_owner }}/${{ env.IMAGE_NAME }} \
-              --tag=${{ env.DEFAULT_TAG }} \
-              --git-commit=${{ github.sha }} \
-              --run-tests=true \
-              --publish-image=${{ steps.should_publish.outputs.publish }} \
-              --username=env:GITHUB_ACTOR \
-              --password=env:GITHUB_TOKEN
+          call: ci-pipeline --source=. --registry=${{ env.IMAGE_REGISTRY }} --repository=${{ github.repository_owner }}/${{ env.IMAGE_NAME }} --tag=${{ env.DEFAULT_TAG }} --git-commit=${{ github.sha }} --run-tests=true --publish-image=${{ steps.should_publish.outputs.publish }} --username=env:GITHUB_ACTOR --password=env:GITHUB_TOKEN
         env:
           GITHUB_ACTOR: ${{ github.actor }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
