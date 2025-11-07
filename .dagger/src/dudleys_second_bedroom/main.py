@@ -109,10 +109,19 @@ class DudleysSecondBedroom:
             dag.container()
             .from_("quay.io/buildah/stable:latest")
             .with_exec(["dnf", "install", "-y", "podman", "buildah"])
+            .with_exec(["mkdir", "-p", "/tmp/buildah-runtime"])
+            .with_exec(["mkdir", "-p", "/var/lib/containers/storage"])
+            .with_env_variable("XDG_RUNTIME_DIR", "/tmp/buildah-runtime")
+            .with_env_variable("STORAGE_DRIVER", "vfs")
+            .with_env_variable("BUILDAH_ROOT", "/var/lib/containers/storage")
+            .with_env_variable("BUILDAH_ISOLATION", "chroot")
+            .with_env_variable("BUILDAH_FORMAT", "docker")
             .with_directory("/workspace", source)
             .with_workdir("/workspace")
             .with_exec([
                 "buildah", "build",
+                "--storage-driver", "vfs",
+                "--isolation", "chroot",
                 "--format", "docker",  # Matches GitHub Actions "oci: false"
                 "--layers",  # Enable layer caching like GitHub Actions
                 "--build-arg", f"IMAGE_NAME={image_name}",
@@ -128,6 +137,7 @@ class DudleysSecondBedroom:
             builder
             .with_exec([
                 "buildah", "push",
+                "--storage-driver", "vfs",
                 f"localhost/{image_name}:{tag}",
                 f"oci-archive:/tmp/{image_name}.tar:{tag}"
             ])
