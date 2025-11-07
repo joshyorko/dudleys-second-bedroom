@@ -84,18 +84,14 @@ class DudleysSecondBedroom:
         ⏱️  WARNING: This takes 15-30 minutes on first run!
         Subsequent builds with caching: 5-10 minutes.
         
-          Builds a bootc-compatible container image using the modular build system.
-          Matches the GitHub Actions workflow which uses buildah-build with podman.
-
-          The build process includes:
-          1. Multi-stage Containerfile build with buildah running inside the
-              Universal Blue devcontainer image
-          2. Modular script execution (shared, desktop, developer, user-hooks)
-          3. Content-based versioning for hooks
-          4. Build manifest generation
-          5. Layer caching for faster subsequent builds
-          6. Export of the resulting image to an OCI tarball which is then
-              imported back into Dagger for downstream steps
+        Builds a bootc-compatible container image using Podman/Buildah
+        (same as production GitHub Actions workflow).
+        The build process includes:
+        1. Multi-stage Containerfile build with Buildah
+        2. Modular script execution (shared, desktop, developer, user-hooks)
+        3. Content-based versioning for hooks
+        4. Build manifest generation
+        5. Image validation with bootc container lint
         
         Args:
             source: The project source directory
@@ -107,46 +103,37 @@ class DudleysSecondBedroom:
         Returns:
             Built container image
         """
-        # The local image reference uses the localhost namespace to avoid
-        # accidental remote pulls and to play nicely with buildah defaults.
-        sanitized_name = image_name.replace("/", "_")
-        local_ref = f"localhost/{sanitized_name}:{tag}"
-        tarball_dir = "/tmp/dagger-build"
-        tarball_path = f"{tarball_dir}/{sanitized_name}-{tag}.tar"
-
+        # Build using Podman/Buildah (matches GitHub Actions workflow)
+        # Note: Using Docker format (not OCI) to match GitHub Actions "oci: false" setting
         builder = (
             dag.container()
-            .from_("ghcr.io/ublue-os/devcontainer:latest")
-            .with_env_variable("XDG_RUNTIME_DIR", "/tmp/xdg-runtime")
-            .with_env_variable("BUILDAH_ISOLATION", "chroot")
-            .with_env_variable("BUILDAH_STORAGE_DRIVER", "vfs")
+            .from_("quay.io/buildah/stable:latest")
+            .with_exec(["dnf", "install", "-y", "podman", "buildah"])
             .with_directory("/workspace", source)
             .with_workdir("/workspace")
-            .with_exec(["mkdir", "-p", tarball_dir, "/tmp/xdg-runtime"])
             .with_exec([
                 "buildah", "build",
-                "--userns", "host",
-                "--isolation", "chroot",
-                "--format", "docker",  # mirrors oci: false in GitHub Actions
-                "--layers",
+                "--format", "docker",  # Matches GitHub Actions "oci: false"
+                "--layers",  # Enable layer caching like GitHub Actions
                 "--build-arg", f"IMAGE_NAME={image_name}",
                 "--build-arg", f"SHA_HEAD_SHORT={git_commit}",
-                "--tag", local_ref,
-                "--file", "Containerfile",
-                ".",
-            ], experimental_privileged_nesting=True, insecure_root_capabilities=True)
+                "-t", f"localhost/{image_name}:{tag}",
+                "-f", "Containerfile",
+                "."
+            ])
+        )
+        
+        # Export the built image to OCI format and import back as Dagger container
+        return (
+            builder
             .with_exec([
                 "buildah", "push",
-                local_ref,
-                f"docker-archive:{tarball_path}",
-            ], experimental_privileged_nesting=True, insecure_root_capabilities=True)
+                f"localhost/{image_name}:{tag}",
+                f"oci-archive:/tmp/{image_name}.tar:{tag}"
+            ])
+            .file(f"/tmp/{image_name}.tar")
+            .import_()
         )
-
-        image_tar = builder.file(tarball_path)
-
-        # Import the produced OCI image tarball back into Dagger so downstream
-        # functions (test/publish/etc.) receive a fully materialized container.
-        return dag.container().import_(image_tar)
 
     @function
     async def check_containerfile(
@@ -227,16 +214,17 @@ class DudleysSecondBedroom:
             dagger.Secret,
             "Registry password/token"
         ],
-        tag: Annotated[
-            str,
-            "Tag for the published image"
-        ] = "latest",
+        tags: Annotated[
+            list[str] | None,
+            "List of tags for the published image"
+        ] = None,
     ) -> str:
         """
         Publish the built image to a container registry.
         
         Pushes the container image to the specified registry (default: GitHub Container Registry).
         Requires authentication credentials as Dagger secrets.
+        Supports multiple tags like GitHub Actions workflow.
         
         Args:
             image: The container image to publish
@@ -244,21 +232,27 @@ class DudleysSecondBedroom:
             repository: Repository path without registry (e.g., "joshyorko/dudleys-second-bedroom")
             username: Registry username (as Dagger secret)
             password: Registry password/token (as Dagger secret)
-            tag: Image tag (default: "latest")
+            tags: List of tags (default: ["latest"])
             
         Returns:
-            Published image reference
+            Published image references
         """
-        image_ref = f"{registry}/{repository}:{tag}"
+        if tags is None:
+            tags = ["latest"]
         
-        # Publish with authentication
-        address = await (
-            image
-            .with_registry_auth(registry, username, password)
-            .publish(image_ref)
-        )
+        published = []
         
-        return f"✅ Published to: {address}"
+        # Publish with authentication for each tag
+        for tag in tags:
+            image_ref = f"{registry}/{repository}:{tag}"
+            address = await (
+                image
+                .with_registry_auth(registry, username, password)
+                .publish(image_ref)
+            )
+            published.append(address)
+        
+        return f"✅ Published to:\n" + "\n".join(f"  - {addr}" for addr in published)
 
     @function
     async def build_iso(
@@ -445,7 +439,7 @@ class DudleysSecondBedroom:
                     repository=repository,
                     username=username,
                     password=password,
-                    tag=tag,
+                    tags=[tag],
                 )
                 results.append(publish_result)
         
