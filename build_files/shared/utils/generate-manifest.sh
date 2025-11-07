@@ -24,10 +24,10 @@ else
     PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
 fi
 
-# Source utilities
-# shellcheck source=./content-versioning.sh
+# Source required utilities
+# shellcheck disable=SC1091
 source "$SCRIPT_DIR/content-versioning.sh"
-# shellcheck source=./manifest-builder.sh
+# shellcheck disable=SC1091
 source "$SCRIPT_DIR/manifest-builder.sh"
 
 echo "[dudley-versioning] ========================================" >&2
@@ -86,7 +86,7 @@ VSCODE_DEPS=(
 extension_count=0
 if [[ -f "$PROJECT_ROOT/vscode-extensions.list" ]]; then
     VSCODE_DEPS+=("$PROJECT_ROOT/vscode-extensions.list")
-    extension_count=$(grep -v '^\s*#' "$PROJECT_ROOT/vscode-extensions.list" | grep -v '^\s*$' | wc -l | tr -d ' ')
+    extension_count=$(grep -v '^\s*#' "$PROJECT_ROOT/vscode-extensions.list" | grep -c -v '^\s*$')
 fi
 
 vscode_hash=$(compute_content_hash "${VSCODE_DEPS[@]}")

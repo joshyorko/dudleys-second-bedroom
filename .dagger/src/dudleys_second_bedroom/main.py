@@ -79,18 +79,23 @@ class DudleysSecondBedroom:
         ] = "unknown",
     ) -> dagger.Container:
         """
-        Build the custom Universal Blue OS image.
+        Build the custom Universal Blue OS image using Podman/Buildah.
         
         ⏱️  WARNING: This takes 15-30 minutes on first run!
         Subsequent builds with caching: 5-10 minutes.
         
-        Builds a bootc-compatible container image using the modular build system.
-        The build process includes:
-        1. Multi-stage Containerfile build
-        2. Modular script execution (shared, desktop, developer, user-hooks)
-        3. Content-based versioning for hooks
-        4. Build manifest generation
-        5. Image validation with bootc container lint
+          Builds a bootc-compatible container image using the modular build system.
+          Matches the GitHub Actions workflow which uses buildah-build with podman.
+
+          The build process includes:
+          1. Multi-stage Containerfile build with buildah running inside the
+              Universal Blue devcontainer image
+          2. Modular script execution (shared, desktop, developer, user-hooks)
+          3. Content-based versioning for hooks
+          4. Build manifest generation
+          5. Layer caching for faster subsequent builds
+          6. Export of the resulting image to an OCI tarball which is then
+              imported back into Dagger for downstream steps
         
         Args:
             source: The project source directory
@@ -102,16 +107,46 @@ class DudleysSecondBedroom:
         Returns:
             Built container image
         """
-        # Build using the directory's docker_build method
-        return (
-            source.docker_build(
-                dockerfile="Containerfile",
-                build_args=[
-                    dagger.BuildArg(name="IMAGE_NAME", value=image_name),
-                    dagger.BuildArg(name="SHA_HEAD_SHORT", value=git_commit),
-                ],
-            )
+        # The local image reference uses the localhost namespace to avoid
+        # accidental remote pulls and to play nicely with buildah defaults.
+        sanitized_name = image_name.replace("/", "_")
+        local_ref = f"localhost/{sanitized_name}:{tag}"
+        tarball_dir = "/tmp/dagger-build"
+        tarball_path = f"{tarball_dir}/{sanitized_name}-{tag}.tar"
+
+        builder = (
+            dag.container()
+            .from_("ghcr.io/ublue-os/devcontainer:latest")
+            .with_env_variable("XDG_RUNTIME_DIR", "/tmp/xdg-runtime")
+            .with_env_variable("BUILDAH_ISOLATION", "chroot")
+            .with_env_variable("BUILDAH_STORAGE_DRIVER", "vfs")
+            .with_directory("/workspace", source)
+            .with_workdir("/workspace")
+            .with_exec(["mkdir", "-p", tarball_dir, "/tmp/xdg-runtime"])
+            .with_exec([
+                "buildah", "build",
+                "--userns", "host",
+                "--isolation", "chroot",
+                "--format", "docker",  # mirrors oci: false in GitHub Actions
+                "--layers",
+                "--build-arg", f"IMAGE_NAME={image_name}",
+                "--build-arg", f"SHA_HEAD_SHORT={git_commit}",
+                "--tag", local_ref,
+                "--file", "Containerfile",
+                ".",
+            ], experimental_privileged_nesting=True, insecure_root_capabilities=True)
+            .with_exec([
+                "buildah", "push",
+                local_ref,
+                f"docker-archive:{tarball_path}",
+            ], experimental_privileged_nesting=True, insecure_root_capabilities=True)
         )
+
+        image_tar = builder.file(tarball_path)
+
+        # Import the produced OCI image tarball back into Dagger so downstream
+        # functions (test/publish/etc.) receive a fully materialized container.
+        return dag.container().import_(image_tar)
 
     @function
     async def check_containerfile(

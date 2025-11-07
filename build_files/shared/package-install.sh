@@ -25,6 +25,7 @@ log() {
 # Detect Fedora version
 detect_fedora_version() {
     if [[ -f /etc/os-release ]]; then
+        # shellcheck source=/dev/null
         source /etc/os-release
         echo "${VERSION_ID}"
     else

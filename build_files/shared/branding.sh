@@ -89,7 +89,7 @@ main() {
     fi
     
     # Update dconf database if gdm.d overrides exist
-    if [[ -n "$(find /etc/dconf/db/gdm.d -name '*.conf' -o -name '*-*' 2>/dev/null | grep -v '.gitkeep')" ]]; then
+    if find /etc/dconf/db/gdm.d -name '*.conf' -o -name '*-*' 2>/dev/null | grep -v '.gitkeep' | grep -q .; then
         log "INFO" "Updating dconf database..."
         dconf update || {
             log "WARNING" "dconf update failed (may not be critical)"
