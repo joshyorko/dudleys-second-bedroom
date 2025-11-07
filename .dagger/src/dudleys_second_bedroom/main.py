@@ -124,7 +124,7 @@ class DudleysSecondBedroom:
         )
         
         # Export the built image to OCI format and import back as Dagger container
-        return (
+        oci_file = (
             builder
             .with_exec([
                 "buildah", "push",
@@ -132,8 +132,10 @@ class DudleysSecondBedroom:
                 f"oci-archive:/tmp/{image_name}.tar:{tag}"
             ])
             .file(f"/tmp/{image_name}.tar")
-            .import_()
         )
+        
+        # Import the OCI archive as a container
+        return await dag.container().import_(oci_file)
 
     @function
     async def check_containerfile(

@@ -1,9 +1,7 @@
 ---
 name: Build with Dagger
 on:
-  pull_request:
-    branches:
-      - main
+
   workflow_dispatch:
 
 env:
