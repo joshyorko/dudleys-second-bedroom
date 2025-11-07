@@ -122,6 +122,7 @@ class DudleysSecondBedroom:
                 "buildah", "build",
                 "--storage-driver", "vfs",
                 "--isolation", "chroot",
+                "--userns", "host",
                 "--format", "docker",  # Matches GitHub Actions "oci: false"
                 "--layers",  # Enable layer caching like GitHub Actions
                 "--build-arg", f"IMAGE_NAME={image_name}",
