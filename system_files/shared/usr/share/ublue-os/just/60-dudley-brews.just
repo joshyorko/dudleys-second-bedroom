@@ -83,7 +83,7 @@ dudley-brews-list:
     set -euo pipefail
     echo "Available Brewfiles in /usr/share/ublue-os/homebrew/:"
     if [ -d "/usr/share/ublue-os/homebrew" ]; then
-        ls -1 /usr/share/ublue-os/homebrew/*.Brewfile 2>/dev/null || echo "No Brewfiles found"
+        ls -1 /usr/share/ublue-os/homebrew/dudley-*.Brewfile 2>/dev/null || echo "No Brewfiles found"
     else
         echo "Homebrew directory not found"
     fi
