@@ -16,23 +16,23 @@ readonly CATEGORY="user-hooks"
 
 # Logging helper
 log() {
-    local level=$1
-    shift
-    echo "[MODULE:${CATEGORY}/${MODULE_NAME}] ${level}: $*"
+	local level=$1
+	shift
+	echo "[MODULE:${CATEGORY}/${MODULE_NAME}] ${level}: $*"
 }
 
 # Main function
 main() {
-    local start_time
-    start_time=$(date +%s)
-    
-    log "INFO" "START - Installing wallpaper enforcement hook"
-    
-    local hook_dir="/usr/share/ublue-os/user-setup.hooks.d"
-    install -d "$hook_dir"
-    
-    log "INFO" "Creating wallpaper enforcement hook..."
-    cat >"$hook_dir/10-wallpaper-enforcement.sh" <<'HOOK_EOF'
+	local start_time
+	start_time=$(date +%s)
+
+	log "INFO" "START - Installing wallpaper enforcement hook"
+
+	local hook_dir="/usr/share/ublue-os/user-setup.hooks.d"
+	install -d "$hook_dir"
+
+	log "INFO" "Creating wallpaper enforcement hook..."
+	cat >"$hook_dir/10-wallpaper-enforcement.sh" <<'HOOK_EOF'
 #!/usr/bin/env bash
 # Wallpaper enforcement user hook
 set -euo pipefail
@@ -61,15 +61,15 @@ fi
 
 echo "Dudley Hook: wallpaper completed successfully"
 HOOK_EOF
-    
-    chmod 0755 "$hook_dir/10-wallpaper-enforcement.sh"
-    log "INFO" "Wallpaper enforcement hook installed"
-    
-    local end_time duration
-    end_time=$(date +%s)
-    duration=$((end_time - start_time))
-    
-    log "INFO" "DONE (duration: ${duration}s)"
+
+	chmod 0755 "$hook_dir/10-wallpaper-enforcement.sh"
+	log "INFO" "Wallpaper enforcement hook installed"
+
+	local end_time duration
+	end_time=$(date +%s)
+	duration=$((end_time - start_time))
+
+	log "INFO" "DONE (duration: ${duration}s)"
 }
 
 # Execute

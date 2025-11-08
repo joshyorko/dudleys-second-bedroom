@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -euo pipefail
 
 #
 # Purpose: Content-based versioning utilities for user hooks
@@ -12,8 +13,6 @@
 # Provides functions for computing deterministic content hashes and managing
 # version placeholders in hook scripts. Used during container build process.
 #
-
-set -euo pipefail
 
 #
 # compute_content_hash <file1> [file2] [file3] ...
@@ -34,36 +33,36 @@ set -euo pipefail
 #   - Truncates to 8 characters
 #
 compute_content_hash() {
-    local files=("$@")
-    
-    # Check for arguments
-    if [[ ${#files[@]} -eq 0 ]]; then
-        echo "[dudley-versioning] ERROR: No files specified for hash computation" >&2
-        echo "[dudley-versioning] Usage: compute_content_hash <file1> [file2] ..." >&2
-        return 1
-    fi
-    
-    # Validate all files exist
-    for file in "${files[@]}"; do
-        if [[ ! -f "$file" ]]; then
-            echo "[dudley-versioning] ERROR: File not found: $file" >&2
-            return 1
-        fi
-        if [[ ! -r "$file" ]]; then
-            echo "[dudley-versioning] ERROR: File not readable: $file" >&2
-            return 1
-        fi
-    done
-    
-    # Sort files for deterministic ordering
-    local sorted_files=()
-    mapfile -t sorted_files < <(printf '%s\n' "${files[@]}" | sort)
-    
-    # Compute hash (concatenate, hash, truncate to 8 chars)
-    local hash
-    hash=$(cat "${sorted_files[@]}" | sha256sum | cut -c1-8)
-    
-    echo "$hash"
+	local files=("$@")
+
+	# Check for arguments
+	if [[ ${#files[@]} -eq 0 ]]; then
+		echo "[dudley-versioning] ERROR: No files specified for hash computation" >&2
+		echo "[dudley-versioning] Usage: compute_content_hash <file1> [file2] ..." >&2
+		return 1
+	fi
+
+	# Validate all files exist
+	for file in "${files[@]}"; do
+		if [[ ! -f "$file" ]]; then
+			echo "[dudley-versioning] ERROR: File not found: $file" >&2
+			return 1
+		fi
+		if [[ ! -r "$file" ]]; then
+			echo "[dudley-versioning] ERROR: File not readable: $file" >&2
+			return 1
+		fi
+	done
+
+	# Sort files for deterministic ordering
+	local sorted_files=()
+	mapfile -t sorted_files < <(printf '%s\n' "${files[@]}" | sort)
+
+	# Compute hash (concatenate, hash, truncate to 8 chars)
+	local hash
+	hash=$(cat "${sorted_files[@]}" | sha256sum | cut -c1-8)
+
+	echo "$hash"
 }
 
 #
@@ -86,44 +85,44 @@ compute_content_hash() {
 #   - Uses sed -i for in-place modification
 #
 replace_version_placeholder() {
-    local file="$1"
-    local hash="$2"
-    
-    # Validate arguments
-    if [[ -z "$file" ]] || [[ -z "$hash" ]]; then
-        echo "[dudley-versioning] ERROR: Missing required arguments" >&2
-        echo "[dudley-versioning] Usage: replace_version_placeholder <file> <hash>" >&2
-        return 1
-    fi
-    
-    # Validate file exists
-    if [[ ! -f "$file" ]]; then
-        echo "[dudley-versioning] ERROR: File not found: $file" >&2
-        return 1
-    fi
-    
-    # Validate file is writable
-    if [[ ! -w "$file" ]]; then
-        echo "[dudley-versioning] ERROR: File not writable: $file" >&2
-        return 1
-    fi
-    
-    # Validate hash format
-    if ! validate_hash_format "$hash"; then
-        echo "[dudley-versioning] ERROR: Invalid hash format: $hash (expected 8 hex chars)" >&2
-        return 1
-    fi
-    
-    # Check if placeholder exists
-    if ! grep -q "__CONTENT_VERSION__" "$file"; then
-        echo "[dudley-versioning] WARNING: No __CONTENT_VERSION__ placeholder found in $file" >&2
-        return 0  # Non-fatal warning
-    fi
-    
-    # Replace placeholder
-    sed -i "s/__CONTENT_VERSION__/$hash/g" "$file"
-    
-    echo "[dudley-versioning] Replaced version placeholder in $file with $hash" >&2
+	local file="$1"
+	local hash="$2"
+
+	# Validate arguments
+	if [[ -z "$file" ]] || [[ -z "$hash" ]]; then
+		echo "[dudley-versioning] ERROR: Missing required arguments" >&2
+		echo "[dudley-versioning] Usage: replace_version_placeholder <file> <hash>" >&2
+		return 1
+	fi
+
+	# Validate file exists
+	if [[ ! -f "$file" ]]; then
+		echo "[dudley-versioning] ERROR: File not found: $file" >&2
+		return 1
+	fi
+
+	# Validate file is writable
+	if [[ ! -w "$file" ]]; then
+		echo "[dudley-versioning] ERROR: File not writable: $file" >&2
+		return 1
+	fi
+
+	# Validate hash format
+	if ! validate_hash_format "$hash"; then
+		echo "[dudley-versioning] ERROR: Invalid hash format: $hash (expected 8 hex chars)" >&2
+		return 1
+	fi
+
+	# Check if placeholder exists
+	if ! grep -q "__CONTENT_VERSION__" "$file"; then
+		echo "[dudley-versioning] WARNING: No __CONTENT_VERSION__ placeholder found in $file" >&2
+		return 0 # Non-fatal warning
+	fi
+
+	# Replace placeholder
+	sed -i "s/__CONTENT_VERSION__/$hash/g" "$file"
+
+	echo "[dudley-versioning] Replaced version placeholder in $file with $hash" >&2
 }
 
 #
@@ -143,19 +142,19 @@ replace_version_placeholder() {
 #   - Checks all characters are lowercase hex [a-f0-9]
 #
 validate_hash_format() {
-    local hash="$1"
-    
-    # Check if provided
-    if [[ -z "$hash" ]]; then
-        return 1
-    fi
-    
-    # Check format: exactly 8 lowercase hex characters
-    if [[ "$hash" =~ ^[a-f0-9]{8}$ ]]; then
-        return 0
-    else
-        return 1
-    fi
+	local hash="$1"
+
+	# Check if provided
+	if [[ -z "$hash" ]]; then
+		return 1
+	fi
+
+	# Check format: exactly 8 lowercase hex characters
+	if [[ "$hash" =~ ^[a-f0-9]{8}$ ]]; then
+		return 0
+	else
+		return 1
+	fi
 }
 
 # Export functions for use by other scripts

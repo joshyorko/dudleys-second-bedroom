@@ -16,23 +16,23 @@ readonly CATEGORY="user-hooks"
 
 # Logging helper
 log() {
-    local level=$1
-    shift
-    echo "[MODULE:${CATEGORY}/${MODULE_NAME}] ${level}: $*"
+	local level=$1
+	shift
+	echo "[MODULE:${CATEGORY}/${MODULE_NAME}] ${level}: $*"
 }
 
 # Main function
 main() {
-    local start_time
-    start_time=$(date +%s)
-    
-    log "INFO" "START - Installing welcome hook"
-    
-    local hook_dir="/usr/share/ublue-os/user-setup.hooks.d"
-    install -d "$hook_dir"
-    
-    log "INFO" "Creating welcome hook..."
-    cat >"$hook_dir/99-first-boot-welcome.sh" <<'HOOK_EOF'
+	local start_time
+	start_time=$(date +%s)
+
+	log "INFO" "START - Installing welcome hook"
+
+	local hook_dir="/usr/share/ublue-os/user-setup.hooks.d"
+	install -d "$hook_dir"
+
+	log "INFO" "Creating welcome hook..."
+	cat >"$hook_dir/99-first-boot-welcome.sh" <<'HOOK_EOF'
 #!/usr/bin/env bash
 # First boot welcome message user hook
 set -euo pipefail
@@ -178,15 +178,15 @@ echo "User documentation created at: $DOC_DIR/README.md"
 
 echo "Dudley Hook: welcome completed successfully"
 HOOK_EOF
-    
-    chmod 0755 "$hook_dir/99-first-boot-welcome.sh"
-    log "INFO" "Welcome hook installed"
-    
-    local end_time duration
-    end_time=$(date +%s)
-    duration=$((end_time - start_time))
-    
-    log "INFO" "DONE (duration: ${duration}s)"
+
+	chmod 0755 "$hook_dir/99-first-boot-welcome.sh"
+	log "INFO" "Welcome hook installed"
+
+	local end_time duration
+	end_time=$(date +%s)
+	duration=$((end_time - start_time))
+
+	log "INFO" "DONE (duration: ${duration}s)"
 }
 
 # Execute

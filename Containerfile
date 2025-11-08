@@ -35,8 +35,9 @@ COPY cosign.pub /cosign.pub
 # =============================================================================
 # Inherits from Universal Blue's Bluefin-DX (Developer Experience) image
 # with desktop environment pre-configured.
+# Using :stable tag for reproducible builds (Fedora 42, GNOME 48)
 
-FROM ghcr.io/ublue-os/bluefin-dx:latest AS base
+FROM ghcr.io/ublue-os/bluefin-dx:stable AS base
 
 # Build arguments
 ARG IMAGE_NAME="dudleys-second-bedroom"
@@ -85,16 +86,18 @@ RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
 # Copy versioning utilities to temporary location
 COPY build_files/shared/utils/*.sh /tmp/dudley-versioning/
 
+# Set working directory for manifest generation
+WORKDIR /ctx
+
 # Generate manifest and replace version placeholders in hooks
 RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
-    cd /ctx && \
     # Source the utilities
-    source /tmp/dudley-versioning/content-versioning.sh && \
-    source /tmp/dudley-versioning/manifest-builder.sh && \
+    . /tmp/dudley-versioning/content-versioning.sh && \
+    . /tmp/dudley-versioning/manifest-builder.sh && \
     # Generate manifest (creates /etc/dudley/build-manifest.json)
     bash /tmp/dudley-versioning/generate-manifest.sh > /tmp/versions.env && \
     # Load computed hashes
-    source /tmp/versions.env && \
+    . /tmp/versions.env && \
     echo "[dudley-versioning] Replacing version placeholders in hooks..." && \
     echo "[dudley-versioning]   Wallpaper: $WALLPAPER_VERSION" && \
     echo "[dudley-versioning]   VS Code: $VSCODE_VERSION" && \

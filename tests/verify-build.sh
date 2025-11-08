@@ -12,7 +12,6 @@ FAILED_CHECKS=0
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
 echo "==================================="
@@ -23,31 +22,31 @@ echo ""
 
 # Function to run check
 run_check() {
-    local description="$1"
-    local command="$2"
-    local expected="$3"
-    
-    echo -n "Checking ${description}... "
-    
-    if result=$(eval "${command}" 2>&1); then
-        if [[ -n "${expected}" ]]; then
-            if echo "${result}" | grep -q "${expected}"; then
-                echo -e "${GREEN}✓${NC}"
-                return 0
-            else
-                echo -e "${RED}✗${NC} (expected: ${expected}, got: ${result})"
-                FAILED_CHECKS=$((FAILED_CHECKS + 1))
-                return 1
-            fi
-        else
-            echo -e "${GREEN}✓${NC}"
-            return 0
-        fi
-    else
-        echo -e "${RED}✗${NC} (command failed)"
-        FAILED_CHECKS=$((FAILED_CHECKS + 1))
-        return 1
-    fi
+	local description="$1"
+	local command="$2"
+	local expected="$3"
+
+	echo -n "Checking ${description}... "
+
+	if result=$(eval "${command}" 2>&1); then
+		if [[ -n "${expected}" ]]; then
+			if echo "${result}" | grep -q "${expected}"; then
+				echo -e "${GREEN}✓${NC}"
+				return 0
+			else
+				echo -e "${RED}✗${NC} (expected: ${expected}, got: ${result})"
+				FAILED_CHECKS=$((FAILED_CHECKS + 1))
+				return 1
+			fi
+		else
+			echo -e "${GREEN}✓${NC}"
+			return 0
+		fi
+	else
+		echo -e "${RED}✗${NC} (command failed)"
+		FAILED_CHECKS=$((FAILED_CHECKS + 1))
+		return 1
+	fi
 }
 
 # Check 1: Image exists
@@ -106,22 +105,22 @@ run_check "RCC available for holotree" "podman run --rm ${IMAGE_NAME} command -v
 # Check 8: Image Metadata
 echo ""
 echo "=== Image Metadata ==="
-IMAGE_SIZE=$(podman inspect ${IMAGE_NAME} | jq -r '.[0].Size')
+IMAGE_SIZE=$(podman inspect "${IMAGE_NAME}" | jq -r '.[0].Size')
 IMAGE_SIZE_GB=$(awk "BEGIN {printf \"%.1f\", ${IMAGE_SIZE} / 1024 / 1024 / 1024}")
 echo "Image size: ${IMAGE_SIZE_GB} GB"
 
-LAYER_COUNT=$(podman inspect ${IMAGE_NAME} | jq -r '.[0].RootFS.Layers | length')
+LAYER_COUNT=$(podman inspect "${IMAGE_NAME}" | jq -r '.[0].RootFS.Layers | length')
 echo "Layer count: ${LAYER_COUNT}"
 
 # Summary
 echo ""
 echo "==================================="
 if [[ ${FAILED_CHECKS} -eq 0 ]]; then
-    echo -e "${GREEN}✓ ALL CHECKS PASSED${NC}"
-    echo "==================================="
-    exit 0
+	echo -e "${GREEN}✓ ALL CHECKS PASSED${NC}"
+	echo "==================================="
+	exit 0
 else
-    echo -e "${RED}✗ ${FAILED_CHECKS} CHECK(S) FAILED${NC}"
-    echo "==================================="
-    exit 1
+	echo -e "${RED}✗ ${FAILED_CHECKS} CHECK(S) FAILED${NC}"
+	echo "==================================="
+	exit 1
 fi

@@ -1,4 +1,6 @@
 #!/usr/bin/bash
+set -euo pipefail
+
 #
 # Script: TEMPLATE-new-hook.sh
 # Purpose: [TODO: Describe what this hook does - e.g., "Install custom fonts and themes"]
@@ -18,22 +20,20 @@
 # 3. Update this file's header documentation
 #
 
-set -eoux pipefail
-
 # ==============================================================================
 # MODULE METADATA
 # ==============================================================================
 # This section defines basic metadata for logging and identification
 
 # TODO: Update these to match your hook name
-readonly MODULE_NAME="new-hook-name"  # Use kebab-case: e.g., "custom-fonts"
+readonly MODULE_NAME="new-hook-name" # Use kebab-case: e.g., "custom-fonts"
 readonly CATEGORY="user-hooks"
 
 # Logging helper function
 log() {
-    local level=$1
-    shift
-    echo "[MODULE:${CATEGORY}/${MODULE_NAME}] ${level}: $*"
+	local level=$1
+	shift
+	echo "[MODULE:${CATEGORY}/${MODULE_NAME}] ${level}: $*"
 }
 
 # ==============================================================================
@@ -43,28 +43,28 @@ log() {
 # to /usr/share/ublue-os/user-setup.hooks.d/
 
 main() {
-    local start_time
-    start_time=$(date +%s)
-    
-    log "INFO" "START - Installing ${MODULE_NAME} hook"
-    
-    # Create hook directory if it doesn't exist
-    local hook_dir="/usr/share/ublue-os/user-setup.hooks.d"
-    install -d "$hook_dir"
-    
-    # TODO: If your hook needs data files, copy them here
-    # Example:
-    # local config_dir="/etc/skel/.config/my-app"
-    # install -d "$config_dir"
-    # cp "$BUILD_CONTEXT/my-config-file.conf" "$config_dir/"
-    
-    log "INFO" "Creating ${MODULE_NAME} runtime hook..."
-    
-    # TODO: Update the priority number (NN) to control execution order
-    # 10-19: System/environment setup
-    # 20-29: Application installation/configuration
-    # 90-99: Finalization and welcome messages
-    cat >"$hook_dir/NN-${MODULE_NAME}.sh" <<'HOOK_EOF'
+	local start_time
+	start_time=$(date +%s)
+
+	log "INFO" "START - Installing ${MODULE_NAME} hook"
+
+	# Create hook directory if it doesn't exist
+	local hook_dir="/usr/share/ublue-os/user-setup.hooks.d"
+	install -d "$hook_dir"
+
+	# TODO: If your hook needs data files, copy them here
+	# Example:
+	# local config_dir="/etc/skel/.config/my-app"
+	# install -d "$config_dir"
+	# cp "$BUILD_CONTEXT/my-config-file.conf" "$config_dir/"
+
+	log "INFO" "Creating ${MODULE_NAME} runtime hook..."
+
+	# TODO: Update the priority number (NN) to control execution order
+	# 10-19: System/environment setup
+	# 20-29: Application installation/configuration
+	# 90-99: Finalization and welcome messages
+	cat >"$hook_dir/NN-${MODULE_NAME}.sh" <<'HOOK_EOF'
 #!/usr/bin/env bash
 #
 # Runtime Hook: [TODO: Hook description]
@@ -156,17 +156,17 @@ echo "Dudley Hook: $HOOK_NAME completed successfully"
 # For non-critical operations, use:
 #   some-optional-command || true
 HOOK_EOF
-    
-    # Make hook executable
-    chmod 0755 "$hook_dir/NN-${MODULE_NAME}.sh"
-    log "INFO" "${MODULE_NAME} hook installed"
-    
-    # Calculate and log duration
-    local end_time duration
-    end_time=$(date +%s)
-    duration=$((end_time - start_time))
-    
-    log "INFO" "DONE (duration: ${duration}s)"
+
+	# Make hook executable
+	chmod 0755 "$hook_dir/NN-${MODULE_NAME}.sh"
+	log "INFO" "${MODULE_NAME} hook installed"
+
+	# Calculate and log duration
+	local end_time duration
+	end_time=$(date +%s)
+	duration=$((end_time - start_time))
+
+	log "INFO" "DONE (duration: ${duration}s)"
 }
 
 # ==============================================================================

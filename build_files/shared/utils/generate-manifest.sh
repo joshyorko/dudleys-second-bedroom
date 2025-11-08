@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -euo pipefail
 
 #
 # Purpose: Generate build manifest with content-based versions for all hooks
@@ -13,15 +14,13 @@
 # their dependencies, then writing the manifest to /etc/dudley/build-manifest.json
 #
 
-set -euo pipefail
-
 # Get script directory and project root
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # If we're in a bind mount context (/ctx), use /ctx as root, otherwise calculate from script dir
 if [[ "$SCRIPT_DIR" == /tmp/* ]]; then
-    PROJECT_ROOT="/ctx"
+	PROJECT_ROOT="/ctx"
 else
-    PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
+	PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
 fi
 
 # Source required utilities
@@ -40,12 +39,12 @@ BASE_IMAGE="${BASE_IMAGE:-ghcr.io/ublue-os/bluefin-dx:40}"
 
 # Get git commit from environment variable (set during build) or fall back to git
 if [[ -n "${GIT_COMMIT:-}" && "$GIT_COMMIT" != "unknown" ]]; then
-    # Already set via environment variable from build arg
-    : # no-op
+	# Already set via environment variable from build arg
+	: # no-op
 elif git rev-parse --git-dir >/dev/null 2>&1; then
-    GIT_COMMIT=$(git rev-parse --short=7 HEAD 2>/dev/null || echo "unknown")
+	GIT_COMMIT=$(git rev-parse --short=7 HEAD 2>/dev/null || echo "unknown")
 else
-    GIT_COMMIT="unknown"
+	GIT_COMMIT="unknown"
 fi
 
 echo "[dudley-versioning] Image: $IMAGE_NAME" >&2
@@ -60,14 +59,14 @@ manifest=$(init_manifest "$IMAGE_NAME" "$BASE_IMAGE" "$GIT_COMMIT")
 # Compute hash for wallpaper hook
 echo "[dudley-versioning] Computing hash for wallpaper hook..." >&2
 WALLPAPER_DEPS=(
-    "$PROJECT_ROOT/build_files/user-hooks/10-wallpaper-enforcement.sh"
+	"$PROJECT_ROOT/build_files/user-hooks/10-wallpaper-enforcement.sh"
 )
 # Add wallpaper files if they exist
 WALLPAPER_COUNT=0
-if compgen -G "$PROJECT_ROOT/custom_wallpapers/*" > /dev/null; then
-    mapfile -t WALLPAPER_FILES < <(find "$PROJECT_ROOT/custom_wallpapers" -type f 2>/dev/null | sort)
-    WALLPAPER_DEPS+=("${WALLPAPER_FILES[@]}")
-    WALLPAPER_COUNT=${#WALLPAPER_FILES[@]}
+if compgen -G "$PROJECT_ROOT/custom_wallpapers/*" >/dev/null; then
+	mapfile -t WALLPAPER_FILES < <(find "$PROJECT_ROOT/custom_wallpapers" -type f 2>/dev/null | sort)
+	WALLPAPER_DEPS+=("${WALLPAPER_FILES[@]}")
+	WALLPAPER_COUNT=${#WALLPAPER_FILES[@]}
 fi
 
 wallpaper_hash=$(compute_content_hash "${WALLPAPER_DEPS[@]}")
@@ -80,13 +79,13 @@ manifest=$(add_hook_to_manifest "$manifest" "wallpaper" "$wallpaper_hash" "$wall
 # Compute hash for vscode-extensions hook
 echo "[dudley-versioning] Computing hash for vscode-extensions hook..." >&2
 VSCODE_DEPS=(
-    "$PROJECT_ROOT/build_files/user-hooks/20-vscode-extensions.sh"
+	"$PROJECT_ROOT/build_files/user-hooks/20-vscode-extensions.sh"
 )
 # Add extensions list if it exists
 extension_count=0
 if [[ -f "$PROJECT_ROOT/vscode-extensions.list" ]]; then
-    VSCODE_DEPS+=("$PROJECT_ROOT/vscode-extensions.list")
-    extension_count=$(grep -v '^\s*#' "$PROJECT_ROOT/vscode-extensions.list" | grep -c -v '^\s*$')
+	VSCODE_DEPS+=("$PROJECT_ROOT/vscode-extensions.list")
+	extension_count=$(grep -v '^\s*#' "$PROJECT_ROOT/vscode-extensions.list" | grep -c -v '^\s*$')
 fi
 
 vscode_hash=$(compute_content_hash "${VSCODE_DEPS[@]}")
@@ -109,8 +108,8 @@ manifest=$(add_hook_to_manifest "$manifest" "welcome" "$welcome_hash" "$welcome_
 echo "[dudley-versioning]" >&2
 echo "[dudley-versioning] Validating manifest..." >&2
 if ! validate_manifest_schema "$manifest"; then
-    echo "[dudley-versioning] ERROR: Manifest validation failed!" >&2
-    exit 1
+	echo "[dudley-versioning] ERROR: Manifest validation failed!" >&2
+	exit 1
 fi
 echo "[dudley-versioning] Manifest validation passed" >&2
 

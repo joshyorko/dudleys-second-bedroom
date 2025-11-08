@@ -16,31 +16,31 @@ readonly CATEGORY="shared"
 
 # Logging helper
 log() {
-    local level=$1
-    shift
-    echo "[MODULE:${CATEGORY}/${MODULE_NAME}] ${level}: $*"
+	local level=$1
+	shift
+	echo "[MODULE:${CATEGORY}/${MODULE_NAME}] ${level}: $*"
 }
 
 # Main function
 main() {
-    local start_time
-    start_time=$(date +%s)
-    
-    log "INFO" "START"
-    
-    # Enable podman socket service
-    log "INFO" "Enabling podman.socket..."
-    systemctl enable podman.socket || {
-        log "WARNING" "Failed to enable podman.socket (may not be critical)"
-    }
-    
-    # Add other system services here as needed
-    
-    local end_time duration
-    end_time=$(date +%s)
-    duration=$((end_time - start_time))
-    
-    log "INFO" "DONE (duration: ${duration}s)"
+	local start_time
+	start_time=$(date +%s)
+
+	log "INFO" "START"
+
+	# Enable podman socket service
+	log "INFO" "Enabling podman.socket..."
+	systemctl enable podman.socket || {
+		log "WARNING" "Failed to enable podman.socket (may not be critical)"
+	}
+
+	# Add other system services here as needed
+
+	local end_time duration
+	end_time=$(date +%s)
+	duration=$((end_time - start_time))
+
+	log "INFO" "DONE (duration: ${duration}s)"
 }
 
 # Execute

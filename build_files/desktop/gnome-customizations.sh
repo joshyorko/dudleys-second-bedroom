@@ -16,35 +16,35 @@ readonly CATEGORY="desktop"
 
 # Logging helper
 log() {
-    local level=$1
-    shift
-    echo "[MODULE:${CATEGORY}/${MODULE_NAME}] ${level}: $*"
+	local level=$1
+	shift
+	echo "[MODULE:${CATEGORY}/${MODULE_NAME}] ${level}: $*"
 }
 
 # Main function
 main() {
-    local start_time
-    start_time=$(date +%s)
-    
-    log "INFO" "START"
-    
-    # Check if GNOME is present
-    if ! rpm -q gnome-shell &>/dev/null; then
-        log "INFO" "GNOME Shell not installed, skipping customizations"
-        exit 2
-    fi
-    
-    log "INFO" "GNOME Shell detected, applying customizations..."
-    
-    # Add GNOME-specific customizations here
-    # For now, this is a placeholder
-    log "INFO" "No specific GNOME customizations configured yet"
-    
-    local end_time duration
-    end_time=$(date +%s)
-    duration=$((end_time - start_time))
-    
-    log "INFO" "DONE (duration: ${duration}s)"
+	local start_time
+	start_time=$(date +%s)
+
+	log "INFO" "START"
+
+	# Check if GNOME is present
+	if ! rpm -q gnome-shell &>/dev/null; then
+		log "INFO" "GNOME Shell not installed, skipping customizations"
+		exit 2
+	fi
+
+	log "INFO" "GNOME Shell detected, applying customizations..."
+
+	# Add GNOME-specific customizations here
+	# For now, this is a placeholder
+	log "INFO" "No specific GNOME customizations configured yet"
+
+	local end_time duration
+	end_time=$(date +%s)
+	duration=$((end_time - start_time))
+
+	log "INFO" "DONE (duration: ${duration}s)"
 }
 
 # Execute

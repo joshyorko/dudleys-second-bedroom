@@ -16,21 +16,21 @@ readonly CATEGORY="user-hooks"
 
 # Logging helper
 log() {
-    local level=$1
-    shift
-    echo "[MODULE:${CATEGORY}/${MODULE_NAME}] ${level}: $*"
+	local level=$1
+	shift
+	echo "[MODULE:${CATEGORY}/${MODULE_NAME}] ${level}: $*"
 }
 
 main() {
-    local start_time
-    start_time=$(date +%s)
+	local start_time
+	start_time=$(date +%s)
 
-    log "INFO" "START - Installing holotree init user hook"
+	log "INFO" "START - Installing holotree init user hook"
 
-    local hook_dir="/usr/share/ublue-os/user-setup.hooks.d"
-    install -d "$hook_dir"
+	local hook_dir="/usr/share/ublue-os/user-setup.hooks.d"
+	install -d "$hook_dir"
 
-    cat >"$hook_dir/30-holotree-init.sh" <<'HOOK'
+	cat >"$hook_dir/30-holotree-init.sh" <<'HOOK'
 #!/usr/bin/env bash
 set -euo pipefail
 
@@ -40,13 +40,13 @@ if command -v rcc &>/dev/null; then
 fi
 HOOK
 
-    chmod 0755 "$hook_dir/30-holotree-init.sh"
-    log "INFO" "Holotree init hook installed"
+	chmod 0755 "$hook_dir/30-holotree-init.sh"
+	log "INFO" "Holotree init hook installed"
 
-    local end_time duration
-    end_time=$(date +%s)
-    duration=$((end_time - start_time))
-    log "INFO" "DONE (duration: ${duration}s)"
+	local end_time duration
+	end_time=$(date +%s)
+	duration=$((end_time - start_time))
+	log "INFO" "DONE (duration: ${duration}s)"
 }
 
 main "$@"

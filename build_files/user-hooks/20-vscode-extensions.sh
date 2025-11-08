@@ -16,36 +16,36 @@ readonly CATEGORY="user-hooks"
 
 # Logging helper
 log() {
-    local level=$1
-    shift
-    echo "[MODULE:${CATEGORY}/${MODULE_NAME}] ${level}: $*"
+	local level=$1
+	shift
+	echo "[MODULE:${CATEGORY}/${MODULE_NAME}] ${level}: $*"
 }
 
 # Main function
 main() {
-    local start_time
-    start_time=$(date +%s)
-    
-    log "INFO" "START - Installing VS Code extensions hook"
-    
-    local hook_dir="/usr/share/ublue-os/user-setup.hooks.d"
-    install -d "$hook_dir"
-    
-    log "INFO" "Creating VS Code extensions hook..."
-    
-    # Get build context path
-    local build_context="${BUILD_CONTEXT:-/ctx}"
-    
-    # Copy the extensions list to the system
-    local extensions_list="/etc/skel/.config/vscode-extensions.list"
-    install -d "$(dirname "$extensions_list")"
-    if [[ -f "$build_context/vscode-extensions.list" ]]; then
-        cp "$build_context/vscode-extensions.list" "$extensions_list"
-        chmod 0644 "$extensions_list"
-        log "INFO" "VS Code extensions list copied to $extensions_list"
-    else
-        log "WARNING" "vscode-extensions.list not found, creating default list"
-        cat >"$extensions_list" <<'EXTENSIONS_EOF'
+	local start_time
+	start_time=$(date +%s)
+
+	log "INFO" "START - Installing VS Code extensions hook"
+
+	local hook_dir="/usr/share/ublue-os/user-setup.hooks.d"
+	install -d "$hook_dir"
+
+	log "INFO" "Creating VS Code extensions hook..."
+
+	# Get build context path
+	local build_context="${BUILD_CONTEXT:-/ctx}"
+
+	# Copy the extensions list to the system
+	local extensions_list="/etc/skel/.config/vscode-extensions.list"
+	install -d "$(dirname "$extensions_list")"
+	if [[ -f "$build_context/vscode-extensions.list" ]]; then
+		cp "$build_context/vscode-extensions.list" "$extensions_list"
+		chmod 0644 "$extensions_list"
+		log "INFO" "VS Code extensions list copied to $extensions_list"
+	else
+		log "WARNING" "vscode-extensions.list not found, creating default list"
+		cat >"$extensions_list" <<'EXTENSIONS_EOF'
 # VS Code Insiders Extensions - one per line
 ms-vscode-remote.remote-containers
 ms-vscode-remote.remote-ssh
@@ -54,10 +54,10 @@ ms-vscode.cpptools-extension-pack
 GitHub.copilot
 GitHub.copilot-chat
 EXTENSIONS_EOF
-        chmod 0644 "$extensions_list"
-    fi
-    
-    cat >"$hook_dir/20-vscode-extensions.sh" <<'HOOK_EOF'
+		chmod 0644 "$extensions_list"
+	fi
+
+	cat >"$hook_dir/20-vscode-extensions.sh" <<'HOOK_EOF'
 #!/usr/bin/env bash
 # VS Code Insiders extensions user hook
 set -euo pipefail
@@ -132,15 +132,15 @@ MARKER_CONTENT
 
 echo "Dudley Hook: vscode-extensions completed successfully"
 HOOK_EOF
-    
-    chmod 0755 "$hook_dir/20-vscode-extensions.sh"
-    log "INFO" "VS Code extensions hook installed"
-    
-    local end_time duration
-    end_time=$(date +%s)
-    duration=$((end_time - start_time))
-    
-    log "INFO" "DONE (duration: ${duration}s)"
+
+	chmod 0755 "$hook_dir/20-vscode-extensions.sh"
+	log "INFO" "VS Code extensions hook installed"
+
+	local end_time duration
+	end_time=$(date +%s)
+	duration=$((end_time - start_time))
+
+	log "INFO" "DONE (duration: ${duration}s)"
 }
 
 # Execute

@@ -393,7 +393,8 @@ lint:
         exit 1
     fi
     # Run shellcheck on all Bash scripts
-    /usr/bin/find . -iname "*.sh" -type f -exec shellcheck "{}" ';'
+    # Use -x to follow sourced files so SC1091 informational warnings are resolved (suppressed explicitly)
+    /usr/bin/find . -iname "*.sh" -type f -exec shellcheck -x -e SC1091 "{}" ';'
 
 # Runs shfmt on all Bash scripts
 format:
