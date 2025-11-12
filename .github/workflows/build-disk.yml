@@ -34,9 +34,51 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  validate:
+    name: Validation
+    runs-on: ubuntu-24.04
+    # Only run validation on pull requests to save CI time on manual builds
+    if: github.event_name == 'pull_request'
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
+      
+      - name: Install Just
+        uses: extractions/setup-just@v2
+      
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq shellcheck shfmt
+      
+      - name: Run validation checks
+        run: just check
+      
+      - name: Validate disk configuration files
+        run: |
+          echo "Validating disk_config/disk.toml..."
+          if [[ ! -f disk_config/disk.toml ]]; then
+            echo "✗ ERROR: disk_config/disk.toml not found"
+            exit 1
+          fi
+          echo "✓ disk_config/disk.toml exists"
+          
+          echo "Validating disk_config/iso.toml..."
+          if [[ ! -f disk_config/iso.toml ]]; then
+            echo "✗ ERROR: disk_config/iso.toml not found"
+            exit 1
+          fi
+          echo "✓ disk_config/iso.toml exists"
+
   build:
     name: Build disk images
     runs-on: ${{ inputs.platform == 'amd64' && 'ubuntu-24.04' || 'ubuntu-24.04-arm' }}
+    needs: [validate]
+    # Skip validation dependency on manual builds
+    if: |
+      always() && 
+      (needs.validate.result == 'success' || needs.validate.result == 'skipped')
     strategy:
       fail-fast: false
       matrix:

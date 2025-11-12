@@ -1,0 +1,44 @@
+name: Copilot Setup Steps
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - .github/workflows/copilot-setup-steps.yml
+  pull_request:
+    paths:
+      - .github/workflows/copilot-setup-steps.yml
+
+jobs:
+  copilot-setup-steps:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            podman \
+            shellcheck \
+            shfmt \
+            jq
+
+      - name: Install just
+        uses: extractions/setup-just@v2
+
+      - name: Validate modules
+        run: tests/validate-modules.sh
+
+      - name: Validate packages
+        run: just validate-packages
+
+      - name: Run shell linting
+        run: just lint
+
+      - name: Run full validation suite
+        run: just check

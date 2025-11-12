@@ -30,9 +30,48 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  pre-build-validation:
+    name: Pre-build validation
+    runs-on: ubuntu-24.04
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
+      
+      - name: Install Just
+        uses: extractions/setup-just@v2
+      
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq shellcheck shfmt
+      
+      - name: Run all validation checks
+        run: just check
+
+  unit-tests:
+    name: Unit tests
+    runs-on: ubuntu-24.04
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
+      
+      - name: Install Just
+        uses: extractions/setup-just@v2
+      
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq
+      
+      - name: Run unit tests
+        run: just test-unit
+
   build_push:
     name: Build and push image
     runs-on: ubuntu-24.04
+    needs: [pre-build-validation, unit-tests]
 
     permissions:
       contents: read
@@ -119,6 +158,18 @@ jobs:
           oci: false
           # Enable layer caching to speed up builds
           layers: true
+      
+      - name: Verify built image
+        run: |
+          # Install Just
+          curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to /usr/local/bin
+          
+          # Install dependencies for verification
+          sudo apt-get update
+          sudo apt-get install -y jq
+          
+          # Run verification using just command
+          just verify-build "localhost/${{ env.IMAGE_NAME }}" "${{ env.DEFAULT_TAG }}"
 
       # Rechunk is a script that we use on Universal Blue to make sure there isnt a single huge layer when your image gets published.
       # This does not make your image faster to download, just provides better resumability and fixes a few errors.

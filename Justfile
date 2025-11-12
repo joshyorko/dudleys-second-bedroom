@@ -33,6 +33,34 @@ check:
     just validate-modules
     echo "✓ All validation checks passed!"
 
+# Run unit tests
+[group('Testing')]
+test-unit:
+    #!/usr/bin/bash
+    set -eoux pipefail
+    echo "Running unit tests..."
+    bash tests/test-content-versioning.sh
+    bash tests/test-manifest-generation.sh
+    echo "✓ Unit tests passed!"
+
+# Run integration tests
+[group('Testing')]
+test-integration:
+    #!/usr/bin/bash
+    set -eoux pipefail
+    echo "Running integration tests..."
+    bash tests/test-hook-integration.sh
+    echo "✓ Integration tests passed!"
+
+# Run all tests (validation + unit + integration)
+[group('Testing')]
+test-all:
+    #!/usr/bin/bash
+    set -eoux pipefail
+    echo "Running full test suite..."
+    bash tests/run-all-tests.sh
+    echo "✓ All tests passed!"
+
 # Validate packages.json configuration
 [group('Validation')]
 validate-packages:

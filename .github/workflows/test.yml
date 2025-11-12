@@ -1,0 +1,120 @@
+---
+name: Test suite
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'build_files/**'
+      - 'tests/**'
+      - 'packages.json'
+      - '.github/workflows/test.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'build_files/**'
+      - 'tests/**'
+      - 'packages.json'
+  schedule:
+    - cron: '30 2 * * *'  # 02:30 UTC daily
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  validation:
+    name: Static validation
+    runs-on: ubuntu-24.04
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
+      
+      - name: Install Just
+        uses: extractions/setup-just@v2
+      
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq shellcheck shfmt
+      
+      - name: Run all validation checks
+        run: just check
+
+  unit-tests:
+    name: Unit tests
+    runs-on: ubuntu-24.04
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
+      
+      - name: Install Just
+        uses: extractions/setup-just@v2
+      
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq
+      
+      - name: Run unit tests
+        run: just test-unit
+
+  integration-tests:
+    name: Integration tests
+    runs-on: ubuntu-24.04
+    needs: [validation, unit-tests]
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
+      
+      - name: Install Just
+        uses: extractions/setup-just@v2
+      
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq
+      
+      - name: Run integration tests
+        run: just test-integration
+
+  full-test-suite:
+    name: Full test suite
+    runs-on: ubuntu-24.04
+    needs: [validation, unit-tests, integration-tests]
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
+      
+      - name: Install Just
+        uses: extractions/setup-just@v2
+      
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq shellcheck shfmt
+      
+      - name: Run all tests
+        run: just test-all
+      
+      - name: Test summary
+        if: always()
+        run: |
+          echo "=== Test Execution Summary ==="
+          echo "Validation: ${{ needs.validation.result }}"
+          echo "Unit Tests: ${{ needs.unit-tests.result }}"
+          echo "Integration Tests: ${{ needs.integration-tests.result }}"
+          if [[ "${{ needs.validation.result }}" == "success" ]] && \
+             [[ "${{ needs.unit-tests.result }}" == "success" ]] && \
+             [[ "${{ needs.integration-tests.result }}" == "success" ]]; then
+            echo "✓ All test stages passed"
+          else
+            echo "✗ Some test stages failed"
+            exit 1
+          fi
