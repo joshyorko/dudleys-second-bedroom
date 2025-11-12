@@ -45,7 +45,7 @@ gpgkey=https://packages.microsoft.com/keys/microsoft.asc
 EOF
 
 	log "INFO" "Installing code-insiders RPM..."
-	if ! dnf5 install -y code-insiders 2>/dev/null && ! dnf install -y code-insiders; then
+	if ! dnf5 install -y --refresh code-insiders 2>/dev/null && ! dnf install -y --refresh code-insiders; then
 		log "ERROR" "Failed to install code-insiders RPM"
 		exit 1
 	fi
