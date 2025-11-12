@@ -11,34 +11,27 @@ on:
 
 jobs:
   copilot-setup-steps:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
 
-      - name: Install system dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            podman \
-            shellcheck \
-            shfmt \
-            jq
-
-      - name: Install just
+      - name: Install Just
         uses: extractions/setup-just@v2
 
-      - name: Validate modules
-        run: tests/validate-modules.sh
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq shellcheck shfmt podman
 
-      - name: Validate packages
-        run: just validate-packages
-
-      - name: Run shell linting
-        run: just lint
-
-      - name: Run full validation suite
+      - name: Run all validation checks
         run: just check
+
+      - name: Run unit tests
+        run: just test-unit
+
+      - name: Run integration tests
+        run: just test-integration
