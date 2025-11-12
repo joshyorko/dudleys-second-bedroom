@@ -77,7 +77,7 @@ run_check "gcc-c++" "podman run --rm ${IMAGE_NAME} rpm -q gcc-c++" "gcc-c++-"
 echo ""
 echo "=== Custom Branding ==="
 run_check "wallpaper directory" "podman run --rm ${IMAGE_NAME} test -d /usr/share/backgrounds/dudley && echo exists" "exists"
-run_check "wallpaper files" "podman run --rm ${IMAGE_NAME} ls /usr/share/backgrounds/dudley/ | wc -l" "4"
+run_check "wallpaper files" "podman run --rm ${IMAGE_NAME} ls /usr/share/backgrounds/dudley/ | wc -l" "6"
 run_check "GNOME schema override" "podman run --rm ${IMAGE_NAME} test -f /usr/share/glib-2.0/schemas/zz0-dudley-background.gschema.override && echo exists" "exists"
 
 # Check 6: Flatpaks Configuration
