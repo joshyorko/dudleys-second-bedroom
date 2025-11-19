@@ -35,7 +35,7 @@ COPY cosign.pub /cosign.pub
 # =============================================================================
 # Inherits from Universal Blue's Bluefin-DX (Developer Experience) image
 # with desktop environment pre-configured.
-# Using :stable tag for reproducible builds (Fedora 42, GNOME 48)
+# Using :stable tag for reproducible builds (Fedora 43)
 
 FROM ghcr.io/ublue-os/bluefin-dx:stable AS base
 

@@ -57,7 +57,7 @@ run_check "image exists" "podman images -q ${IMAGE_NAME}" ""
 echo ""
 echo "=== Base Operating System ==="
 run_check "Bluefin base" "podman run --rm ${IMAGE_NAME} cat /etc/os-release" "ID=bluefin"
-run_check "Fedora 42" "podman run --rm ${IMAGE_NAME} cat /etc/os-release" "VERSION_ID=42"
+run_check "Fedora 43" "podman run --rm ${IMAGE_NAME} cat /etc/os-release" "VERSION_ID=43"
 
 # Check 3: Developer Tools
 echo ""
