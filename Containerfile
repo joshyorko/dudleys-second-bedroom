@@ -14,6 +14,8 @@
 # For more information, see: specs/001-implement-modular-build/
 # =============================================================================
 
+ARG BASE_IMAGE="ghcr.io/ublue-os/bluefin-dx:stable"
+
 # =============================================================================
 # Stage 1: Context Layer (Static Build Files)
 # =============================================================================
@@ -37,7 +39,7 @@ COPY cosign.pub /cosign.pub
 # with desktop environment pre-configured.
 # Using :stable tag for reproducible builds (Fedora 43)
 
-FROM ghcr.io/ublue-os/bluefin-dx:stable AS base
+FROM ${BASE_IMAGE} AS base
 
 # Build arguments
 ARG IMAGE_NAME="dudleys-second-bedroom"

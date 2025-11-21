@@ -302,6 +302,31 @@ To add or modify packages:
 2. Rebuild the image
 3. After rebasing, run the corresponding `ujust` command
 
+## Building with Custom Base Images
+
+You can override the default base image (`ghcr.io/ublue-os/bluefin-dx:stable`) to test against other Universal Blue images (e.g., Aurora, Bazzite) or different tags.
+
+### Local Build
+
+Use the `BASE_IMAGE` environment variable:
+
+```bash
+# Build with Aurora DX
+BASE_IMAGE="ghcr.io/ublue-os/aurora-dx:stable" just build
+
+# Build with Bazzite
+BASE_IMAGE="ghcr.io/ublue-os/bazzite:latest" just build
+```
+
+### CI/CD Build
+
+The GitHub Actions workflow accepts a `base_image` input:
+
+1. Go to **Actions** > **Build container image**.
+2. Click **Run workflow**.
+3. Enter the image reference in **Base image**.
+4. Click **Run workflow**.
+
 ## About This Image
 
 This is a customized Universal Blue OS image that extends `ghcr.io/ublue-os/bluefin:stable` with:

@@ -1,0 +1,13 @@
+.git
+.gitignore
+.vscode
+.idea
+*.log
+*.swp
+*.tmp
+.DS_Store
+node_modules
+dist
+build
+coverage
+tests/reproductions
