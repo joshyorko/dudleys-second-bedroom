@@ -93,7 +93,7 @@ specs/002-implement-automatic-content/
   "build": {
     "date": "2025-10-10T14:55:15Z",
     "image": "ghcr.io/joshyorko/dudleys-second-bedroom:latest",
-    "base": "ghcr.io/ublue-os/bluefin-dx:40",
+    "base": "ghcr.io/ublue-os/bluefin-dx:stable",
     "commit": "a55df81"
   },
   "hooks": {

@@ -124,7 +124,7 @@ compute_content_hash() {
   "build": {
     "date": "2025-10-10T14:30:00Z",
     "image": "ghcr.io/joshyorko/dudleys-second-bedroom:latest",
-    "base": "ghcr.io/ublue-os/bluefin-dx:40",
+    "base": "ghcr.io/ublue-os/bluefin-dx:stable",
     "commit": "a3f2c1b"
   },
   "hooks": {

@@ -35,7 +35,7 @@ echo "[dudley-versioning] ========================================" >&2
 
 # Get build metadata
 IMAGE_NAME="${IMAGE_NAME:-ghcr.io/joshyorko/dudleys-second-bedroom:latest}"
-BASE_IMAGE="${BASE_IMAGE:-ghcr.io/ublue-os/bluefin-dx:40}"
+BASE_IMAGE="${BASE_IMAGE:-ghcr.io/ublue-os/bluefin-dx:stable}"
 
 # Get git commit from environment variable (set during build) or fall back to git
 if [[ -n "${GIT_COMMIT:-}" && "$GIT_COMMIT" != "unknown" ]]; then

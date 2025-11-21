@@ -40,7 +40,7 @@ init_manifest <image_name> <base_image> <commit_sha>
 ```bash
 manifest=$(init_manifest \
     "ghcr.io/joshyorko/dudleys-second-bedroom:latest" \
-    "ghcr.io/ublue-os/bluefin-dx:40" \
+    "ghcr.io/ublue-os/bluefin-dx:stable" \
     "a3f2c1b")
 
 echo "$manifest"
@@ -50,7 +50,7 @@ echo "$manifest"
 #   "build": {
 #     "date": "2025-10-10T14:30:00Z",
 #     "image": "ghcr.io/joshyorko/dudleys-second-bedroom:latest",
-#     "base": "ghcr.io/ublue-os/bluefin-dx:40",
+#     "base": "ghcr.io/ublue-os/bluefin-dx:stable",
 #     "commit": "a3f2c1b"
 #   },
 #   "hooks": {}
@@ -271,7 +271,7 @@ source build_files/shared/utils/manifest-builder.sh
 
 # Get build metadata
 IMAGE_NAME="ghcr.io/joshyorko/dudleys-second-bedroom:latest"
-BASE_IMAGE="ghcr.io/ublue-os/bluefin-dx:40"
+BASE_IMAGE="ghcr.io/ublue-os/bluefin-dx:stable"
 GIT_COMMIT=$(git rev-parse --short=7 HEAD)
 
 # Initialize manifest

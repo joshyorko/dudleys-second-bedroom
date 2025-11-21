@@ -36,7 +36,7 @@
           "type": "string",
           "description": "Base image reference",
           "pattern": "^[a-z0-9.-]+(/[a-z0-9._-]+)*:[a-z0-9._-]+$",
-          "examples": ["ghcr.io/ublue-os/bluefin-dx:40"]
+          "examples": ["ghcr.io/ublue-os/bluefin-dx:stable"]
         },
         "commit": {
           "type": "string",
@@ -102,7 +102,7 @@
       "build": {
         "date": "2025-10-10T14:30:00Z",
         "image": "ghcr.io/joshyorko/dudleys-second-bedroom:latest",
-        "base": "ghcr.io/ublue-os/bluefin-dx:40",
+        "base": "ghcr.io/ublue-os/bluefin-dx:stable",
         "commit": "a3f2c1b"
       },
       "hooks": {
