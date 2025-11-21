@@ -212,6 +212,11 @@ build $target_image=image_name $tag=default_tag:
         BUILD_ARGS+=("--build-arg" "SHA_HEAD_SHORT=${GIT_SHA}")
     fi
 
+    # Pass BASE_IMAGE build arg if environment variable is set
+    if [[ -n "${BASE_IMAGE:-}" ]]; then
+        BUILD_ARGS+=("--build-arg" "BASE_IMAGE=${BASE_IMAGE}")
+    fi
+
     podman build \
         "${BUILD_ARGS[@]}" \
         --pull=newer \

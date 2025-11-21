@@ -16,6 +16,11 @@ on:
       - '.github/**'
       - '.specify/**'
   workflow_dispatch:
+    inputs:
+      base_image:
+        description: 'Base image to build from (default: ghcr.io/ublue-os/bluefin-dx:stable)'
+        required: false
+        type: string
 
 env:
   IMAGE_DESC: "My Customized Universal Blue Image"
@@ -155,6 +160,7 @@ jobs:
           labels: ${{ steps.metadata.outputs.labels }}
           build-args: |
             SHA_HEAD_SHORT=${{ github.sha }}
+            ${{ inputs.base_image != '' && format('BASE_IMAGE={0}', inputs.base_image) || '' }}
           oci: false
           # Enable layer caching to speed up builds
           layers: true
