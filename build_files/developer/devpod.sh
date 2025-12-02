@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Purpose: Install DevPod CLI and Desktop App (AppImage)
+# Purpose: Install latest DevPod by extracting DEB package
 # Category: developer
 # Dependencies: none
 # Parallel-Safe: yes
@@ -10,7 +10,7 @@ set -euo pipefail
 # Module metadata
 readonly MODULE_NAME="devpod"
 readonly CATEGORY="developer"
-readonly DEVPOD_VERSION="${DEVPOD_VERSION:-v0.7.0-alpha.34}"
+readonly DEVPOD_VERSION="${DEVPOD_VERSION:-0.6.15}"
 
 # Logging helper
 log() {
@@ -27,59 +27,95 @@ main() {
 	log "INFO" "START - Installing DevPod ${DEVPOD_VERSION}"
 
 	# Check if already installed
-	if command -v devpod &>/dev/null; then
-		log "INFO" "DevPod CLI already installed, skipping"
+	if command -v devpod &>/dev/null && [[ -f "/usr/bin/DevPod Desktop" ]]; then
+		log "INFO" "DevPod already installed, skipping"
 		exit 2
 	fi
 
-	# Create directories
-	# Use /usr/share for AppImage (standard location, avoids /opt symlink issues on OSTree)
-	mkdir -p /usr/share/devpod
-	mkdir -p /usr/share/applications
+	# Download the latest DevPod DEB from GitHub releases
+	local deb_url="https://github.com/loft-sh/devpod/releases/download/v${DEVPOD_VERSION}/DevPod_${DEVPOD_VERSION}_amd64.deb"
+	log "INFO" "Downloading DevPod DEB from ${deb_url}"
 
-	# URLs
-	local base_url="https://github.com/loft-sh/devpod/releases/download/${DEVPOD_VERSION}"
-	local cli_url="${base_url}/devpod-linux-amd64"
-	local appimage_url="${base_url}/DevPod_linux_amd64.AppImage"
-	local desktop_url="${base_url}/DevPod.desktop"
-
-	# Install CLI to /usr/bin (same pattern as rcc-cli.sh)
-	log "INFO" "Downloading DevPod CLI..."
-	curl -fsSL --retry 3 --retry-delay 5 "$cli_url" -o /tmp/devpod || {
-		log "ERROR" "Failed to download DevPod CLI"
-		exit 1
-	}
-	install -m755 /tmp/devpod /usr/bin/devpod
-	rm -f /tmp/devpod
-
-	# Install AppImage to /usr/share/devpod
-	log "INFO" "Downloading DevPod AppImage..."
-	curl -fsSL --retry 3 --retry-delay 5 "$appimage_url" -o /usr/share/devpod/DevPod.AppImage || {
-		log "ERROR" "Failed to download DevPod AppImage"
-		exit 1
-	}
-	chmod +x /usr/share/devpod/DevPod.AppImage
-
-	# Install Desktop File
-	log "INFO" "Downloading DevPod .desktop file..."
-	curl -fsSL --retry 3 --retry-delay 5 "$desktop_url" -o /usr/share/applications/devpod.desktop || {
-		log "ERROR" "Failed to download DevPod desktop file"
+	curl -fsSL --retry 3 --retry-delay 5 "${deb_url}" -o /tmp/devpod.deb || {
+		log "ERROR" "Failed to download DevPod DEB"
 		exit 1
 	}
 
-	# Fix Desktop File Exec path to point to our AppImage location
-	sed -i "s|Exec=.*|Exec=/usr/share/devpod/DevPod.AppImage %U|g" /usr/share/applications/devpod.desktop
+	# Extract DEB package directly (no conversion needed)
+	log "INFO" "Extracting DEB package..."
+	cd /tmp
+	ar x devpod.deb || {
+		log "ERROR" "Failed to extract DEB archive"
+		exit 1
+	}
 
-	# Verify CLI installation
-	log "INFO" "Verifying DevPod CLI installation..."
-	if [[ -x /usr/bin/devpod ]]; then
-		log "INFO" "DevPod CLI installed at /usr/bin/devpod"
+	# Extract the data tarball
+	log "INFO" "Extracting package contents..."
+	tar -xf data.tar.* -C / || {
+		log "ERROR" "Failed to extract package data"
+		exit 1
+	}
+
+	# Create symlink from devpod-cli to devpod
+	log "INFO" "Creating devpod symlink..."
+	ln -sf /usr/bin/devpod-cli /usr/bin/devpod
+
+	# Ensure GUI binary is executable (DEB installs it as "DevPod Desktop" with space)
+	if [[ -f "/usr/bin/DevPod Desktop" ]]; then
+		chmod +x "/usr/bin/DevPod Desktop"
+		log "INFO" "Set DevPod Desktop binary as executable"
+	fi
+
+	# Download and install icon
+	log "INFO" "Installing DevPod icon..."
+	mkdir -p /usr/share/icons/hicolor/512x512/apps
+	curl -fsSL --retry 3 \
+		"https://raw.githubusercontent.com/loft-sh/devpod/main/desktop/src-tauri/icons/icon.png" \
+		-o /usr/share/icons/hicolor/512x512/apps/devpod.png || {
+		log "WARN" "Failed to download icon, continuing anyway"
+	}
+
+	# Fix desktop entry (DEB file has wrong Exec path and no --no-sandbox)
+	log "INFO" "Fixing desktop entry..."
+	if [[ -f /usr/share/applications/DevPod.desktop ]]; then
+		# Replace the entire desktop file with corrected version
+		cat >/usr/share/applications/DevPod.desktop <<-'EOF'
+			[Desktop Entry]
+			Name=DevPod
+			Comment=Spin up dev environments in any infra
+			Exec="/usr/bin/DevPod Desktop" --no-sandbox %U
+			Icon=devpod
+			Terminal=false
+			Type=Application
+			Categories=Development;
+			StartupWMClass=DevPod Desktop
+		EOF
+		log "INFO" "Desktop entry fixed with correct binary path and --no-sandbox flag"
 	else
-		log "ERROR" "DevPod CLI not found or not executable"
+		log "ERROR" "Desktop entry not found after DEB extraction"
 		exit 1
 	fi
 
-	log "INFO" "DevPod installed successfully"
+	# Cleanup
+	log "INFO" "Cleaning up temporary files..."
+	rm -f /tmp/devpod.deb /tmp/control.tar.* /tmp/data.tar.* /tmp/debian-binary
+
+	# Verify installation
+	log "INFO" "Verifying DevPod installation..."
+	if command -v devpod &>/dev/null; then
+		local version
+		version=$(devpod version 2>/dev/null || echo "unknown")
+		log "INFO" "DevPod CLI installed successfully (version: ${version})"
+	else
+		log "ERROR" "DevPod CLI not found after installation"
+		exit 1
+	fi
+
+	if [[ -f "/usr/bin/DevPod Desktop" ]]; then
+		log "INFO" "DevPod desktop app installed successfully"
+	else
+		log "WARN" "DevPod desktop app not found, but CLI is available"
+	fi
 
 	local end_time duration
 	end_time=$(date +%s)
