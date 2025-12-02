@@ -4,7 +4,8 @@
       "tmux",
       "curl",
       "gcc-c++",
-      "libayatana-appindicator-gtk3"
+      "libayatana-appindicator-gtk3",
+      "libappindicator-gtk3"
     ],
     "remove": []
   }

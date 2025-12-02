@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Purpose: Install latest DevPod by extracting DEB package
+# Purpose: Install latest DevPod from tar.gz
 # Category: developer
 # Dependencies: none
 # Parallel-Safe: yes
@@ -27,32 +27,24 @@ main() {
 	log "INFO" "START - Installing DevPod ${DEVPOD_VERSION}"
 
 	# Check if already installed
-	if command -v devpod &>/dev/null && [[ -f "/usr/bin/DevPod Desktop" ]]; then
+	if command -v devpod &>/dev/null && [[ -f "/usr/bin/dev-pod-desktop" ]]; then
 		log "INFO" "DevPod already installed, skipping"
 		exit 2
 	fi
 
-	# Download the latest DevPod DEB from GitHub releases
-	local deb_url="https://github.com/loft-sh/devpod/releases/download/v${DEVPOD_VERSION}/DevPod_${DEVPOD_VERSION}_amd64.deb"
-	log "INFO" "Downloading DevPod DEB from ${deb_url}"
+	# Download the latest DevPod tar.gz from GitHub releases
+	local tar_url="https://github.com/loft-sh/devpod/releases/download/v${DEVPOD_VERSION}/DevPod_linux_x86_64.tar.gz"
+	log "INFO" "Downloading DevPod tarball from ${tar_url}"
 
-	curl -fsSL --retry 3 --retry-delay 5 "${deb_url}" -o /tmp/devpod.deb || {
-		log "ERROR" "Failed to download DevPod DEB"
+	curl -fsSL --retry 3 --retry-delay 5 "${tar_url}" -o /tmp/devpod.tar.gz || {
+		log "ERROR" "Failed to download DevPod tarball"
 		exit 1
 	}
 
-	# Extract DEB package directly (no conversion needed)
-	log "INFO" "Extracting DEB package..."
-	cd /tmp
-	ar x devpod.deb || {
-		log "ERROR" "Failed to extract DEB archive"
-		exit 1
-	}
-
-	# Extract the data tarball
-	log "INFO" "Extracting package contents..."
-	tar -xf data.tar.* -C / || {
-		log "ERROR" "Failed to extract package data"
+	# Extract tarball directly to /
+	log "INFO" "Extracting tarball..."
+	tar -xzf /tmp/devpod.tar.gz -C / || {
+		log "ERROR" "Failed to extract tarball"
 		exit 1
 	}
 
@@ -60,46 +52,29 @@ main() {
 	log "INFO" "Creating devpod symlink..."
 	ln -sf /usr/bin/devpod-cli /usr/bin/devpod
 
-	# Ensure GUI binary is executable (DEB installs it as "DevPod Desktop" with space)
-	if [[ -f "/usr/bin/DevPod Desktop" ]]; then
-		chmod +x "/usr/bin/DevPod Desktop"
-		log "INFO" "Set DevPod Desktop binary as executable"
-	fi
+	# Ensure binaries are executable
+	chmod +x /usr/bin/dev-pod-desktop
+	chmod +x /usr/bin/devpod-cli
+	log "INFO" "Set DevPod binaries as executable"
 
-	# Icons are included in the DEB package at:
-	# /usr/share/icons/hicolor/{32x32,128x128,256x256@2}/apps/DevPod Desktop.png
-	# We need to rename them to remove spaces for better compatibility
-	log "INFO" "Renaming icons to remove spaces..."
-	find /usr/share/icons/hicolor -name "DevPod Desktop.png" | while read -r icon_path; do
-		new_path="${icon_path/DevPod Desktop.png/devpod-desktop.png}"
-		mv "${icon_path}" "${new_path}"
-		log "INFO" "Renamed ${icon_path} to ${new_path}"
-	done
-
-	# Fix desktop entry (DEB file has wrong Exec path and no --no-sandbox)
-	log "INFO" "Fixing desktop entry..."
-	if [[ -f /usr/share/applications/DevPod.desktop ]]; then
-		# Replace the entire desktop file with corrected version
-		cat >/usr/share/applications/DevPod.desktop <<-'EOF'
-			[Desktop Entry]
-			Name=DevPod
-			Comment=Spin up dev environments in any infra
-			Exec="/usr/bin/DevPod Desktop" --no-sandbox %U
-			Icon=devpod-desktop
-			Terminal=false
-			Type=Application
-			Categories=Development;
-			StartupWMClass=DevPod Desktop
-		EOF
-		log "INFO" "Desktop entry fixed with correct binary path, icon name, and --no-sandbox flag"
-	else
-		log "ERROR" "Desktop entry not found after DEB extraction"
-		exit 1
-	fi
+	# Fix desktop entry
+	log "INFO" "Configuring desktop entry..."
+	cat >/usr/share/applications/DevPod.desktop <<-'EOF'
+		[Desktop Entry]
+		Name=DevPod
+		Comment=Spin up dev environments in any infra
+		Exec="/usr/bin/dev-pod-desktop" --no-sandbox %U
+		Icon=dev-pod-desktop
+		Terminal=false
+		Type=Application
+		Categories=Development;
+		StartupWMClass=DevPod
+	EOF
+	log "INFO" "Desktop entry configured"
 
 	# Cleanup
 	log "INFO" "Cleaning up temporary files..."
-	rm -f /tmp/devpod.deb /tmp/control.tar.* /tmp/data.tar.* /tmp/debian-binary
+	rm -f /tmp/devpod.tar.gz
 
 	# Verify installation
 	log "INFO" "Verifying DevPod installation..."
@@ -112,10 +87,11 @@ main() {
 		exit 1
 	fi
 
-	if [[ -f "/usr/bin/DevPod Desktop" ]]; then
+	if [[ -f "/usr/bin/dev-pod-desktop" ]]; then
 		log "INFO" "DevPod desktop app installed successfully"
 	else
-		log "WARN" "DevPod desktop app not found, but CLI is available"
+		log "ERROR" "DevPod desktop app not found"
+		exit 1
 	fi
 
 	local end_time duration
