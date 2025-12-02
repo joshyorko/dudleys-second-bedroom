@@ -79,11 +79,13 @@ As a user who prefers OIDC-based trust, I want to verify the image using GitHub 
 - **FR-003**: The build pipeline MUST generate a SLSA-style provenance attestation including the Git commit SHA and GitHub workflow run ID.
 - **FR-004**: The build pipeline MUST attach the provenance attestation to the image using `cosign attest`.
 - **FR-005**: The build pipeline MUST package **exclusively** the `specs/`, `docs/`, and `build_files/` directories into a compressed archive (tarball).
-- **FR-006**: The build pipeline MUST attach the metadata archive as an OCI artifact to the image using `oras`, with a specific artifact type (e.g., `application/vnd.dudley.metadata.v1`).
+- **FR-006**: The build pipeline MUST attach the metadata archive as an OCI artifact to the image using `oras`, using the tag naming convention `sha256-<digest>.metadata` to link it to the image digest.
 - **FR-007**: The project MUST provide documentation and an example `registries.d` policy file for enforcing signature verification. This policy MUST NOT be embedded in the image itself.
 - **FR-008**: The build pipeline MUST support optional keyless signing using GitHub OIDC. The documented verification procedure MUST enforce the `refs/heads/main` branch constraint.
 - **FR-009**: The build pipeline MUST fail if any of the artifact generation or attachment steps (SBOM, provenance, ORAS) fail.
 - **FR-010**: The build pipeline MUST perform "Dual Signing" (both key-pair and OIDC) for every build on the `main` branch.
+- **FR-011**: The CI pipeline MUST retrieve the signing key from the `COSIGN_PRIVATE_KEY` repository secret.
+- **FR-012**: The build pipeline MUST skip signing, attestation, and SBOM attachment steps when running in a local environment (non-CI).
 
 ### Key Entities *(include if feature involves data)*
 
@@ -111,3 +113,9 @@ As a user who prefers OIDC-based trust, I want to verify the image using GitHub 
 - Q: How should the signature enforcement policy be distributed? → A: Documentation only (user installs manually)
 - Q: What content should be included in the metadata artifact? → A: Specified directories only (`specs/`, `docs/`, `build_files/`)
 - Q: When should keyless signing be triggered? → A: Always (Dual Signing) - Sign with both key-pair and OIDC on every main branch build.
+
+### Session 2025-12-02
+
+- Q: How should the private key for signing be managed in CI? → A: GitHub Repository Secret (`COSIGN_PRIVATE_KEY`)
+- Q: How should signing/attestation be handled for local builds? → A: Skip signing/attestation locally (CI only)
+- Q: How should the metadata artifact be linked to the image? → A: Tag Naming Convention (e.g., `sha256-<digest>.metadata`)
