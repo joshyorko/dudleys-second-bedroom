@@ -33,7 +33,8 @@ main() {
 	fi
 
 	# Create directories
-	mkdir -p /opt/devpod
+	# Use /usr/share for AppImage (standard location, avoids /opt symlink issues on OSTree)
+	mkdir -p /usr/share/devpod
 	mkdir -p /usr/share/applications
 
 	# URLs
@@ -42,32 +43,39 @@ main() {
 	local appimage_url="${base_url}/DevPod_linux_amd64.AppImage"
 	local desktop_url="${base_url}/DevPod.desktop"
 
-	# Install CLI
+	# Install CLI to /usr/bin (same pattern as rcc-cli.sh)
 	log "INFO" "Downloading DevPod CLI..."
-	curl -fsSL "$cli_url" -o /usr/bin/devpod
-	chmod +x /usr/bin/devpod
+	curl -fsSL "$cli_url" -o /tmp/devpod || {
+		log "ERROR" "Failed to download DevPod CLI"
+		exit 1
+	}
+	install -m755 /tmp/devpod /usr/bin/devpod
+	rm -f /tmp/devpod
 
-	# Install AppImage
+	# Install AppImage to /usr/share/devpod
 	log "INFO" "Downloading DevPod AppImage..."
-	curl -fsSL "$appimage_url" -o /opt/devpod/DevPod.AppImage
-	chmod +x /opt/devpod/DevPod.AppImage
+	curl -fsSL "$appimage_url" -o /usr/share/devpod/DevPod.AppImage || {
+		log "ERROR" "Failed to download DevPod AppImage"
+		exit 1
+	}
+	chmod +x /usr/share/devpod/DevPod.AppImage
 
 	# Install Desktop File
 	log "INFO" "Downloading DevPod .desktop file..."
-	curl -fsSL "$desktop_url" -o /usr/share/applications/devpod.desktop
+	curl -fsSL "$desktop_url" -o /usr/share/applications/devpod.desktop || {
+		log "ERROR" "Failed to download DevPod desktop file"
+		exit 1
+	}
 
-	# Fix Desktop File Exec path
-	# Ensure it points to the AppImage
-	sed -i "s|Exec=.*|Exec=/opt/devpod/DevPod.AppImage --no-sandbox %U|g" /usr/share/applications/devpod.desktop
-    # Note: --no-sandbox might be needed for some electron apps in containers, but usually not on host. 
-    # However, AppImages sometimes need FUSE. Bluefin has FUSE.
-    # I'll remove --no-sandbox to be safe, or keep it if I suspect issues. 
-    # Better to just point to the AppImage.
-    sed -i "s|Exec=.*|Exec=/opt/devpod/DevPod.AppImage %U|g" /usr/share/applications/devpod.desktop
+	# Fix Desktop File Exec path to point to our AppImage location
+	sed -i "s|Exec=.*|Exec=/usr/share/devpod/DevPod.AppImage %U|g" /usr/share/applications/devpod.desktop
 
-    # Fix Icon path if needed (assuming the desktop file expects 'devpod' icon which might not exist)
-    # We don't have the icon easily. 
-    # I'll leave the Icon= line as is, it might pick up a generic one or fail gracefully.
+	# Verify CLI installation
+	log "INFO" "Verifying DevPod CLI installation..."
+	devpod version || {
+		log "ERROR" "DevPod CLI verification failed"
+		exit 1
+	}
 
 	log "INFO" "DevPod installed successfully"
 
