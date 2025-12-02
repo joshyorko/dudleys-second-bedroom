@@ -68,7 +68,13 @@ main() {
 
 	# Icons are included in the DEB package at:
 	# /usr/share/icons/hicolor/{32x32,128x128,256x256@2}/apps/DevPod Desktop.png
-	log "INFO" "DevPod icons installed from DEB package"
+	# We need to rename them to remove spaces for better compatibility
+	log "INFO" "Renaming icons to remove spaces..."
+	find /usr/share/icons/hicolor -name "DevPod Desktop.png" | while read -r icon_path; do
+		new_path="${icon_path/DevPod Desktop.png/devpod-desktop.png}"
+		mv "${icon_path}" "${new_path}"
+		log "INFO" "Renamed ${icon_path} to ${new_path}"
+	done
 
 	# Fix desktop entry (DEB file has wrong Exec path and no --no-sandbox)
 	log "INFO" "Fixing desktop entry..."
@@ -79,7 +85,7 @@ main() {
 			Name=DevPod
 			Comment=Spin up dev environments in any infra
 			Exec="/usr/bin/DevPod Desktop" --no-sandbox %U
-			Icon=DevPod Desktop
+			Icon=devpod-desktop
 			Terminal=false
 			Type=Application
 			Categories=Development;
