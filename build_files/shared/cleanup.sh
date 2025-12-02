@@ -54,6 +54,17 @@ main() {
 		log "INFO" "No COPR repositories found"
 	fi
 
+	# Disable ALL repos if FINAL_CLEANUP is set
+	if [[ "${FINAL_CLEANUP:-false}" == "true" ]]; then
+		log "INFO" "Disabling ALL repositories (Final Cleanup)..."
+		for repo in /etc/yum.repos.d/*.repo; do
+			if [[ -f "$repo" ]]; then
+				log "INFO" "Setting enabled=0 in $repo"
+				sed -i 's/enabled=1/enabled=0/g' "$repo" || true
+			fi
+		done
+	fi
+
 	# Recreate required directories with correct permissions
 	log "INFO" "Recreating required directories..."
 	mkdir -p /tmp /var/tmp /var/log

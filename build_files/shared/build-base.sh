@@ -124,6 +124,11 @@ main() {
 				continue
 			fi
 
+			# Skip validate-repos.sh in Phase 1 (run it at the end)
+			if [[ $(basename "$module") == "validate-repos.sh" ]]; then
+				continue
+			fi
+
 			total_modules=$((total_modules + 1))
 
 			if execute_module "$module"; then
@@ -210,10 +215,24 @@ main() {
 	# Phase 5: Final cleanup
 	log "INFO" "Phase 5: Running final cleanup..."
 	if [[ -f "shared/cleanup.sh" ]]; then
+		export FINAL_CLEANUP=true
 		if execute_module "shared/cleanup.sh"; then
 			successful_modules=$((successful_modules + 1))
 		else
 			log "WARNING" "Cleanup encountered issues but build continues"
+		fi
+		unset FINAL_CLEANUP
+	fi
+
+	# Phase 6: Final validation
+	log "INFO" "Phase 6: Running final validation..."
+	if [[ -f "shared/validate-repos.sh" ]]; then
+		total_modules=$((total_modules + 1))
+		if execute_module "shared/validate-repos.sh"; then
+			successful_modules=$((successful_modules + 1))
+		else
+			failed_modules=$((failed_modules + 1))
+			log "ERROR" "Final repository validation failed"
 		fi
 	fi
 

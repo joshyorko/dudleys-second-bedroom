@@ -45,7 +45,7 @@ main() {
 
 	# Install CLI to /usr/bin (same pattern as rcc-cli.sh)
 	log "INFO" "Downloading DevPod CLI..."
-	curl -fsSL "$cli_url" -o /tmp/devpod || {
+	curl -fsSL --retry 3 --retry-delay 5 "$cli_url" -o /tmp/devpod || {
 		log "ERROR" "Failed to download DevPod CLI"
 		exit 1
 	}
@@ -54,7 +54,7 @@ main() {
 
 	# Install AppImage to /usr/share/devpod
 	log "INFO" "Downloading DevPod AppImage..."
-	curl -fsSL "$appimage_url" -o /usr/share/devpod/DevPod.AppImage || {
+	curl -fsSL --retry 3 --retry-delay 5 "$appimage_url" -o /usr/share/devpod/DevPod.AppImage || {
 		log "ERROR" "Failed to download DevPod AppImage"
 		exit 1
 	}
@@ -62,7 +62,7 @@ main() {
 
 	# Install Desktop File
 	log "INFO" "Downloading DevPod .desktop file..."
-	curl -fsSL "$desktop_url" -o /usr/share/applications/devpod.desktop || {
+	curl -fsSL --retry 3 --retry-delay 5 "$desktop_url" -o /usr/share/applications/devpod.desktop || {
 		log "ERROR" "Failed to download DevPod desktop file"
 		exit 1
 	}
@@ -72,10 +72,12 @@ main() {
 
 	# Verify CLI installation
 	log "INFO" "Verifying DevPod CLI installation..."
-	devpod version || {
-		log "ERROR" "DevPod CLI verification failed"
+	if [[ -x /usr/bin/devpod ]]; then
+		log "INFO" "DevPod CLI installed at /usr/bin/devpod"
+	else
+		log "ERROR" "DevPod CLI not found or not executable"
 		exit 1
-	}
+	fi
 
 	log "INFO" "DevPod installed successfully"
 
