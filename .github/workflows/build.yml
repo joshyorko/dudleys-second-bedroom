@@ -94,11 +94,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v5
 
-      # This is optional, but if you see that your builds are way too big for the runners, you can enable this by uncommenting the following lines:
-      # - name: Maximize build space
-      #   uses: ublue-os/remove-unwanted-software@517622d6452028f266b7ba4cc9a123b5f58a6b53 # v7
-      #   with:
-      #     remove-codeql: true
+      # Required for large images like Bluefin-DX (~13GB) to prevent "no space left on device" errors
+      - name: Maximize build space
+        uses: ublue-os/remove-unwanted-software@517622d6452028f266b7ba4cc9a123b5f58a6b53 # v7
+        with:
+          remove-codeql: true
 
       - name: Mount BTRFS for podman storage
         uses: ublue-os/container-storage-action@main
@@ -263,6 +263,23 @@ jobs:
       # your project for others to consume. You will need to create a public and private key
       # using Cosign and save the private key as a repository secret in Github for this workflow
       # to consume. For more details, review the image signing section of the README.
+
+      # ----------------------------------------
+      # Step 0: Free disk space for SBOM generation
+      # ----------------------------------------
+      # Large images (~13GB) can exhaust runner disk during syft analysis
+      - name: Free disk space for supply chain steps
+        if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+        run: |
+          echo "Disk space before cleanup:"
+          df -h /
+          # Clean up Docker build cache and unused images
+          docker system prune -af --volumes || true
+          # Remove unnecessary large directories
+          sudo rm -rf /usr/local/lib/android || true
+          sudo rm -rf /usr/share/dotnet || true
+          echo "Disk space after cleanup:"
+          df -h /
 
       # ----------------------------------------
       # Step 1: Install supply chain tools

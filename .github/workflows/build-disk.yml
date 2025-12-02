@@ -10,6 +10,7 @@ on:
         default: false
         type: boolean
       platform:
+        description: "Target platform architecture"
         required: true
         type: choice
         options:
