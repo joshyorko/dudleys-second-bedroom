@@ -10,7 +10,7 @@ set -euo pipefail
 # Module metadata
 readonly MODULE_NAME="devpod"
 readonly CATEGORY="developer"
-readonly DEVPOD_VERSION="${DEVPOD_VERSION:-v0.6.15}"
+readonly DEVPOD_VERSION="${DEVPOD_VERSION:-v0.7.0-alpha.34}"
 
 # Logging helper
 log() {
