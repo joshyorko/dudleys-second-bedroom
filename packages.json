@@ -3,7 +3,8 @@
     "install": [
       "tmux",
       "curl",
-      "gcc-c++"
+      "gcc-c++",
+      "libayatana-appindicator-gtk3"
     ],
     "remove": []
   }
