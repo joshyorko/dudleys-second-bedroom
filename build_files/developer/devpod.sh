@@ -66,14 +66,9 @@ main() {
 		log "INFO" "Set DevPod Desktop binary as executable"
 	fi
 
-	# Download and install icon
-	log "INFO" "Installing DevPod icon..."
-	mkdir -p /usr/share/icons/hicolor/512x512/apps
-	curl -fsSL --retry 3 \
-		"https://raw.githubusercontent.com/loft-sh/devpod/main/desktop/src-tauri/icons/icon.png" \
-		-o /usr/share/icons/hicolor/512x512/apps/devpod.png || {
-		log "WARN" "Failed to download icon, continuing anyway"
-	}
+	# Icons are included in the DEB package at:
+	# /usr/share/icons/hicolor/{32x32,128x128,256x256@2}/apps/DevPod Desktop.png
+	log "INFO" "DevPod icons installed from DEB package"
 
 	# Fix desktop entry (DEB file has wrong Exec path and no --no-sandbox)
 	log "INFO" "Fixing desktop entry..."
@@ -84,13 +79,13 @@ main() {
 			Name=DevPod
 			Comment=Spin up dev environments in any infra
 			Exec="/usr/bin/DevPod Desktop" --no-sandbox %U
-			Icon=devpod
+			Icon=DevPod Desktop
 			Terminal=false
 			Type=Application
 			Categories=Development;
 			StartupWMClass=DevPod Desktop
 		EOF
-		log "INFO" "Desktop entry fixed with correct binary path and --no-sandbox flag"
+		log "INFO" "Desktop entry fixed with correct binary path, icon name, and --no-sandbox flag"
 	else
 		log "ERROR" "Desktop entry not found after DEB extraction"
 		exit 1
