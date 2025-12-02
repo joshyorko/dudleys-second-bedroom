@@ -27,7 +27,7 @@ main() {
 	log "INFO" "START - Installing DevPod ${DEVPOD_VERSION}"
 
 	# Check if already installed
-	if command -v devpod &>/dev/null && [[ -f /usr/bin/DevPod ]]; then
+	if command -v devpod &>/dev/null && [[ -f "/usr/bin/DevPod Desktop" ]]; then
 		log "INFO" "DevPod already installed, skipping"
 		exit 2
 	fi
@@ -60,6 +60,12 @@ main() {
 	log "INFO" "Creating devpod symlink..."
 	ln -sf /usr/bin/devpod-cli /usr/bin/devpod
 
+	# Ensure GUI binary is executable (DEB installs it as "DevPod Desktop" with space)
+	if [[ -f "/usr/bin/DevPod Desktop" ]]; then
+		chmod +x "/usr/bin/DevPod Desktop"
+		log "INFO" "Set DevPod Desktop binary as executable"
+	fi
+
 	# Download and install icon
 	log "INFO" "Installing DevPod icon..."
 	mkdir -p /usr/share/icons/hicolor/512x512/apps
@@ -69,32 +75,25 @@ main() {
 		log "WARN" "Failed to download icon, continuing anyway"
 	}
 
-	# Update desktop entry to fix sandboxing issues and use correct binary path
-	log "INFO" "Updating desktop entry..."
-	if [[ -f /usr/share/applications/devpod.desktop ]]; then
-		# DEB installs binary as /usr/bin/DevPod
-		sed -i 's|^Exec=.*|Exec=/usr/bin/DevPod --no-sandbox %U|' \
-			/usr/share/applications/devpod.desktop
-		sed -i 's|^Icon=.*|Icon=devpod|' \
-			/usr/share/applications/devpod.desktop
-	else
-		log "WARN" "Desktop entry not found, creating one..."
-		cat >/usr/share/applications/devpod.desktop <<-'EOF'
+	# Fix desktop entry (DEB file has wrong Exec path and no --no-sandbox)
+	log "INFO" "Fixing desktop entry..."
+	if [[ -f /usr/share/applications/DevPod.desktop ]]; then
+		# Replace the entire desktop file with corrected version
+		cat >/usr/share/applications/DevPod.desktop <<-'EOF'
 			[Desktop Entry]
 			Name=DevPod
-			Comment=Codespaces but open-source, client-only and unopinionated
-			Exec=/usr/bin/DevPod --no-sandbox %U
+			Comment=Spin up dev environments in any infra
+			Exec="/usr/bin/DevPod Desktop" --no-sandbox %U
 			Icon=devpod
 			Terminal=false
 			Type=Application
 			Categories=Development;
-			StartupWMClass=DevPod
+			StartupWMClass=DevPod Desktop
 		EOF
-	fi
-
-	# Ensure GUI binary is executable
-	if [[ -f /usr/bin/DevPod ]]; then
-		chmod +x /usr/bin/DevPod
+		log "INFO" "Desktop entry fixed with correct binary path and --no-sandbox flag"
+	else
+		log "ERROR" "Desktop entry not found after DEB extraction"
+		exit 1
 	fi
 
 	# Cleanup
@@ -112,7 +111,7 @@ main() {
 		exit 1
 	fi
 
-	if [[ -f /usr/bin/DevPod ]]; then
+	if [[ -f "/usr/bin/DevPod Desktop" ]]; then
 		log "INFO" "DevPod desktop app installed successfully"
 	else
 		log "WARN" "DevPod desktop app not found, but CLI is available"
