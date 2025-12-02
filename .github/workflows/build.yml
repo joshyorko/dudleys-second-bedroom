@@ -199,6 +199,16 @@ jobs:
       # This does not make your image faster to download, just provides better resumability and fixes a few errors.
       # Documentation for Rechunk is provided on their github repository at https://github.com/hhd-dev/rechunk
       # You can enable it by uncommenting the following lines:
+      - name: Copy image to root storage for rechunking
+        run: |
+          # Save image from user storage to tarball
+          # Use workspace to avoid /tmp size limits
+          podman save -o image.tar "localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
+          # Load image into root storage
+          sudo podman load -i image.tar
+          # Cleanup
+          rm image.tar
+
       - name: Run Rechunker
         id: rechunk
         uses: hhd-dev/rechunk@f153348d8100c1f504dec435460a0d7baf11a9d2 # v1.1.1
