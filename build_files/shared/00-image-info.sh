@@ -54,10 +54,14 @@ if [[ -f /etc/os-release ]]; then
 	FEDORA_VERSION=$(grep -E '^VERSION_ID=' /etc/os-release | cut -d= -f2 | tr -d '"')
 fi
 
-# Get kernel version
+# Get kernel version (ensure single line, no embedded newlines)
 KERNEL_VERSION=""
 if command -v rpm &>/dev/null; then
-	KERNEL_VERSION=$(rpm -qa 'kernel-*' --queryformat '%{VERSION}-%{RELEASE}.%{ARCH}\n' 2>/dev/null | head -1 || echo "unknown")
+	KERNEL_VERSION=$(rpm -qa 'kernel-*' --queryformat '%{VERSION}-%{RELEASE}.%{ARCH}\n' 2>/dev/null | head -1 | tr -d '\n' || echo "unknown")
+fi
+# Fallback if empty
+if [[ -z "$KERNEL_VERSION" ]]; then
+	KERNEL_VERSION="unknown"
 fi
 
 # Generate image-info.json

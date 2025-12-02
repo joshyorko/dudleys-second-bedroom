@@ -37,7 +37,7 @@ concurrency:
 jobs:
   pre-build-validation:
     name: Pre-build validation
-    runs-on: 52806.pts-0.bluefin
+    runs-on: ubuntu-24.04
 
     steps:
       - name: Checkout
@@ -56,7 +56,7 @@ jobs:
 
   unit-tests:
     name: Unit tests
-    runs-on: 52806.pts-0.bluefin
+    runs-on: ubuntu-24.04
 
     steps:
       - name: Checkout
@@ -75,7 +75,7 @@ jobs:
 
   build_push:
     name: Build and push image
-    runs-on: 52806.pts-0.bluefin
+    runs-on: ubuntu-24.04
     needs: [pre-build-validation, unit-tests]
 
     permissions:
