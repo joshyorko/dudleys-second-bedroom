@@ -3,6 +3,8 @@
 Auto-generated from all feature plans. Last updated: 2025-11-21
 
 ## Active Technologies
+- Bash, YAML (GitHub Actions) + `cosign` (v2+), `syft`, `oras`, `jq` (004-oci-supply-chain)
+- OCI Registry (ghcr.io) (004-oci-supply-chain)
 
 - Containerfile (OCI), Bash 5.x, YAML (GitHub Actions) + `podman`/`buildah` (Build Tooling), GitHub Actions (003-configurable-base-image)
 
@@ -22,10 +24,10 @@ tests/
 Containerfile (OCI), Bash 5.x, YAML (GitHub Actions): Follow standard conventions
 
 ## Recent Changes
+- 004-oci-supply-chain: Added Bash, YAML (GitHub Actions) + `cosign` (v2+), `syft`, `oras`, `jq`
 - 003-configurable-base-image: Added Containerfile (OCI), Bash 5.x, YAML (GitHub Actions) + `podman`/`buildah` (Build Tooling), GitHub Actions
 - 003-configurable-base-image: Added Containerfile (OCI), Bash 5.x, YAML (GitHub Actions) + `podman`/`buildah` (Build Tooling), GitHub Actions
 
-- 003-configurable-base-image: Added Containerfile (OCI), Bash 5.x, YAML (GitHub Actions) + `podman`/`buildah` (Build Tooling), GitHub Actions
 
 <!-- MANUAL ADDITIONS START -->
 # Dudley's Second Bedroom · Copilot Instructions

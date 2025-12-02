@@ -161,7 +161,7 @@ All paths relative to repository root: `/var/home/kdlocpanda/second_brain/Projec
 **Actions**:
 - Create script with proper header (per build-module-contract.md)
 - Implement shellcheck validation function
-- Implement JSON validation function  
+- Implement JSON validation function
 - Implement Build Module metadata validation function
 - Distinguish critical errors (block builds) vs non-critical warnings (allow override)
 - Add logging per contract standards
@@ -376,7 +376,7 @@ All paths relative to repository root: `/var/home/kdlocpanda/second_brain/Projec
 **Actions**:
 - Create utility script
 - Function to enable COPR repo
-- Function to disable COPR repo  
+- Function to disable COPR repo
 - Function to list enabled COPR repos
 - Handle repo already enabled/disabled gracefully
 - Add error handling

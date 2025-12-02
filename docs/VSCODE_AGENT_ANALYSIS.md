@@ -1,7 +1,7 @@
 # VS Code Agent Architecture Analysis
 
-**Date**: 2025-11-12  
-**Source**: [microsoft/vscode](https://github.com/microsoft/vscode)  
+**Date**: 2025-11-12
+**Source**: [microsoft/vscode](https://github.com/microsoft/vscode)
 **Purpose**: Extract best-in-class agent context engineering patterns for integration into Dudley's Second Bedroom
 
 ---
@@ -68,7 +68,7 @@ Microsoft's VS Code repository demonstrates a sophisticated, production-grade ap
 ```markdown
 ## Validating TypeScript changes
 
-MANDATORY: Always check the `VS Code - Build` watch task output via #runTasks/getTaskOutput 
+MANDATORY: Always check the `VS Code - Build` watch task output via #runTasks/getTaskOutput
 for compilation errors before running ANY script or declaring work complete
 
 - NEVER run tests if there are compilation errors
@@ -300,7 +300,7 @@ tools: ['edit', 'search', 'github/github-mcp-server/*', 'todos']
 
 ## GitHub MCP Tools
 
-**Prefer using GitHub MCP tools over `gh` CLI commands** - these provide 
+**Prefer using GitHub MCP tools over `gh` CLI commands** - these provide
 structured data and better integration
 
 ### Tool Selection Guidance
@@ -425,7 +425,7 @@ tools: ['edit', 'search', 'mcp/*', 'todos']
 
 ### Global Instructions: `copilot-instructions.md`
 
-**Length**: 7,080 bytes  
+**Length**: 7,080 bytes
 **Structure**: 9 major sections
 
 **Section Breakdown**:
@@ -476,12 +476,12 @@ tools: ['edit', 'search', 'mcp/*', 'todos']
 ### Instruction Files Analysis
 
 #### `disposable.instructions.md` (890 bytes)
-**Purpose**: IDisposable pattern guidance  
-**Core Symbols**: `IDisposable`, `Disposable`, `DisposableStore`, `MutableDisposable`, `toDisposable`  
+**Purpose**: IDisposable pattern guidance
+**Core Symbols**: `IDisposable`, `Disposable`, `DisposableStore`, `MutableDisposable`, `toDisposable`
 **Pattern**: Short, reference-style with core APIs and usage notes
 
 #### `observables.instructions.md` (3,177 bytes)
-**Purpose**: Observable and derived pattern guidance  
+**Purpose**: Observable and derived pattern guidance
 **Structure**:
 - Complete example class showing all patterns
 - Core symbols with usage
@@ -489,7 +489,7 @@ tools: ['edit', 'search', 'mcp/*', 'todos']
 **Pattern**: Code-heavy with annotated examples
 
 #### `telemetry.instructions.md` (4,326 bytes)
-**Purpose**: GDPR-compliant telemetry implementation  
+**Purpose**: GDPR-compliant telemetry implementation
 **Structure**:
 - Implementation pattern (define types → send event → service injection)
 - Classification & purposes (SystemMetaData, CallstackOrException, FeatureInsight, PerformanceAndHealth)
@@ -498,7 +498,7 @@ tools: ['edit', 'search', 'mcp/*', 'todos']
 **Pattern**: Compliance-focused with code templates
 
 #### `tree-widgets.instructions.md` (6,940 bytes)
-**Purpose**: Comprehensive guide to VS Code tree widget development  
+**Purpose**: Comprehensive guide to VS Code tree widget development
 **Structure**:
 - Location and architecture overview
 - Scope (included/excluded/integration points)
@@ -510,7 +510,7 @@ tools: ['edit', 'search', 'mcp/*', 'todos']
 **Pattern**: Full architectural document with decision frameworks
 
 #### `learnings.instructions.md` (1,171 bytes)
-**Purpose**: Meta-instruction for managing learnings  
+**Purpose**: Meta-instruction for managing learnings
 **Structure**:
 - Learning structure definition
 - Example format
@@ -529,8 +529,8 @@ tools: ['edit', 'search', 'mcp/*', 'todos']
 ### Prompt Files Analysis
 
 #### `build-champ.prompt.md` (2,827 bytes)
-**Role**: Build champion for VS Code team  
-**Tools**: `github/github-mcp-server/*`, `microsoft/azure-devops-mcp/*`, `todos`  
+**Role**: Build champion for VS Code team
+**Tools**: `github/github-mcp-server/*`, `microsoft/azure-devops-mcp/*`, `todos`
 **Workflow**:
 1. Display warning about known issues
 2. Investigate failing jobs (prioritize unit tests)
@@ -543,9 +543,9 @@ tools: ['edit', 'search', 'mcp/*', 'todos']
 **Notable**: Includes warning message about agent limitations - transparent about known issues
 
 #### `find-issue.prompt.md` (4,503 bytes)
-**Role**: GitHub issue investigator  
-**Tools**: `github/github-mcp-server/issue_read`, `list_issues`, `search_issues`, `runSubagent`  
-**Model**: Claude Sonnet 4.5  
+**Role**: GitHub issue investigator
+**Tools**: `github/github-mcp-server/issue_read`, `list_issues`, `search_issues`, `runSubagent`
+**Model**: Claude Sonnet 4.5
 **Workflow**:
 1. Interpret input - identify context and component
 2. Search - parallel searches with keyword variations
@@ -556,8 +556,8 @@ tools: ['edit', 'search', 'mcp/*', 'todos']
 **Notable**: Emphasizes context matching ("UI component", "file type", "workflow step") over keyword matching
 
 #### `setup-environment.prompt.md` (4,547 bytes)
-**Role**: Setup automation assistant  
-**Tools**: `runCommands`, `runTasks/runTask`, `search`, `todos`, `fetch`  
+**Role**: Setup automation assistant
+**Tools**: `runCommands`, `runTasks/runTask`, `search`, `todos`, `fetch`
 **Workflow**: 10-step comprehensive setup
 1. Find setup instructions
 2. Show required tools list
@@ -573,14 +573,14 @@ tools: ['edit', 'search', 'mcp/*', 'todos']
 **Notable**: Heavy emphasis on automation - "execute them directly" not "display commands"
 
 #### `component.prompt.md` (2,535 bytes)
-**Role**: Component documentation generator  
-**Tools**: `edit`, `search`, `usages`, `vscodeAPI`, `fetch`, `extensions`, `todos`  
+**Role**: Component documentation generator
+**Tools**: `edit`, `search`, `usages`, `vscodeAPI`, `fetch`, `extensions`, `todos`
 **Output Format**: Structured markdown with Purpose, Scope, Architecture, Key Classes, Key Files, Development Guidelines
 **Pattern**: Creates `.components/[name].md` files for agent context
 
 #### `data.prompt.md` (2,759 bytes)
-**Role**: Azure Data Explorer analyst  
-**Tools**: `search`, `runCommands/runInTerminal`, `Azure MCP/kusto_query`, `githubRepo`, `extensions`, `todos`  
+**Role**: Azure Data Explorer analyst
+**Tools**: `search`, `runCommands/runInTerminal`, `Azure MCP/kusto_query`, `githubRepo`, `extensions`, `todos`
 **Workflow**:
 1. Read telemetry documentation
 2. Execute Kusto queries (not just describe)
@@ -589,8 +589,8 @@ tools: ['edit', 'search', 'mcp/*', 'todos']
 **Notable**: Strong emphasis on actually running queries with best practices (time windows, aggregation, parallel execution)
 
 #### `codenotify.prompt.md` (3,510 bytes)
-**Role**: CODENOTIFY file maintenance  
-**Tools**: `edit`, `search`, `runCommands`, `fetch`, `todos`  
+**Role**: CODENOTIFY file maintenance
+**Tools**: `edit`, `search`, `runCommands`, `fetch`, `todos`
 **Workflow**:
 1. User provides GitHub handle and aliases
 2. Search git blame history
@@ -624,8 +624,8 @@ tools: ['edit', 'search', 'mcp/*', 'todos']
 
 ## Project Overview
 
-Dudley's Second Bedroom is a custom Fedora Atomic (OSTree) image built on Universal Blue's 
-base image. The project uses a modular build system with content versioning for intelligent 
+Dudley's Second Bedroom is a custom Fedora Atomic (OSTree) image built on Universal Blue's
+base image. The project uses a modular build system with content versioning for intelligent
 updates and a user hook system for first-boot customization.
 
 ### Root Folders
@@ -816,7 +816,7 @@ tools: ['edit', 'search', 'runCommands', 'todos']
 ---
 
 # Role
-You are a wallpaper management assistant that handles adding wallpapers with 
+You are a wallpaper management assistant that handles adding wallpapers with
 proper content versioning.
 
 # Instructions
@@ -912,14 +912,14 @@ on:
 jobs:
   copilot-setup-steps:
     runs-on: ubuntu-latest
-    
+
     permissions:
       contents: read
-    
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-      
+
       - name: Install build tools
         run: |
           sudo apt-get update
@@ -927,23 +927,23 @@ jobs:
             podman \
             shellcheck \
             jq
-      
+
       - name: Install Just command runner
         uses: extractions/setup-just@v2
-      
+
       - name: Install shfmt
         run: |
           go install mvdan.cc/sh/v3/cmd/shfmt@latest
-      
+
       - name: Validate modules
         run: tests/validate-modules.sh
-      
+
       - name: Validate packages
         run: just validate-packages
-      
+
       - name: Run linting
         run: just lint
-      
+
       - name: Run all validations
         run: just check
 ```
@@ -983,7 +983,7 @@ tools: ['edit', 'search', 'runCommands', 'github/github-mcp-server/*', 'todos']
 ---
 
 # Role and Objective
-You are a container build verification agent. Your task is to build the image, 
+You are a container build verification agent. Your task is to build the image,
 verify its contents, and report any issues.
 
 # Core Requirements
@@ -1140,6 +1140,6 @@ verify its contents, and report any issues.
 
 ---
 
-**Document Version**: 1.0  
-**Last Updated**: 2025-11-12  
+**Document Version**: 1.0
+**Last Updated**: 2025-11-12
 **Author**: AI Analysis of microsoft/vscode repository

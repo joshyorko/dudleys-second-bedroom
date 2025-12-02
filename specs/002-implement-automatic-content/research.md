@@ -1,7 +1,7 @@
 # Research: Automatic Content-Based Versioning
 
-**Feature**: 002-implement-automatic-content  
-**Date**: 2025-10-10  
+**Feature**: 002-implement-automatic-content
+**Date**: 2025-10-10
 **Status**: Complete
 
 ## Overview
@@ -69,11 +69,11 @@ Use `sha256sum` with sorted file concatenation, truncate to 8 characters, includ
 compute_content_hash() {
     local files=("$@")
     local combined_hash
-    
+
     # Sort files for deterministic ordering
     IFS=$'\n' sorted_files=($(sort <<<"${files[*]}"))
     unset IFS
-    
+
     # Concatenate and hash
     combined_hash=$(cat "${sorted_files[@]}" | sha256sum | cut -c1-8)
     echo "$combined_hash"

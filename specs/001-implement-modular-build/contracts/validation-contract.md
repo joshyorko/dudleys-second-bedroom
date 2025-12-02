@@ -1,6 +1,6 @@
 # Validation Contract
 
-**Version**: 1.0.0  
+**Version**: 1.0.0
 **Date**: 2025-10-05
 
 ## Purpose
@@ -157,16 +157,16 @@ echo "✓ Package configuration valid"
 validate_module() {
     local script=$1
     local category=$(dirname "$script" | xargs basename)
-    
+
     # Extract header
     header=$(sed -n '1,/^$/p' "$script")
-    
+
     # Check required fields
     [[ $header =~ Purpose: ]] || echo "ERROR: Missing Purpose in $script"
     [[ $header =~ Category: ]] || echo "ERROR: Missing Category in $script"
     [[ $header =~ Dependencies: ]] || echo "ERROR: Missing Dependencies in $script"
     [[ $header =~ Parallel-Safe: ]] || echo "ERROR: Missing Parallel-Safe in $script"
-    
+
     # Category matches directory
     declared_category=$(echo "$header" | grep "Category:" | cut -d: -f2 | xargs)
     if [[ "$declared_category" != "$category" ]]; then
@@ -382,13 +382,13 @@ repos:
         language: system
         types: [shell]
         args: [-e, SC2086]
-      
+
       - id: validate-json
         name: validate-json
         entry: bash -c 'for f in "$@"; do jq empty "$f"; done'
         language: system
         types: [json]
-      
+
       - id: just-fmt
         name: just-fmt
         entry: just --unstable --fmt --check

@@ -1,0 +1,46 @@
+{
+  "default": [
+    {
+      "type": "reject"
+    }
+  ],
+  "transports": {
+    "docker": {
+      "ghcr.io/joshyorko/dudleys-second-bedroom": [
+        {
+          "type": "sigstoreSigned",
+          "keyPath": "/etc/pki/containers/dudley-cosign.pub",
+          "signedIdentity": {
+            "type": "matchRepository"
+          }
+        }
+      ],
+      "ghcr.io/ublue-os": [
+        {
+          "type": "sigstoreSigned",
+          "fulcio": {
+            "caPath": "/etc/pki/containers/fulcio_v1.crt.pem",
+            "oidcIssuer": "https://token.actions.githubusercontent.com",
+            "subjectEmail": ""
+          },
+          "rekorPublicKeyPath": "/etc/pki/containers/rekor.pub",
+          "signedIdentity": {
+            "type": "matchRepository"
+          }
+        }
+      ],
+      "": [
+        {
+          "type": "insecureAcceptAnything"
+        }
+      ]
+    },
+    "docker-daemon": {
+      "": [
+        {
+          "type": "insecureAcceptAnything"
+        }
+      ]
+    }
+  }
+}

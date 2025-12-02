@@ -89,16 +89,16 @@ EOF
 		# Get hook-specific metadata
 		local extra_info=""
 		case "$hook" in
-		"vscode-extensions")
-			local ext_count
-			ext_count=$(jq -r ".hooks[\"$hook\"].metadata.extension_count // 0" "$manifest_path")
-			extra_info=" ($ext_count extensions)"
-			;;
-		"wallpaper")
-			local wp_count
-			wp_count=$(jq -r ".hooks[\"$hook\"].metadata.wallpaper_count // 0" "$manifest_path")
-			extra_info=" ($wp_count wallpapers)"
-			;;
+			"vscode-extensions")
+				local ext_count
+				ext_count=$(jq -r ".hooks[\"$hook\"].metadata.extension_count // 0" "$manifest_path")
+				extra_info=" ($ext_count extensions)"
+				;;
+			"wallpaper")
+				local wp_count
+				wp_count=$(jq -r ".hooks[\"$hook\"].metadata.wallpaper_count // 0" "$manifest_path")
+				extra_info=" ($wp_count wallpapers)"
+				;;
 		esac
 
 		# Format changed indicator
@@ -140,30 +140,30 @@ main() {
 	# Parse arguments
 	while [[ $# -gt 0 ]]; do
 		case "$1" in
-		--json | -j)
-			output_mode="json"
-			shift
-			;;
-		--help | -h)
-			usage
-			exit 0
-			;;
-		*)
-			echo "Error: Unknown option: $1" >&2
-			echo "Use --help for usage information" >&2
-			exit 1
-			;;
+			--json | -j)
+				output_mode="json"
+				shift
+				;;
+			--help | -h)
+				usage
+				exit 0
+				;;
+			*)
+				echo "Error: Unknown option: $1" >&2
+				echo "Use --help for usage information" >&2
+				exit 1
+				;;
 		esac
 	done
 
 	# Display based on mode
 	case "$output_mode" in
-	json)
-		display_json "$MANIFEST_PATH"
-		;;
-	formatted)
-		display_formatted "$MANIFEST_PATH"
-		;;
+		json)
+			display_json "$MANIFEST_PATH"
+			;;
+		formatted)
+			display_formatted "$MANIFEST_PATH"
+			;;
 	esac
 }
 

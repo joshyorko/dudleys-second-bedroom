@@ -1,6 +1,6 @@
 # Data Model: Modular Build System
 
-**Feature**: Modular Build Architecture  
+**Feature**: Modular Build Architecture
 **Date**: 2025-10-05
 
 ## Core Entities

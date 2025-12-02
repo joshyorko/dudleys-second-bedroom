@@ -1,7 +1,7 @@
 # Developer Guide: Content-Based Versioning System
 
-**Project**: Dudley's Second Bedroom  
-**Feature**: Automatic Content-Based Versioning for User Hooks  
+**Project**: Dudley's Second Bedroom
+**Feature**: Automatic Content-Based Versioning for User Hooks
 **Audience**: Developers extending the system with new hooks
 
 ## Table of Contents
@@ -247,7 +247,7 @@ cat /etc/dudley/build-manifest.json | jq .
 if [[ -f /etc/dudley/build-manifest.json ]]; then
     # Extract specific field
     version=$(jq -r '.hooks.myHook.version' /etc/dudley/build-manifest.json)
-    
+
     # Extract metadata
     count=$(jq -r '.hooks.myHook.metadata.item_count' /etc/dudley/build-manifest.json)
 fi
@@ -688,6 +688,99 @@ The GitHub Actions workflow accepts a `base_image` input:
 
 ---
 
+## Supply Chain Security
+
+The build system includes comprehensive supply chain security features that ensure image integrity and traceability.
+
+### Overview
+
+Every production image built from the `main` branch includes:
+
+- **SBOM (SPDX JSON)**: Complete software bill of materials
+- **SLSA Provenance**: Build attestation with Git SHA and workflow context
+- **Build Metadata**: Archived specs, docs, and build_files as OCI artifact
+- **Dual Signatures**: Both key-based and keyless (OIDC) signatures
+
+### Verifying Images
+
+**Quick verification commands:**
+
+```bash
+# Key-based signature verification
+cosign verify --key cosign.pub ghcr.io/joshyorko/dudleys-second-bedroom:latest
+
+# Keyless (OIDC) verification
+cosign verify \
+  --certificate-identity-regexp "https://github.com/joshyorko/dudleys-second-bedroom/.github/workflows/build.yml@refs/heads/main" \
+  --certificate-oidc-issuer "https://token.actions.githubusercontent.com" \
+  ghcr.io/joshyorko/dudleys-second-bedroom:latest
+
+# Download and inspect SBOM
+cosign download sbom ghcr.io/joshyorko/dudleys-second-bedroom:latest | jq .
+
+# Verify provenance attestation
+cosign verify-attestation --type slsaprovenance --key cosign.pub \
+  ghcr.io/joshyorko/dudleys-second-bedroom:latest
+```
+
+### Accessing Build Metadata
+
+Each image has associated metadata (specs, docs, build_files) stored as an OCI artifact:
+
+```bash
+# Get image digest
+DIGEST=$(skopeo inspect docker://ghcr.io/joshyorko/dudleys-second-bedroom:latest | jq -r .Digest | cut -d: -f2)
+
+# Pull metadata artifact
+oras pull "ghcr.io/joshyorko/dudleys-second-bedroom:sha256-${DIGEST}.metadata"
+
+# Extract and inspect
+tar -xzf metadata.tar.gz
+ls -la specs/ docs/ build_files/
+```
+
+### Verification Script
+
+Use the project's verification script for comprehensive checks:
+
+```bash
+# Run all verification checks
+./tests/verify-supply-chain.sh verify-all ghcr.io/joshyorko/dudleys-second-bedroom:latest
+
+# Individual checks
+./tests/verify-supply-chain.sh verify-sbom <image-ref>
+./tests/verify-supply-chain.sh verify-provenance <image-ref>
+./tests/verify-supply-chain.sh verify-metadata <image-ref>
+./tests/verify-supply-chain.sh verify-signature-key <image-ref> cosign.pub
+./tests/verify-supply-chain.sh verify-signature-oidc <image-ref>
+```
+
+### Enforcing Signature Policy
+
+For system administrators who want to enforce signature verification:
+
+See [docs/SIGNATURE-VERIFICATION.md](./SIGNATURE-VERIFICATION.md) for:
+- Policy configuration examples
+- registries.d setup
+- bootc switch verification
+
+### CI/CD Integration
+
+The supply chain artifacts are generated in `.github/workflows/build.yml`:
+
+1. **SBOM Generation**: Uses `syft` to generate SPDX JSON
+2. **SBOM Attachment**: `cosign attach sbom` links SBOM to image
+3. **Provenance**: SLSA v0.2 predicate with build context
+4. **Attestation**: `cosign attest` creates signed provenance
+5. **Metadata**: `oras push` stores build files as OCI artifact
+6. **Dual Signing**: Both key-based and keyless signatures
+
+All supply chain steps are conditional on:
+- Running on the default branch (main)
+- Not being a pull request
+
+---
+
 ## Additional Resources
 
 ### Documentation
@@ -716,10 +809,10 @@ The GitHub Actions workflow accepts a `base_image` input:
 
 The content-based versioning system provides:
 
-✅ **Automatic version management** - No manual updates needed  
-✅ **Precise change detection** - Hooks run only when needed  
-✅ **Build transparency** - Clear visibility into what changed  
-✅ **Developer-friendly patterns** - Simple to extend with new hooks  
-✅ **Fail-safe behavior** - Automatic retry on errors  
+✅ **Automatic version management** - No manual updates needed
+✅ **Precise change detection** - Hooks run only when needed
+✅ **Build transparency** - Clear visibility into what changed
+✅ **Developer-friendly patterns** - Simple to extend with new hooks
+✅ **Fail-safe behavior** - Automatic retry on errors
 
 By following the patterns in this guide, you can create robust user hooks that integrate seamlessly with the versioning system.

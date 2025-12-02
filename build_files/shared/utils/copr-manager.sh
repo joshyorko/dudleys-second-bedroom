@@ -135,34 +135,34 @@ copr_disable_all() {
 # If script is executed directly (not sourced), show usage
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
 	case "${1:-}" in
-	enable)
-		if [[ $# -ne 2 ]]; then
-			echo "Usage: $0 enable OWNER/REPO"
+		enable)
+			if [[ $# -ne 2 ]]; then
+				echo "Usage: $0 enable OWNER/REPO"
+				exit 1
+			fi
+			copr_enable "$2"
+			;;
+		disable)
+			if [[ $# -ne 2 ]]; then
+				echo "Usage: $0 disable OWNER/REPO"
+				exit 1
+			fi
+			copr_disable "$2"
+			;;
+		list)
+			copr_list
+			;;
+		disable-all)
+			copr_disable_all
+			;;
+		*)
+			echo "Usage: $0 {enable|disable|list|disable-all} [OWNER/REPO]"
+			echo "Examples:"
+			echo "  $0 enable ublue-os/staging"
+			echo "  $0 disable ublue-os/staging"
+			echo "  $0 list"
+			echo "  $0 disable-all"
 			exit 1
-		fi
-		copr_enable "$2"
-		;;
-	disable)
-		if [[ $# -ne 2 ]]; then
-			echo "Usage: $0 disable OWNER/REPO"
-			exit 1
-		fi
-		copr_disable "$2"
-		;;
-	list)
-		copr_list
-		;;
-	disable-all)
-		copr_disable_all
-		;;
-	*)
-		echo "Usage: $0 {enable|disable|list|disable-all} [OWNER/REPO]"
-		echo "Examples:"
-		echo "  $0 enable ublue-os/staging"
-		echo "  $0 disable ublue-os/staging"
-		echo "  $0 list"
-		echo "  $0 disable-all"
-		exit 1
-		;;
+			;;
 	esac
 fi

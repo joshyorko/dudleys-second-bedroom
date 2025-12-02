@@ -1,7 +1,7 @@
 # Quickstart Guide: Content-Based Versioning
 
-**Feature**: 002-implement-automatic-content  
-**Audience**: Developers adding new hooks or modifying existing ones  
+**Feature**: 002-implement-automatic-content
+**Audience**: Developers adding new hooks or modifying existing ones
 **Date**: 2025-10-10
 
 ## Overview

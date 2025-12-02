@@ -15,7 +15,7 @@ Build times can be significantly reduced by caching various artifacts between wo
 
 ### 1. Container Layer Cache
 
-**Location:** `~/.local/share/containers`, `/var/lib/containers`  
+**Location:** `~/.local/share/containers`, `/var/lib/containers`
 **Cache Key:** `${{ runner.os }}-containers-${{ hashFiles('Containerfile', 'packages.json', 'build_files/**') }}`
 
 This caches:
@@ -30,7 +30,7 @@ This caches:
 
 ### 2. DNF/RPM Package Cache
 
-**Location:** `~/.cache/dnf`, `/var/cache/dnf5`, `/var/cache/yum`  
+**Location:** `~/.cache/dnf`, `/var/cache/dnf5`, `/var/cache/yum`
 **Cache Key:** `${{ runner.os }}-dnf-${{ hashFiles('packages.json') }}`
 
 This caches:
@@ -51,7 +51,7 @@ Works in conjunction with Containerfile cache mounts:
 
 ### 3. Downloaded Binaries Cache
 
-**Location:** `~/.cache/github-releases`, `/tmp/downloads`  
+**Location:** `~/.cache/github-releases`, `/tmp/downloads`
 **Cache Key:** `${{ runner.os }}-binaries-${{ hashFiles('build_files/developer/*.sh') }}`
 
 This caches:
@@ -198,7 +198,7 @@ To force a cache rebuild:
 3. Branch isolation (feature branch can't access main branch cache on first run)
 4. Cache key changed due to file modifications
 
-**Solution:** 
+**Solution:**
 - Verify cache keys in workflow logs
 - Check GitHub Settings → Actions → Caches for available caches
 - Merge main branch into feature branch to access caches

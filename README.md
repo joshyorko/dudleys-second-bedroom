@@ -61,7 +61,7 @@ See [ARCHITECTURE.md](./ARCHITECTURE.md) for complete documentation of the modul
 The build system computes content hashes (SHA256) of each user hook and its dependencies. Hooks only re-execute when their content actually changes:
 
 - **Wallpaper hook**: Tracks wallpaper images + hook script
-- **VS Code extensions**: Tracks vscode-extensions.list + hook script  
+- **VS Code extensions**: Tracks vscode-extensions.list + hook script
 - **Welcome message**: Tracks only the hook script
 
 **No manual version bumping required!**
@@ -151,13 +151,13 @@ To pin a specific version, adjust the install script to request `code-insiders-<
 The build system automatically discovers and installs **any PNG/JPG images** from the `custom_wallpapers/` directory.
 
 **Current wallpapers:**
-- `custom_wallpapers/dudleys-second-bedroom-1.png` → Primary desktop background  
+- `custom_wallpapers/dudleys-second-bedroom-1.png` → Primary desktop background
 - `custom_wallpapers/dudleys-second-bedroom-2.png` → Secondary wallpaper (available for user selection)
 
 ### Build Process
 
 1. **Discovery**: Scans `custom_wallpapers/` for `*.png`, `*.jpg`, `*.jpeg` files
-2. **Installation**: Copies all found images to `/usr/share/backgrounds/dudley/`  
+2. **Installation**: Copies all found images to `/usr/share/backgrounds/dudley/`
 3. **Schema Override**: Points desktop background to `dudleys-second-bedroom-1.png`
 4. **User Hook**: A user-setup hook enforces the branded wallpaper. It now re-applies if settings drift, if its internal version changes, or if you force it.
 5. **Login Screen**: Uses default Bluefin branding (no custom wallpaper)
@@ -365,6 +365,68 @@ The [build.sh](./build_files/build.sh) file is called from your Containerfile. I
 
 The [build.yml](./.github/workflows/build.yml) Github Actions workflow creates your custom OCI image and publishes it to the Github Container Registry (GHCR). By default, the image name will match the Github repository name. There are several environment variables at the start of the workflow which may be of interest to change.
 
+### Image signing and supply-chain artifacts
+
+The workflow supports comprehensive supply-chain security with SBOM generation, SLSA provenance attestation, and dual signing (key-based + keyless).
+
+#### Attached Artifacts
+
+Every production image includes:
+- **SBOM (SPDX JSON)**: Software Bill of Materials listing all packages
+- **SLSA Provenance**: Build attestation with Git SHA and workflow context
+- **Build Metadata**: Archived specs, docs, and build_files as OCI artifact
+
+#### Verification Methods
+
+**Key-based Verification:**
+```bash
+cosign verify --key cosign.pub ghcr.io/joshyorko/dudleys-second-bedroom:latest
+```
+
+**Keyless (OIDC) Verification:**
+```bash
+cosign verify \
+  --certificate-identity-regexp "https://github.com/joshyorko/dudleys-second-bedroom/.github/workflows/build.yml@refs/heads/main" \
+  --certificate-oidc-issuer "https://token.actions.githubusercontent.com" \
+  ghcr.io/joshyorko/dudleys-second-bedroom:latest
+```
+
+**Download SBOM:**
+```bash
+cosign download sbom ghcr.io/joshyorko/dudleys-second-bedroom:latest | jq .
+```
+
+**Verify Provenance:**
+```bash
+cosign verify-attestation \
+  --type slsaprovenance \
+  --key cosign.pub \
+  ghcr.io/joshyorko/dudleys-second-bedroom:latest
+```
+
+**Pull Build Metadata:**
+```bash
+DIGEST=$(skopeo inspect docker://ghcr.io/joshyorko/dudleys-second-bedroom:latest | jq -r .Digest | cut -d: -f2)
+oras pull "ghcr.io/joshyorko/dudleys-second-bedroom:sha256-${DIGEST}.metadata"
+tar -xzf metadata.tar.gz
+```
+
+#### Setup for Signing
+
+To enable repository-based key signing, add a repository secret named `COSIGN_PRIVATE_KEY` containing your private key (PEM) exported as the raw value.
+
+Key points:
+- The workflow only signs/attests and publishes artifacts when running on the default branch
+- Key-based signing requires the `COSIGN_PRIVATE_KEY` secret
+- Keyless signing uses GitHub OIDC (requires `id-token: write` permission)
+- Both signing methods are applied for maximum verification flexibility
+
+#### Further Reading
+
+- **Quick Start Guide**: [specs/004-oci-supply-chain/quickstart.md](./specs/004-oci-supply-chain/quickstart.md)
+- **Signature Verification**: [docs/SIGNATURE-VERIFICATION.md](./docs/SIGNATURE-VERIFICATION.md)
+- **Policy Examples**: [docs/signature-policy/](./docs/signature-policy/)
+
 # Building Disk Images
 
 This template provides an out of the box workflow for creating disk images (ISO, qcow, raw) for your custom OCI image which can be used to directly install onto your machines.
@@ -391,9 +453,9 @@ Once the workflow is done, you'll find the disk images either in your S3 bucket 
 
 This template comes with the necessary tooling to index your image on [artifacthub.io](https://artifacthub.io). Use the `artifacthub-repo.yml` file at the root to verify yourself as the publisher. This is important to you for a few reasons:
 
-- The value of artifacthub is it's one place for people to index their custom images, and since we depend on each other to learn, it helps grow the community. 
+- The value of artifacthub is it's one place for people to index their custom images, and since we depend on each other to learn, it helps grow the community.
 - You get to see your pet project listed with the other cool projects in Cloud Native.
-- Since the site puts your README front and center, it's a good way to learn how to write a good README, learn some marketing, finding your audience, etc. 
+- Since the site puts your README front and center, it's a good way to learn how to write a good README, learn some marketing, finding your audience, etc.
 
 [Discussion Thread](https://universal-blue.discourse.group/t/listing-your-custom-image-on-artifacthub/6446)
 

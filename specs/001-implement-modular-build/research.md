@@ -1,6 +1,6 @@
 # Phase 0: Research & Technical Decisions
 
-**Feature**: Modular Build Architecture with Multi-Stage Containerfile  
+**Feature**: Modular Build Architecture with Multi-Stage Containerfile
 **Date**: 2025-10-05
 
 ## Research Areas

@@ -1,8 +1,8 @@
 # Implementation Summary: Automatic Content-Based Versioning
 
-**Feature**: 002-implement-automatic-content  
-**Date**: 2025-10-10  
-**Status**: MVP Complete (User Story 1)  
+**Feature**: 002-implement-automatic-content
+**Date**: 2025-10-10
+**Status**: MVP Complete (User Story 1)
 **Branch**: `002-implement-automatic-content`
 
 ## Summary

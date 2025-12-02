@@ -148,7 +148,7 @@ description: "Task list for automatic content-based versioning implementation"
   - Scenario 1: First boot - all hooks execute (verify by checking version files created)
   - Scenario 2: Rebuild with no changes - no hooks re-execute (verify logs show "skip")
   - Scenario 3: Modify vscode-extensions.list - only that hook re-executes
-  - Scenario 4: Replace wallpaper image - only wallpaper hook re-executes  
+  - Scenario 4: Replace wallpaper image - only wallpaper hook re-executes
   - Scenario 5: Modify hook script - hook re-executes (hash includes script)
 
 **Checkpoint**: User Story 1 is fully functional - automatic versioning works for all hooks. Test independently before proceeding.
@@ -334,12 +334,12 @@ description: "Task list for automatic content-based versioning implementation"
 - **User Story 1 (P1)**: Foundation must be complete (Phase 2)
   - No dependencies on other stories - this is the MVP
   - Delivers: Automatic versioning for all three hooks
-  
+
 - **User Story 2 (P2)**: User Story 1 must be complete
   - Requires: Manifest generation from US1 (build manifest structure)
   - Depends on: `generate-manifest.sh` existing and working
   - Delivers: Welcome message enhancement reading manifest
-  
+
 - **User Story 3 (P3)**: User Stories 1 and 2 must be complete
   - Requires: Working examples from US1 and US2 to document
   - Depends on: All utilities and patterns established

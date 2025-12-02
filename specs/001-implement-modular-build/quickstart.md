@@ -1,7 +1,7 @@
 # Quickstart: Modular Build System
 
-**Feature**: Modular Build Architecture  
-**Target Audience**: Developers and maintainers  
+**Feature**: Modular Build Architecture
+**Target Audience**: Developers and maintainers
 **Time to Complete**: 5-10 minutes
 
 ## Prerequisites
@@ -330,23 +330,23 @@ Build can proceed with: just build --force
 ## Troubleshooting
 
 ### Build Fails with "Module Not Found"
-**Cause**: Dependency declared but module doesn't exist  
+**Cause**: Dependency declared but module doesn't exist
 **Fix**: Check module name in Dependencies: header matches actual file
 
 ### Build Fails with "Validation Error"
-**Cause**: Configuration file has syntax or semantic error  
+**Cause**: Configuration file has syntax or semantic error
 **Fix**: Run `just check` to see specific error, fix the issue
 
 ### Build Takes Forever
-**Cause**: Cache not being used or many packages changed  
+**Cause**: Cache not being used or many packages changed
 **Fix**: Check if base image updated, consider `just clean` and rebuild
 
 ### "Permission Denied" Errors
-**Cause**: Script not executable  
+**Cause**: Script not executable
 **Fix**: `chmod +x build_files/category/module-name.sh`
 
 ### Package Installation Fails
-**Cause**: Package name wrong or not in Fedora repos  
+**Cause**: Package name wrong or not in Fedora repos
 **Fix**: Verify package name with `dnf search package-name`
 
 ## Next Steps

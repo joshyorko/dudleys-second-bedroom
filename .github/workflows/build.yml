@@ -239,15 +239,133 @@ jobs:
           username: ${{ env.REGISTRY_USER }}
           password: ${{ env.REGISTRY_PASSWORD }}
 
+      # ============================================
+      # SUPPLY CHAIN SECURITY
+      # ============================================
+      # This section implements OCI supply chain security features:
+      # - SBOM (Software Bill of Materials) generation and attachment
+      # - SLSA provenance attestation
+      # - Build metadata artifact (specs, docs, build_files)
+      # - Dual signing: key-based + keyless (OIDC)
+      #
+      # All steps are conditional on:
+      # 1. Not being a pull request
+      # 2. Running on the default branch (main)
+      #
+      # Required secrets:
+      # - COSIGN_PRIVATE_KEY: PEM-encoded private key for key-based signing
+      #
+      # For more information, see:
+      # - docs/SIGNATURE-VERIFICATION.md
+      # - specs/004-oci-supply-chain/quickstart.md
+
       # This section is optional and only needs to be enabled if you plan on distributing
       # your project for others to consume. You will need to create a public and private key
       # using Cosign and save the private key as a repository secret in Github for this workflow
       # to consume. For more details, review the image signing section of the README.
+
+      # ----------------------------------------
+      # Step 1: Install supply chain tools
+      # ----------------------------------------
+      - name: Install SBOM & ORAS tools
+        # syft is used for SBOM generation and oras is used to push/pull OCI metadata artifacts
+        run: |
+          set -euo pipefail
+          echo "Installing syft and oras"
+          curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin || true
+          # install oras
+          curl -sSfL https://raw.githubusercontent.com/oras-project/oras/master/cmd/oras/install.sh | sh -s -- -b /usr/local/bin || true
+        if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+
+      # ----------------------------------------
+      # Step 2: Generate SBOM (Software Bill of Materials)
+      # ----------------------------------------
+      # Uses syft to create an SPDX JSON SBOM listing all packages in the image.
+      # This enables security scanning and license compliance verification.
+      - name: Generate SBOM (SPDX JSON)
+        if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+        id: gen-sbom
+        run: |
+          set -euo pipefail
+          IMAGE_FULL="${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
+          echo "Generating SPDX JSON SBOM for $IMAGE_FULL"
+          # syft supports generating SPDX JSON; write to workspace and upload as artifact for debugging
+          syft "$IMAGE_FULL" -o spdx-json > ./sbom-${{ env.DEFAULT_TAG }}.spdx.json
+
+      # ----------------------------------------
+      # Step 3: Attach SBOM to image
+      # ----------------------------------------
+      # Links the SBOM to the image for retrieval via `cosign download sbom`
+      - name: Attach SBOM to pushed image with cosign
+        if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+        run: |
+          set -euo pipefail
+          IMAGE_FULL="${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
+          SBOM_FILE=./sbom-${{ env.DEFAULT_TAG }}.spdx.json
+          if [[ ! -f "$SBOM_FILE" ]]; then
+            echo "SBOM file not found: $SBOM_FILE" >&2
+            exit 1
+          fi
+          # attach SBOM using cosign
+          cosign attach sbom -y --key env://COSIGN_PRIVATE_KEY "$IMAGE_FULL" --sbom "$SBOM_FILE"
+        env:
+          COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
+
+      # ----------------------------------------
+      # Step 4: Create SLSA provenance predicate
+      # ----------------------------------------
+      # Creates the SLSA v0.2 provenance predicate containing build context:
+      # - Builder ID (GitHub Actions)
+      # - Build type and metadata
+      # - Git SHA and workflow run ID
+      - name: Create SLSA provenance predicate
+        if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+        id: create-predicate
+        run: |
+          set -euo pipefail
+          mkdir -p .slsa
+          cat > .slsa/predicate.json <<'JSON'
+          {
+            "predicateType": "https://slsa.dev/provenance/v0.2",
+            "predicate": {
+              "builder": {"id": "gh-action/dudley-build"},
+              "buildType": "https://github.com/ublue-os/dudley/build",
+              "metadata": {
+                "buildStartedOn": "${{ steps.date.outputs.date }}",
+                "completeness": {"parameters": true, "environment": true, "materials": true}
+              },
+              "invocation": {"workflowRunId": "${{ github.run_id }}", "gitSha": "${{ github.sha }}"}
+            }
+          }
+          JSON
+
+      # ----------------------------------------
+      # Step 5: Attest image with SLSA provenance
+      # ----------------------------------------
+      # Signs and attaches the provenance attestation to the image.
+      # Verify with: cosign verify-attestation --type slsaprovenance <image>
+      - name: Attest image with SLSA provenance (cosign attest)
+        if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+        run: |
+          set -euo pipefail
+          IMAGE_FULL="${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
+          cosign attest -y --key env://COSIGN_PRIVATE_KEY --type slsaprovenance --predicate .slsa/predicate.json "$IMAGE_FULL"
+        env:
+          COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
+
+      # ----------------------------------------
+      # Step 6: Install Cosign for signing
+      # ----------------------------------------
       - name: Install Cosign
         uses: sigstore/cosign-installer@faadad0cce49287aee09b3a48701e75088a2c6ad # v4.0.0
         if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
 
-      - name: Sign container image
+      # ----------------------------------------
+      # Step 7: Key-based signing
+      # ----------------------------------------
+      # Signs the image using the project's private key.
+      # Verify with: cosign verify --key cosign.pub <image>
+      - name: Sign container image (key-based)
         if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
         run: |
           IMAGE_FULL="${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}"
@@ -257,4 +375,70 @@ jobs:
         env:
           TAGS: ${{ steps.push.outputs.digest }}
           COSIGN_EXPERIMENTAL: false
-          COSIGN_PRIVATE_KEY: ${{ secrets.SIGNING_SECRET }}
+          COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
+
+      # ============================================
+      # User Story 2: Build Metadata Artifact (ORAS)
+      # ============================================
+      # Step 8-10: Package and push build metadata
+      # Package specs/, docs/, and build_files/ as an OCI artifact
+      # so developers/auditors can trace exactly what went into a given image.
+      # Retrieve with: oras pull <registry>/<image>:sha256-<digest>.metadata
+
+      - name: Create metadata archive
+        if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+        id: metadata-archive
+        run: |
+          set -euo pipefail
+          echo "Creating metadata.tar.gz from specs/, docs/, and build_files/"
+          tar -czvf metadata.tar.gz specs/ docs/ build_files/
+          ls -lh metadata.tar.gz
+
+      - name: Extract image digest and construct metadata tag
+        if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+        id: metadata-tag
+        run: |
+          set -euo pipefail
+          IMAGE_FULL="${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
+          # Get the digest of the pushed image using skopeo
+          DIGEST=$(skopeo inspect --format '{{.Digest}}' "docker://$IMAGE_FULL" | cut -d: -f2)
+          if [[ -z "$DIGEST" ]]; then
+            echo "ERROR: Failed to extract image digest" >&2
+            exit 1
+          fi
+          METADATA_TAG="sha256-${DIGEST}.metadata"
+          echo "Image digest: sha256:$DIGEST"
+          echo "Metadata tag: $METADATA_TAG"
+          echo "digest=$DIGEST" >> "$GITHUB_OUTPUT"
+          echo "metadata_tag=$METADATA_TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Push metadata artifact with ORAS
+        if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+        run: |
+          set -euo pipefail
+          METADATA_REF="${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.metadata-tag.outputs.metadata_tag }}"
+          echo "Pushing metadata artifact to $METADATA_REF"
+          oras push "$METADATA_REF" \
+            --artifact-type "application/vnd.dudley.metadata.v1" \
+            metadata.tar.gz:application/gzip
+          echo "Metadata artifact pushed successfully"
+
+      # ============================================
+      # User Story 4: Keyless (OIDC) Signing
+      # ============================================
+      # Step 11: Sign image using GitHub Actions OIDC identity
+      # Sign the image using GitHub Actions OIDC identity for keyless verification.
+      # This provides an additional verification path without requiring public key distribution.
+      # Verify with: cosign verify --certificate-oidc-issuer <issuer> --certificate-identity-regexp <pattern> <image>
+
+      - name: Sign container image (keyless/OIDC)
+        if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+        run: |
+          set -euo pipefail
+          IMAGE_FULL="${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}"
+          echo "Performing keyless (OIDC) signing for all tags"
+          for tag in ${{ steps.metadata.outputs.tags }}; do
+            cosign sign -y "$IMAGE_FULL:$tag"
+          done
+        env:
+          COSIGN_EXPERIMENTAL: "1"
