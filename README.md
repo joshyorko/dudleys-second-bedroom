@@ -365,6 +365,68 @@ The [build.sh](./build_files/build.sh) file is called from your Containerfile. I
 
 The [build.yml](./.github/workflows/build.yml) Github Actions workflow creates your custom OCI image and publishes it to the Github Container Registry (GHCR). By default, the image name will match the Github repository name. There are several environment variables at the start of the workflow which may be of interest to change.
 
+### Image signing and supply-chain artifacts
+
+The workflow supports comprehensive supply-chain security with SBOM generation, SLSA provenance attestation, and dual signing (key-based + keyless).
+
+#### Attached Artifacts
+
+Every production image includes:
+- **SBOM (SPDX JSON)**: Software Bill of Materials listing all packages
+- **SLSA Provenance**: Build attestation with Git SHA and workflow context
+- **Build Metadata**: Archived specs, docs, and build_files as OCI artifact
+
+#### Verification Methods
+
+**Key-based Verification:**
+```bash
+cosign verify --key cosign.pub ghcr.io/joshyorko/dudleys-second-bedroom:latest
+```
+
+**Keyless (OIDC) Verification:**
+```bash
+cosign verify \
+  --certificate-identity-regexp "https://github.com/joshyorko/dudleys-second-bedroom/.github/workflows/build.yml@refs/heads/main" \
+  --certificate-oidc-issuer "https://token.actions.githubusercontent.com" \
+  ghcr.io/joshyorko/dudleys-second-bedroom:latest
+```
+
+**Download SBOM:**
+```bash
+cosign download sbom ghcr.io/joshyorko/dudleys-second-bedroom:latest | jq .
+```
+
+**Verify Provenance:**
+```bash
+cosign verify-attestation \
+  --type slsaprovenance \
+  --key cosign.pub \
+  ghcr.io/joshyorko/dudleys-second-bedroom:latest
+```
+
+**Pull Build Metadata:**
+```bash
+DIGEST=$(skopeo inspect docker://ghcr.io/joshyorko/dudleys-second-bedroom:latest | jq -r .Digest | cut -d: -f2)
+oras pull "ghcr.io/joshyorko/dudleys-second-bedroom:sha256-${DIGEST}.metadata"
+tar -xzf metadata.tar.gz
+```
+
+#### Setup for Signing
+
+To enable repository-based key signing, add a repository secret named `COSIGN_PRIVATE_KEY` containing your private key (PEM) exported as the raw value.
+
+Key points:
+- The workflow only signs/attests and publishes artifacts when running on the default branch
+- Key-based signing requires the `COSIGN_PRIVATE_KEY` secret
+- Keyless signing uses GitHub OIDC (requires `id-token: write` permission)
+- Both signing methods are applied for maximum verification flexibility
+
+#### Further Reading
+
+- **Quick Start Guide**: [specs/004-oci-supply-chain/quickstart.md](./specs/004-oci-supply-chain/quickstart.md)
+- **Signature Verification**: [docs/SIGNATURE-VERIFICATION.md](./docs/SIGNATURE-VERIFICATION.md)
+- **Policy Examples**: [docs/signature-policy/](./docs/signature-policy/)
+
 # Building Disk Images
 
 This template provides an out of the box workflow for creating disk images (ISO, qcow, raw) for your custom OCI image which can be used to directly install onto your machines.

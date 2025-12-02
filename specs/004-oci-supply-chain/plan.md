@@ -10,7 +10,7 @@ This feature upgrades the Dudley build pipeline to a full OCI supply-chain compl
 ## Technical Context
 
 **Language/Version**: Bash, YAML (GitHub Actions)
-**Primary Dependencies**: `cosign` (v2+), `syft`, `oras`, `jq`
+**Primary Dependencies**: `cosign` (v2+), `syft`, `oras`, `jq`, `skopeo` (for digest inspection)
 **Storage**: OCI Registry (ghcr.io)
 **Testing**: `cosign verify`, `oras discover`, `bats` (for validation scripts)
 **Target Platform**: GitHub Actions (CI), Fedora Atomic (Runtime)
@@ -49,14 +49,13 @@ specs/004-oci-supply-chain/
 .github/workflows/
 └── build.yml            # Modified to include supply chain steps
 
-build_files/shared/
-└── signing.sh           # Existing script (may need updates for policy)
-
 tests/
 └── verify-supply-chain.sh # New validation script
 ```
 
 **Structure Decision**: The logic resides primarily in the CI workflow (`build.yml`) as these are post-build supply chain operations. A new test script will verify the artifacts.
+
+**Note**: `build_files/shared/signing.sh` is out of scope for this feature. All signing operations occur in CI (`build.yml`) using the existing `COSIGN_PRIVATE_KEY` secret and keyless OIDC. The signing.sh module handles image-level signing configuration, not supply chain attestations.
 
 ## Complexity Tracking
 

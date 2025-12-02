@@ -81,7 +81,7 @@ As a user who prefers OIDC-based trust, I want to verify the image using GitHub 
 - **FR-005**: The build pipeline MUST package **exclusively** the `specs/`, `docs/`, and `build_files/` directories into a compressed archive (tarball).
 - **FR-006**: The build pipeline MUST attach the metadata archive as an OCI artifact to the image using `oras`, using the tag naming convention `sha256-<digest>.metadata` to link it to the image digest.
 - **FR-007**: The project MUST provide documentation and an example `registries.d` policy file for enforcing signature verification. This policy MUST NOT be embedded in the image itself.
-- **FR-008**: The build pipeline MUST support optional keyless signing using GitHub OIDC. The documented verification procedure MUST enforce the `refs/heads/main` branch constraint.
+- **FR-008**: The build pipeline MUST support keyless (OIDC) signing for main branch builds as part of dual signing. The documented verification procedure MUST enforce the `refs/heads/main` branch constraint.
 - **FR-009**: The build pipeline MUST fail if any of the artifact generation or attachment steps (SBOM, provenance, ORAS) fail.
 - **FR-010**: The build pipeline MUST perform "Dual Signing" (both key-pair and OIDC) for every build on the `main` branch.
 - **FR-011**: The CI pipeline MUST retrieve the signing key from the `COSIGN_PRIVATE_KEY` repository secret.

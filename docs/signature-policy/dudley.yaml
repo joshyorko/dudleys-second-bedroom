@@ -1,0 +1,32 @@
+# Dudley registries.d configuration for signature verification
+#
+# This file configures signature verification for Dudley container images.
+# Place this file at /etc/containers/registries.d/dudley.yaml
+#
+# For more information, see:
+# - https://github.com/containers/image/blob/main/docs/containers-registries.d.5.md
+# - https://docs.sigstore.dev/policy-controller/overview/
+
+docker:
+  ghcr.io/joshyorko/dudleys-second-bedroom:
+    # Enable sigstore signature verification
+    use-sigstore-attachments: true
+
+    # Signature verification configuration
+    sigstore:
+      # Key-based verification (preferred for air-gapped environments)
+      # The public key should be placed at this path
+      public-key-file: /etc/pki/containers/dudley-cosign.pub
+
+      # Alternative: Keyless verification using GitHub OIDC
+      # Uncomment the following lines to use keyless verification instead
+      # fulcio:
+      #   ca-file: /etc/pki/containers/fulcio_v1.crt.pem
+      # rekor:
+      #   public-key-file: /etc/pki/containers/rekor.pub
+      # certificate-identity-regexp: "https://github.com/joshyorko/dudleys-second-bedroom/.github/workflows/build.yml@refs/heads/main"
+      # certificate-oidc-issuer: "https://token.actions.githubusercontent.com"
+
+  # Universal Blue base images (optional - for verifying upstream)
+  ghcr.io/ublue-os:
+    use-sigstore-attachments: true
