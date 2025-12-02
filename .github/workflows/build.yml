@@ -147,6 +147,20 @@ jobs:
           sep-tags: " "
           sep-annotations: " "
 
+      # Pre-pull base image with retry to handle transient network failures
+      - name: Pre-pull base image
+        run: |
+          BASE_IMAGE="${{ inputs.base_image || 'ghcr.io/ublue-os/bluefin-dx:stable' }}"
+          echo "Pre-pulling base image: $BASE_IMAGE"
+          for i in 1 2 3; do
+            if podman pull "$BASE_IMAGE"; then
+              echo "Successfully pulled base image on attempt $i"
+              break
+            fi
+            echo "Pull attempt $i failed, retrying in 30s..."
+            sleep 30
+          done
+
       - name: Build Image
         id: build_image
         uses: redhat-actions/buildah-build@7a95fa7ee0f02d552a32753e7414641a04307056 # v2
