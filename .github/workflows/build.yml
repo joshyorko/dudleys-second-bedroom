@@ -299,21 +299,27 @@ jobs:
       # ----------------------------------------
       - name: Install SBOM & ORAS tools
         # syft is used for SBOM generation and oras is used to push/pull OCI metadata artifacts
+        if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
         run: |
           set -euo pipefail
           echo "Installing syft and oras"
-          curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin || true
-          # install oras
-          curl -sSfL https://raw.githubusercontent.com/oras-project/oras/master/cmd/oras/install.sh | sh -s -- -b /usr/local/bin || true
-        if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+          curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin
+          # Install oras using the official installation method
+          ORAS_VERSION="1.2.0"
+          curl -LO "https://github.com/oras-project/oras/releases/download/v${ORAS_VERSION}/oras_${ORAS_VERSION}_linux_amd64.tar.gz"
+          tar -xzf "oras_${ORAS_VERSION}_linux_amd64.tar.gz" -C /usr/local/bin oras
+          rm -f "oras_${ORAS_VERSION}_linux_amd64.tar.gz"
+          echo "Installed versions:"
+          syft version
+          oras version
 
       # ----------------------------------------
       # Step 2: Generate SBOM (Software Bill of Materials)
       # ----------------------------------------
       # Uses syft to create an SPDX JSON SBOM listing all packages in the image.
       # This enables security scanning and license compliance verification.
-      # NOTE: Generate from LOCAL image (still in podman storage) to avoid re-downloading ~13GB
-      # and set TMPDIR to workspace to avoid /tmp disk quota issues on large images.
+      # NOTE: Generate from the PUSHED registry image since local podman storage
+      # isn't reliably accessible to syft in GitHub Actions runners.
       - name: Generate SBOM (SPDX JSON)
         if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
         id: gen-sbom
@@ -330,20 +336,13 @@ jobs:
           echo "=== Disk space before SBOM generation ==="
           df -h / /tmp "$TMPDIR" 2>/dev/null || df -h
 
-          # Use local image from podman storage instead of remote registry to avoid re-downloading
-          LOCAL_IMAGE="localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
-          echo "Generating SPDX JSON SBOM for local image: $LOCAL_IMAGE"
+          # Use the pushed registry image - podman storage isn't accessible to syft in GHA
+          REGISTRY_IMAGE="${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
+          echo "Generating SPDX JSON SBOM for registry image: $REGISTRY_IMAGE"
           echo "Using TMPDIR=$TMPDIR to avoid /tmp disk quota issues"
 
-          # Verify image exists in podman storage
-          if ! podman image exists "$LOCAL_IMAGE"; then
-            echo "ERROR: Image $LOCAL_IMAGE not found in podman storage" >&2
-            podman images
-            exit 1
-          fi
-
-          # syft supports generating SPDX JSON from podman storage directly
-          syft "podman:$LOCAL_IMAGE" -o spdx-json > ./sbom-${{ env.DEFAULT_TAG }}.spdx.json
+          # syft can pull directly from the registry
+          syft "registry:$REGISTRY_IMAGE" -o spdx-json > ./sbom-${{ env.DEFAULT_TAG }}.spdx.json
 
           echo "=== SBOM generation complete ==="
           echo "SBOM file: ./sbom-${{ env.DEFAULT_TAG }}.spdx.json"
