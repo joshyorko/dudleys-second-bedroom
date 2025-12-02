@@ -60,6 +60,13 @@ main() {
 	}
 	chmod +x /usr/share/devpod/DevPod.AppImage
 
+	# Install Icon
+	log "INFO" "Downloading DevPod icon..."
+	mkdir -p /usr/share/icons/hicolor/512x512/apps
+	curl -fsSL --retry 3 --retry-delay 5 "https://raw.githubusercontent.com/loft-sh/devpod/main/desktop/devpod.png" -o /usr/share/icons/hicolor/512x512/apps/devpod.png || {
+		log "WARN" "Failed to download DevPod icon, continuing..."
+	}
+
 	# Install Desktop File
 	log "INFO" "Downloading DevPod .desktop file..."
 	curl -fsSL --retry 3 --retry-delay 5 "$desktop_url" -o /usr/share/applications/devpod.desktop || {
@@ -67,8 +74,11 @@ main() {
 		exit 1
 	}
 
-	# Fix Desktop File Exec path to point to our AppImage location
-	sed -i "s|Exec=.*|Exec=/usr/share/devpod/DevPod.AppImage %U|g" /usr/share/applications/devpod.desktop
+	# Fix Desktop File
+	# 1. Point Exec to AppImage with --no-sandbox (fixes blank window in some envs)
+	# 2. Set Icon to 'devpod' to match the installed icon file
+	sed -i "s|Exec=.*|Exec=/usr/share/devpod/DevPod.AppImage --no-sandbox %U|g" /usr/share/applications/devpod.desktop
+	sed -i "s|Icon=.*|Icon=devpod|g" /usr/share/applications/devpod.desktop
 
 	# Verify CLI installation
 	log "INFO" "Verifying DevPod CLI installation..."
