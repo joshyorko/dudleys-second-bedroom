@@ -302,15 +302,46 @@ jobs:
       # ----------------------------------------
       # Uses syft to create an SPDX JSON SBOM listing all packages in the image.
       # This enables security scanning and license compliance verification.
+      # NOTE: Generate from LOCAL image (still in podman storage) to avoid re-downloading ~13GB
+      # and set TMPDIR to workspace to avoid /tmp disk quota issues on large images.
       - name: Generate SBOM (SPDX JSON)
         if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
         id: gen-sbom
+        timeout-minutes: 30
+        env:
+          # Use workspace for temp files - /tmp can run out of space on large images
+          TMPDIR: ${{ github.workspace }}/.syft-tmp
         run: |
           set -euo pipefail
-          IMAGE_FULL="${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
-          echo "Generating SPDX JSON SBOM for $IMAGE_FULL"
-          # syft supports generating SPDX JSON; write to workspace and upload as artifact for debugging
-          syft "$IMAGE_FULL" -o spdx-json > ./sbom-${{ env.DEFAULT_TAG }}.spdx.json
+
+          # Create temp directory with more space than /tmp
+          mkdir -p "$TMPDIR"
+
+          echo "=== Disk space before SBOM generation ==="
+          df -h / /tmp "$TMPDIR" 2>/dev/null || df -h
+
+          # Use local image from podman storage instead of remote registry to avoid re-downloading
+          LOCAL_IMAGE="localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
+          echo "Generating SPDX JSON SBOM for local image: $LOCAL_IMAGE"
+          echo "Using TMPDIR=$TMPDIR to avoid /tmp disk quota issues"
+
+          # Verify image exists in podman storage
+          if ! podman image exists "$LOCAL_IMAGE"; then
+            echo "ERROR: Image $LOCAL_IMAGE not found in podman storage" >&2
+            podman images
+            exit 1
+          fi
+
+          # syft supports generating SPDX JSON from podman storage directly
+          syft "podman:$LOCAL_IMAGE" -o spdx-json > ./sbom-${{ env.DEFAULT_TAG }}.spdx.json
+
+          echo "=== SBOM generation complete ==="
+          echo "SBOM file: ./sbom-${{ env.DEFAULT_TAG }}.spdx.json"
+          echo "SBOM size: $(du -h ./sbom-${{ env.DEFAULT_TAG }}.spdx.json | cut -f1)"
+          echo "SBOM lines: $(wc -l < ./sbom-${{ env.DEFAULT_TAG }}.spdx.json)"
+
+          # Cleanup temp directory
+          rm -rf "$TMPDIR"
 
       # ----------------------------------------
       # Step 3: Attach SBOM to image
