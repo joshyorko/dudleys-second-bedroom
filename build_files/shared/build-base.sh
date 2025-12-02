@@ -10,6 +10,8 @@
 
 set -eoux pipefail
 
+echo "::group:: ===$(basename "$0")==="
+
 # Module metadata
 readonly MODULE_NAME="build-base"
 readonly CATEGORY="shared"
@@ -231,9 +233,11 @@ main() {
 
 	if [[ $failed_modules -gt 0 ]]; then
 		log "ERROR" "Build completed with failures"
+		echo "::endgroup::"
 		exit 1
 	else
 		log "INFO" "DONE - Build completed successfully"
+		echo "::endgroup::"
 		exit 0
 	fi
 }

@@ -10,6 +10,8 @@
 
 set -eoux pipefail
 
+echo "::group:: ===$(basename "$0")==="
+
 # Module metadata
 readonly MODULE_NAME="package-install"
 readonly CATEGORY="shared"
@@ -197,3 +199,5 @@ main() {
 
 # Execute
 main "$@"
+
+echo "::endgroup::"
