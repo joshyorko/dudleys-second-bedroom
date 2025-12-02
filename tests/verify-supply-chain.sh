@@ -115,26 +115,34 @@ verify_metadata() {
 	# Create temporary directory for pulling metadata
 	local tmp_dir
 	tmp_dir=$(mktemp -d)
-	trap 'rm -rf "$tmp_dir"' RETURN
+
+	# Use explicit cleanup function to avoid trap scope issues
+	cleanup_metadata_tmp() {
+		[[ -d "${tmp_dir:-}" ]] && rm -rf "$tmp_dir"
+	}
 
 	if ! oras pull "$metadata_ref" --output "$tmp_dir" 2>/dev/null; then
 		echo "ERROR: failed to pull metadata artifact from $metadata_ref" >&2
+		cleanup_metadata_tmp
 		return 1
 	fi
 
 	# Verify metadata.tar.gz exists and contains expected directories
 	if [[ ! -f "$tmp_dir/metadata.tar.gz" ]]; then
 		echo "ERROR: metadata.tar.gz not found in pulled artifact" >&2
+		cleanup_metadata_tmp
 		return 1
 	fi
 
 	# Verify tarball contains expected directories
 	if ! tar -tzf "$tmp_dir/metadata.tar.gz" | grep -qE '^(specs|docs|build_files)/'; then
 		echo "ERROR: metadata.tar.gz does not contain expected directories (specs/, docs/, build_files/)" >&2
+		cleanup_metadata_tmp
 		return 1
 	fi
 
 	echo "OK: metadata artifact verified at $metadata_ref"
+	cleanup_metadata_tmp
 	return 0
 }
 
