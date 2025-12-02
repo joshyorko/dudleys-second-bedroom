@@ -44,22 +44,22 @@ The primary goal is maintainability and build performance while maintaining full
 
 ## Technical Context
 **Language/Version**: Bash 5.x (shell scripts), Containerfile (OCI/Docker format)
-**Primary Dependencies**: 
+**Primary Dependencies**:
 - Container runtime: podman 4.x or docker 24.x
 - Build tool: just 1.x (command runner)
 - Base image: ghcr.io/ublue-os/bluefin-dx:stable (Fedora 41)
 - Package manager: dnf5/dnf
 - Validation tools: shellcheck, jq, pre-commit hooks
-**Storage**: OSTree-based immutable filesystem, container layer storage  
-**Testing**: Integration tests via container builds, shellcheck for syntax validation, just recipes for test automation  
-**Target Platform**: Fedora 41 Atomic Desktop (Universal Blue/Bluefin-DX derivative), x86_64 architecture  
-**Project Type**: Container image build system (infrastructure-as-code)  
-**Performance Goals**: 
+**Storage**: OSTree-based immutable filesystem, container layer storage
+**Testing**: Integration tests via container builds, shellcheck for syntax validation, just recipes for test automation
+**Target Platform**: Fedora 41 Atomic Desktop (Universal Blue/Bluefin-DX derivative), x86_64 architecture
+**Project Type**: Container image build system (infrastructure-as-code)
+**Performance Goals**:
 - Incremental builds: < 10 minutes (vs 30+ current)
 - Full builds: < 60 minutes in CI/CD
 - Cache hit rate: ≥ 80% for single-file changes
 - Image size reduction: ≥ 10% through cleanup optimization
-**Constraints**: 
+**Constraints**:
 - Must maintain Universal Blue base image compatibility
 - Must preserve OSTree/rpm-ostree bootable image format
 - Must support both local (podman/docker) and CI/CD (GitHub Actions) builds
@@ -67,7 +67,7 @@ The primary goal is maintainability and build performance while maintaining full
 - Build artifacts auto-cleaned on failure (per FR-022)
 - Critical validation errors block builds; non-critical warnings allow override (per FR-016)
 - Base image fallback on pull failure (per FR-011)
-**Scale/Scope**: 
+**Scale/Scope**:
 - ~20-30 build scripts across 4 categories
 - ~50-100 packages managed via JSON configuration
 - 3-5 build stages in multi-stage Containerfile
@@ -274,30 +274,30 @@ The /tasks command will generate a comprehensive, ordered task list by:
      - Create directory structure
      - Create packages.json with schema
      - Set up Justfile with validation recipes
-   
+
    - **Phase 2: Core Utilities** (Shared functionality)
      - validation.sh utility [P]
      - cleanup.sh script [P]
      - package-install.sh script
      - github-release-install.sh utility [P]
-   
+
    - **Phase 3: Multi-Stage Containerfile** (Build orchestration)
      - Create context stage
      - Create base stage with mount caching
      - Integrate build-base.sh orchestrator
      - Add cleanup stage
-   
+
    - **Phase 4: Module Implementation** (Category-specific)
      - Desktop modules [P]
      - Developer modules [P]
      - User-hooks modules [P]
-   
+
    - **Phase 5: Validation & Testing** (Quality assurance)
      - Create validation tests
      - Create integration tests
      - Update pre-commit hooks
      - CI/CD pipeline updates
-   
+
    - **Phase 6: Documentation** (Polish)
      - Update README.md
      - Add inline documentation
@@ -332,8 +332,8 @@ The /tasks command will generate a comprehensive, ordered task list by:
 ## Phase 3+: Future Implementation
 *These phases are beyond the scope of the /plan command*
 
-**Phase 3**: Task execution (/tasks command creates tasks.md)  
-**Phase 4**: Implementation (execute tasks.md following constitutional principles)  
+**Phase 3**: Task execution (/tasks command creates tasks.md)
+**Phase 4**: Implementation (execute tasks.md following constitutional principles)
 **Phase 5**: Validation (run tests, execute quickstart.md, performance validation)
 
 ## Complexity Tracking

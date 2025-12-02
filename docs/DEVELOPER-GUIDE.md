@@ -1,7 +1,7 @@
 # Developer Guide: Content-Based Versioning System
 
-**Project**: Dudley's Second Bedroom  
-**Feature**: Automatic Content-Based Versioning for User Hooks  
+**Project**: Dudley's Second Bedroom
+**Feature**: Automatic Content-Based Versioning for User Hooks
 **Audience**: Developers extending the system with new hooks
 
 ## Table of Contents
@@ -247,7 +247,7 @@ cat /etc/dudley/build-manifest.json | jq .
 if [[ -f /etc/dudley/build-manifest.json ]]; then
     # Extract specific field
     version=$(jq -r '.hooks.myHook.version' /etc/dudley/build-manifest.json)
-    
+
     # Extract metadata
     count=$(jq -r '.hooks.myHook.metadata.item_count' /etc/dudley/build-manifest.json)
 fi
@@ -716,10 +716,10 @@ The GitHub Actions workflow accepts a `base_image` input:
 
 The content-based versioning system provides:
 
-✅ **Automatic version management** - No manual updates needed  
-✅ **Precise change detection** - Hooks run only when needed  
-✅ **Build transparency** - Clear visibility into what changed  
-✅ **Developer-friendly patterns** - Simple to extend with new hooks  
-✅ **Fail-safe behavior** - Automatic retry on errors  
+✅ **Automatic version management** - No manual updates needed
+✅ **Precise change detection** - Hooks run only when needed
+✅ **Build transparency** - Clear visibility into what changed
+✅ **Developer-friendly patterns** - Simple to extend with new hooks
+✅ **Fail-safe behavior** - Automatic retry on errors
 
 By following the patterns in this guide, you can create robust user hooks that integrate seamlessly with the versioning system.

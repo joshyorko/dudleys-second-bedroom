@@ -1,6 +1,6 @@
 # Build Module Contract
 
-**Version**: 1.0.0  
+**Version**: 1.0.0
 **Date**: 2025-10-05
 
 ## Purpose
@@ -37,7 +37,7 @@ set -eoux pipefail  # REQUIRED: Exit on error, undefined vars, pipe failures
   - `$FEDORA_VERSION`: Current Fedora major version (e.g., "41")
   - `$IMAGE_NAME`: Name of the image being built
   - `$BUILD_CONTEXT`: Path to build context (/ctx in container)
-  
+
 - **File System State**:
   - Working directory: unspecified (scripts must use absolute paths)
   - Read-only access to: `/ctx/` (build context via bind mount)
@@ -248,25 +248,25 @@ log() {
 main() {
     local start_time
     start_time=$(date +%s)
-    
+
     log "INFO" "START"
-    
+
     # Marker file for idempotency
     if [[ -f "/etc/.example-module-done" ]]; then
         log "INFO" "Already run, skipping"
         exit 2
     fi
-    
+
     # Do work here
     log "INFO" "Performing example operation"
-    
+
     # Mark as complete
     touch "/etc/.example-module-done"
-    
+
     local end_time duration
     end_time=$(date +%s)
     duration=$((end_time - start_time))
-    
+
     log "INFO" "DONE (duration: ${duration}s)"
 }
 

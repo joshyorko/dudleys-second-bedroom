@@ -38,38 +38,38 @@ jobs:
   pre-build-validation:
     name: Pre-build validation
     runs-on: ubuntu-24.04
-    
+
     steps:
       - name: Checkout
         uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v5
-      
+
       - name: Install Just
         uses: extractions/setup-just@v3
-      
+
       - name: Install dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y jq shellcheck shfmt
-      
+
       - name: Run all validation checks
         run: just check
 
   unit-tests:
     name: Unit tests
     runs-on: ubuntu-24.04
-    
+
     steps:
       - name: Checkout
         uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v5
-      
+
       - name: Install Just
         uses: extractions/setup-just@v3
-      
+
       - name: Install dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y jq
-      
+
       - name: Run unit tests
         run: just test-unit
 
@@ -178,16 +178,16 @@ jobs:
           oci: false
           # Enable layer caching to speed up builds
           layers: true
-      
+
       - name: Verify built image
         run: |
           # Install Just
           curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to /usr/local/bin
-          
+
           # Install dependencies for verification
           sudo apt-get update
           sudo apt-get install -y jq
-          
+
           # Run verification using just command
           just verify-build "localhost/${{ env.IMAGE_NAME }}" "${{ env.DEFAULT_TAG }}"
 

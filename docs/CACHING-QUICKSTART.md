@@ -15,10 +15,10 @@ Your GitHub Actions workflow now includes **multi-layer caching** to dramaticall
 
 ## What's Being Cached?
 
-✅ **Container layers** - Reuses base image and build layers  
-✅ **DNF/RPM packages** - Skips re-downloading packages  
-✅ **Downloaded binaries** - Caches GitHub release downloads  
-✅ **Buildah layer cache** - Native build tool caching  
+✅ **Container layers** - Reuses base image and build layers
+✅ **DNF/RPM packages** - Skips re-downloading packages
+✅ **Downloaded binaries** - Caches GitHub release downloads
+✅ **Buildah layer cache** - Native build tool caching
 
 ## How to Verify It's Working
 
@@ -28,8 +28,8 @@ Your GitHub Actions workflow now includes **multi-layer caching** to dramaticall
    Cache container layers
      Cache restored successfully from key: Linux-containers-xyz...
      Cache Size: 4.2 GB
-   
-   Cache DNF packages  
+
+   Cache DNF packages
      Cache restored successfully from key: Linux-dnf-abc...
      Cache Size: 856 MB
    ```
@@ -48,7 +48,7 @@ Your GitHub Actions workflow now includes **multi-layer caching** to dramaticall
 Caches automatically rebuild when you change:
 
 - ❌ `Containerfile` - Container layers cache cleared
-- ❌ `packages.json` - DNF packages cache cleared  
+- ❌ `packages.json` - DNF packages cache cleared
 - ❌ Files in `build_files/` - Relevant caches cleared
 - ✅ Documentation changes - Caches preserved
 - ✅ Test files - Caches preserved

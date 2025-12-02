@@ -1,8 +1,8 @@
 # Feature Specification: Automatic Content-Based Versioning for User Hooks
 
-**Feature Branch**: `002-implement-automatic-content`  
-**Created**: 2025-10-10  
-**Status**: Draft  
+**Feature Branch**: `002-implement-automatic-content`
+**Created**: 2025-10-10
+**Status**: Draft
 **Input**: User description: "Implement automatic content-based versioning for user hooks that only re-run when their dependencies actually change. Replace manual version bumping with SHA256 content hashes, and enhance the welcome hook to display a build summary showing what changed."
 
 ## User Scenarios & Testing *(mandatory)*

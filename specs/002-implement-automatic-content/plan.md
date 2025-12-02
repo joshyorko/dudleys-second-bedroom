@@ -11,14 +11,14 @@ Replace manual version management in user hooks with automatic content-based ver
 
 ## Technical Context
 
-**Language/Version**: Bash 5.x  
-**Primary Dependencies**: sha256sum, jq, Universal Blue version-script (/usr/lib/ublue/setup-services/libsetup.sh), systemd journal  
-**Storage**: File-based JSON manifest at `/etc/dudley/build-manifest.json`  
-**Testing**: Bash test scripts with manual build verification  
-**Target Platform**: Fedora-based Universal Blue immutable image (Linux/OCI container)  
-**Project Type**: Build system enhancement (Containerfile integration)  
-**Performance Goals**: Hash computation <5 seconds for <100MB tracked files, welcome display <1 second  
-**Constraints**: Must integrate with existing Universal Blue version-script patterns, no breaking changes to current hook behavior, fail-fast on build errors  
+**Language/Version**: Bash 5.x
+**Primary Dependencies**: sha256sum, jq, Universal Blue version-script (/usr/lib/ublue/setup-services/libsetup.sh), systemd journal
+**Storage**: File-based JSON manifest at `/etc/dudley/build-manifest.json`
+**Testing**: Bash test scripts with manual build verification
+**Target Platform**: Fedora-based Universal Blue immutable image (Linux/OCI container)
+**Project Type**: Build system enhancement (Containerfile integration)
+**Performance Goals**: Hash computation <5 seconds for <100MB tracked files, welcome display <1 second
+**Constraints**: Must integrate with existing Universal Blue version-script patterns, no breaking changes to current hook behavior, fail-fast on build errors
 **Scale/Scope**: 3 initial hooks (wallpaper, VS Code extensions, welcome), extensible pattern for future hooks, manifest <50KB
 
 ## Constitution Check

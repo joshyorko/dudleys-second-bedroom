@@ -1,7 +1,7 @@
 # Data Model: Automatic Content-Based Versioning
 
-**Feature**: 002-implement-automatic-content  
-**Date**: 2025-10-10  
+**Feature**: 002-implement-automatic-content
+**Date**: 2025-10-10
 **Status**: Complete
 
 ## Overview
@@ -33,16 +33,16 @@ This document defines the data structures, relationships, and validation rules f
 ```bash
 compute_content_hash() {
     local files=("$@")
-    
+
     # Validate files exist
     for file in "${files[@]}"; do
         [[ -f "$file" ]] || { echo "ERROR: File not found: $file" >&2; exit 1; }
     done
-    
+
     # Sort for determinism
     IFS=$'\n' sorted_files=($(sort <<<"${files[*]}"))
     unset IFS
-    
+
     # Compute hash
     cat "${sorted_files[@]}" | sha256sum | cut -c1-8
 }

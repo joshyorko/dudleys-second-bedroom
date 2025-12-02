@@ -7,8 +7,8 @@
 set -euo pipefail
 
 if ! command -v jq >/dev/null 2>&1; then
-  echo "This repro requires jq (JSON processor) to be installed." >&2
-  exit 1
+	echo "This repro requires jq (JSON processor) to be installed." >&2
+	exit 1
 fi
 
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
@@ -25,38 +25,38 @@ REPRO_BASE_IMAGE="${REPRO_BASE_IMAGE:-ghcr.io/ublue-os/bluefin-dx:stable}"
 REPRO_GIT_COMMIT="${REPRO_GIT_COMMIT:-deadbee}"
 
 run_manifest_generation() {
-  local output_path="$1"
+	local output_path="$1"
 
-  (
-    cd "$PROJECT_ROOT"
-    MANIFEST_OUTPUT="$output_path" \
-    IMAGE_NAME="$REPRO_IMAGE_NAME" \
-    BASE_IMAGE="$REPRO_BASE_IMAGE" \
-    GIT_COMMIT="$REPRO_GIT_COMMIT" \
-    bash build_files/shared/utils/generate-manifest.sh >/dev/null
-  )
+	(
+		cd "$PROJECT_ROOT"
+		MANIFEST_OUTPUT="$output_path" \
+			IMAGE_NAME="$REPRO_IMAGE_NAME" \
+			BASE_IMAGE="$REPRO_BASE_IMAGE" \
+			GIT_COMMIT="$REPRO_GIT_COMMIT" \
+			bash build_files/shared/utils/generate-manifest.sh >/dev/null
+	)
 }
 
 run_manifest_generation "$MANIFEST_ONE"
 run_manifest_generation "$MANIFEST_TWO"
 
 assert_changed_flag() {
-  local hook_name="$1"
-  local manifest_path="$2"
-  local expected="false"
-  local actual
+	local hook_name="$1"
+	local manifest_path="$2"
+	local expected="false"
+	local actual
 
-  actual="$(jq -r ".hooks[\"${hook_name}\"].metadata.changed" "$manifest_path")"
+	actual="$(jq -r ".hooks[\"${hook_name}\"].metadata.changed" "$manifest_path")"
 
-  if [[ "$actual" != "$expected" ]]; then
-    cat <<EOF
+	if [[ "$actual" != "$expected" ]]; then
+		cat <<EOF
 Bug reproduced for hook "${hook_name}":
   Expected metadata.changed = ${expected}
   Actual metadata.changed   = ${actual}
   Manifest path: ${manifest_path}
 EOF
-    return 1
-  fi
+		return 1
+	fi
 }
 
 # The second manifest should mark hooks as unchanged because no dependencies changed between runs.

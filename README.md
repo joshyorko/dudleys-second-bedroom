@@ -61,7 +61,7 @@ See [ARCHITECTURE.md](./ARCHITECTURE.md) for complete documentation of the modul
 The build system computes content hashes (SHA256) of each user hook and its dependencies. Hooks only re-execute when their content actually changes:
 
 - **Wallpaper hook**: Tracks wallpaper images + hook script
-- **VS Code extensions**: Tracks vscode-extensions.list + hook script  
+- **VS Code extensions**: Tracks vscode-extensions.list + hook script
 - **Welcome message**: Tracks only the hook script
 
 **No manual version bumping required!**
@@ -151,13 +151,13 @@ To pin a specific version, adjust the install script to request `code-insiders-<
 The build system automatically discovers and installs **any PNG/JPG images** from the `custom_wallpapers/` directory.
 
 **Current wallpapers:**
-- `custom_wallpapers/dudleys-second-bedroom-1.png` → Primary desktop background  
+- `custom_wallpapers/dudleys-second-bedroom-1.png` → Primary desktop background
 - `custom_wallpapers/dudleys-second-bedroom-2.png` → Secondary wallpaper (available for user selection)
 
 ### Build Process
 
 1. **Discovery**: Scans `custom_wallpapers/` for `*.png`, `*.jpg`, `*.jpeg` files
-2. **Installation**: Copies all found images to `/usr/share/backgrounds/dudley/`  
+2. **Installation**: Copies all found images to `/usr/share/backgrounds/dudley/`
 3. **Schema Override**: Points desktop background to `dudleys-second-bedroom-1.png`
 4. **User Hook**: A user-setup hook enforces the branded wallpaper. It now re-applies if settings drift, if its internal version changes, or if you force it.
 5. **Login Screen**: Uses default Bluefin branding (no custom wallpaper)
@@ -391,9 +391,9 @@ Once the workflow is done, you'll find the disk images either in your S3 bucket 
 
 This template comes with the necessary tooling to index your image on [artifacthub.io](https://artifacthub.io). Use the `artifacthub-repo.yml` file at the root to verify yourself as the publisher. This is important to you for a few reasons:
 
-- The value of artifacthub is it's one place for people to index their custom images, and since we depend on each other to learn, it helps grow the community. 
+- The value of artifacthub is it's one place for people to index their custom images, and since we depend on each other to learn, it helps grow the community.
 - You get to see your pet project listed with the other cool projects in Cloud Native.
-- Since the site puts your README front and center, it's a good way to learn how to write a good README, learn some marketing, finding your audience, etc. 
+- Since the site puts your README front and center, it's a good way to learn how to write a good README, learn some marketing, finding your audience, etc.
 
 [Discussion Thread](https://universal-blue.discourse.group/t/listing-your-custom-image-on-artifacthub/6446)
 

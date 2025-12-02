@@ -1,7 +1,7 @@
 # Utility Function Contract: Manifest Builder
 
-**Module**: `build_files/shared/utils/manifest-builder.sh`  
-**Purpose**: Generate build manifest JSON file with all hook versions and build metadata  
+**Module**: `build_files/shared/utils/manifest-builder.sh`
+**Purpose**: Generate build manifest JSON file with all hook versions and build metadata
 **Date**: 2025-10-10
 
 ## Overview

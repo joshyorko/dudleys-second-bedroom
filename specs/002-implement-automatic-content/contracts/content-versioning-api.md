@@ -1,7 +1,7 @@
 # Utility Function Contract: Content Versioning
 
-**Module**: `build_files/shared/utils/content-versioning.sh`  
-**Purpose**: Provide reusable bash functions for computing content hashes and managing version placeholders  
+**Module**: `build_files/shared/utils/content-versioning.sh`
+**Purpose**: Provide reusable bash functions for computing content hashes and managing version placeholders
 **Date**: 2025-10-10
 
 ## Overview

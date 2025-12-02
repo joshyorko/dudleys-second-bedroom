@@ -39,22 +39,22 @@ jobs:
     runs-on: ubuntu-24.04
     # Only run validation on pull requests to save CI time on manual builds
     if: github.event_name == 'pull_request'
-    
+
     steps:
       - name: Checkout
         uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v5
-      
+
       - name: Install Just
         uses: extractions/setup-just@v3
-      
+
       - name: Install dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y jq shellcheck shfmt
-      
+
       - name: Run validation checks
         run: just check
-      
+
       - name: Validate disk configuration files
         run: |
           echo "Validating disk_config/disk.toml..."
@@ -63,7 +63,7 @@ jobs:
             exit 1
           fi
           echo "✓ disk_config/disk.toml exists"
-          
+
           echo "Validating disk_config/iso.toml..."
           if [[ ! -f disk_config/iso.toml ]]; then
             echo "✗ ERROR: disk_config/iso.toml not found"
@@ -77,7 +77,7 @@ jobs:
     needs: [validate]
     # Skip validation dependency on manual builds
     if: |
-      always() && 
+      always() &&
       (needs.validate.result == 'success' || needs.validate.result == 'skipped')
     strategy:
       fail-fast: false
@@ -140,7 +140,7 @@ jobs:
           retention-days: 0
           compression-level: 0
           overwrite: true
-      
+
       - name: Upload to S3
         if: inputs.upload-to-s3 == true && github.event_name != 'pull_request'
         shell: bash

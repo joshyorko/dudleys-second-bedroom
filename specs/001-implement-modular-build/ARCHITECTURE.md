@@ -1,7 +1,7 @@
 # Architecture: Modular Build System
 
-**Version**: 1.0.0  
-**Date**: 2025-10-05  
+**Version**: 1.0.0
+**Date**: 2025-10-05
 **Feature**: Modular Build Architecture with Multi-Stage Containerfile
 
 ## Overview

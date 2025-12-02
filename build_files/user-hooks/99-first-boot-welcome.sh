@@ -59,13 +59,13 @@ if [[ -f "$MANIFEST_PATH" ]] && command -v jq &>/dev/null; then
     IMAGE_NAME=$(jq -r '.build.image // "unknown"' "$MANIFEST_PATH" 2>/dev/null || echo "unknown")
     BASE_IMAGE=$(jq -r '.build.base // "unknown"' "$MANIFEST_PATH" 2>/dev/null || echo "unknown")
     GIT_COMMIT=$(jq -r '.build.commit // "unknown"' "$MANIFEST_PATH" 2>/dev/null || echo "unknown")
-    
+
     # Extract hook information
     VSCODE_VERSION=$(jq -r '.hooks["vscode-extensions"].version // "unknown"' "$MANIFEST_PATH" 2>/dev/null || echo "unknown")
     VSCODE_COUNT=$(jq -r '.hooks["vscode-extensions"].metadata.extension_count // 0' "$MANIFEST_PATH" 2>/dev/null || echo "0")
     WALLPAPER_VERSION=$(jq -r '.hooks.wallpaper.version // "unknown"' "$MANIFEST_PATH" 2>/dev/null || echo "unknown")
     WALLPAPER_COUNT=$(jq -r '.hooks.wallpaper.metadata.wallpaper_count // 0' "$MANIFEST_PATH" 2>/dev/null || echo "0")
-    
+
     # Format build info
     BUILD_INFO="
 ║  Build Information:                                        ║

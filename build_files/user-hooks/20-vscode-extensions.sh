@@ -110,11 +110,11 @@ while IFS= read -r ext || [[ -n "$ext" ]]; do
   # Skip empty lines and comments
   [[ -z "$ext" ]] && continue
   [[ "$ext" =~ ^#.*$ ]] && continue
-  
+
   # Trim whitespace
   ext=$(echo "$ext" | xargs)
   [[ -z "$ext" ]] && continue
-  
+
   echo "Installing extension: $ext"
   if ! "$CMD" --list-extensions --user-data-dir "$USER_DATA_DIR" --no-sandbox 2>/dev/null | grep -qi "^${ext}$"; then
     "$CMD" --install-extension "$ext" --user-data-dir "$USER_DATA_DIR" --no-sandbox || echo "Failed to install $ext"

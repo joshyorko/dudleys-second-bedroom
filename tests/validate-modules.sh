@@ -37,18 +37,18 @@ while IFS= read -r script; do
 	fi
 
 	case $exit_code in
-	0)
-		passed_modules=$((passed_modules + 1))
-		echo "  ✓ Passed"
-		;;
-	1)
-		failed_modules=$((failed_modules + 1))
-		echo "  ✗ Failed with critical errors"
-		;;
-	2)
-		warning_modules=$((warning_modules + 1))
-		echo "  ⚠ Passed with warnings"
-		;;
+		0)
+			passed_modules=$((passed_modules + 1))
+			echo "  ✓ Passed"
+			;;
+		1)
+			failed_modules=$((failed_modules + 1))
+			echo "  ✗ Failed with critical errors"
+			;;
+		2)
+			warning_modules=$((warning_modules + 1))
+			echo "  ⚠ Passed with warnings"
+			;;
 	esac
 	echo
 done < <(find build_files -type f -name "*.sh")
