@@ -27,7 +27,7 @@ main() {
 	log "INFO" "START - Installing DevPod ${DEVPOD_VERSION}"
 
 	# Check if already installed
-	if command -v devpod &>/dev/null && [[ -f /usr/share/devpod/DevPod.AppImage ]]; then
+	if command -v devpod &>/dev/null && [[ -f /usr/bin/DevPod ]]; then
 		log "INFO" "DevPod already installed, skipping"
 		exit 2
 	fi
@@ -69,10 +69,11 @@ main() {
 		log "WARN" "Failed to download icon, continuing anyway"
 	}
 
-	# Update desktop entry to fix sandboxing issues
+	# Update desktop entry to fix sandboxing issues and use correct binary path
 	log "INFO" "Updating desktop entry..."
 	if [[ -f /usr/share/applications/devpod.desktop ]]; then
-		sed -i 's|^Exec=.*|Exec=/usr/share/devpod/DevPod.AppImage --no-sandbox %U|' \
+		# DEB installs binary as /usr/bin/DevPod
+		sed -i 's|^Exec=.*|Exec=/usr/bin/DevPod --no-sandbox %U|' \
 			/usr/share/applications/devpod.desktop
 		sed -i 's|^Icon=.*|Icon=devpod|' \
 			/usr/share/applications/devpod.desktop
@@ -82,7 +83,7 @@ main() {
 			[Desktop Entry]
 			Name=DevPod
 			Comment=Codespaces but open-source, client-only and unopinionated
-			Exec=/usr/share/devpod/DevPod.AppImage --no-sandbox %U
+			Exec=/usr/bin/DevPod --no-sandbox %U
 			Icon=devpod
 			Terminal=false
 			Type=Application
@@ -91,9 +92,9 @@ main() {
 		EOF
 	fi
 
-	# Ensure AppImage is executable
-	if [[ -f /usr/share/devpod/DevPod.AppImage ]]; then
-		chmod +x /usr/share/devpod/DevPod.AppImage
+	# Ensure GUI binary is executable
+	if [[ -f /usr/bin/DevPod ]]; then
+		chmod +x /usr/bin/DevPod
 	fi
 
 	# Cleanup
@@ -111,7 +112,7 @@ main() {
 		exit 1
 	fi
 
-	if [[ -f /usr/share/devpod/DevPod.AppImage ]]; then
+	if [[ -f /usr/bin/DevPod ]]; then
 		log "INFO" "DevPod desktop app installed successfully"
 	else
 		log "WARN" "DevPod desktop app not found, but CLI is available"
