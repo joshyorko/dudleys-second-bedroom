@@ -74,7 +74,7 @@ As a user who prefers OIDC-based trust, I want to verify the image using GitHub 
 
 ### Functional Requirements
 
-- **FR-001**: The build pipeline MUST generate an SBOM for the image in SPDX JSON format using `syft`.
+- **FR-001**: The build pipeline MUST generate an SBOM for the image in SPDX JSON format using `trivy` (changed from `syft` for performance).
 - **FR-002**: The build pipeline MUST attach the generated SBOM to the image in the registry using `cosign attach sbom`.
 - **FR-003**: The build pipeline MUST generate a SLSA-style provenance attestation including the Git commit SHA and GitHub workflow run ID.
 - **FR-004**: The build pipeline MUST attach the provenance attestation to the image using `cosign attest`.

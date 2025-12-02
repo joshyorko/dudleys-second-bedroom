@@ -768,7 +768,7 @@ See [docs/SIGNATURE-VERIFICATION.md](./SIGNATURE-VERIFICATION.md) for:
 
 The supply chain artifacts are generated in `.github/workflows/build.yml`:
 
-1. **SBOM Generation**: Uses `syft` to generate SPDX JSON
+1. **SBOM Generation**: Uses `trivy` to generate SPDX JSON (faster than syft for large images)
 2. **SBOM Attachment**: `cosign attach sbom` links SBOM to image
 3. **Provenance**: SLSA v0.2 predicate with build context
 4. **Attestation**: `cosign attest` creates signed provenance

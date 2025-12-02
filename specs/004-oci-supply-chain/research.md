@@ -30,9 +30,10 @@
 **Rationale**: Industry standard for container signing and attestation. Supports both key-based and keyless workflows.
 **Alternatives**: `skopeo` (signing only, no attestation), `notary` (v1 is deprecated, v2 is `notation` - less integrated with GitHub Actions than Cosign).
 
-### Syft (Anchore)
-**Rationale**: Best-in-class SBOM generator with excellent Cosign integration.
-**Alternatives**: `trivy` (focused on scanning), `docker sbom` (uses syft under the hood).
+### ~~Syft (Anchore)~~ → Trivy (Aquasecurity)
+**Original Rationale**: Syft was chosen as best-in-class SBOM generator with excellent Cosign integration.
+**Update (2025-12-02)**: Switched to `trivy` due to performance issues with syft on large images (~13GB Bluefin-DX). Trivy generates valid SPDX JSON significantly faster.
+**Alternatives**: `syft` (original choice, slower), `docker sbom` (uses syft under the hood).
 
 ### ORAS (OCI Registry as Storage)
 **Rationale**: Native way to push arbitrary artifacts (metadata) to OCI registries.
@@ -40,8 +41,8 @@
 
 ## Implementation Strategy
 
-1. **Install Tools**: Add `syft` and `oras` setup steps to `build.yml`.
-2. **Generate Artifacts**: Run `syft` and `tar` after build.
+1. **Install Tools**: Add `trivy` and `oras` setup steps to `build.yml`.
+2. **Generate Artifacts**: Run `trivy` and `tar` after build.
 3. **Push & Sign**:
    - Push image.
    - Sign image (Key).

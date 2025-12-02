@@ -5,12 +5,12 @@
 
 ## Summary
 
-This feature upgrades the Dudley build pipeline to a full OCI supply-chain compliant project. It introduces automated SBOM generation (Syft), SLSA provenance attestation (Cosign), dual signing (Key-pair + OIDC), and metadata artifact attachment (ORAS). These enhancements ensure image integrity, auditability, and compliance with modern security standards.
+This feature upgrades the Dudley build pipeline to a full OCI supply-chain compliant project. It introduces automated SBOM generation (Trivy), SLSA provenance attestation (Cosign), dual signing (Key-pair + OIDC), and metadata artifact attachment (ORAS). These enhancements ensure image integrity, auditability, and compliance with modern security standards.
 
 ## Technical Context
 
 **Language/Version**: Bash, YAML (GitHub Actions)
-**Primary Dependencies**: `cosign` (v2+), `syft`, `oras`, `jq`, `skopeo` (for digest inspection)
+**Primary Dependencies**: `cosign` (v2+), `trivy`, `oras`, `jq`, `skopeo` (for digest inspection)
 **Storage**: OCI Registry (ghcr.io)
 **Testing**: `cosign verify`, `oras discover`, `bats` (for validation scripts)
 **Target Platform**: GitHub Actions (CI), Fedora Atomic (Runtime)
