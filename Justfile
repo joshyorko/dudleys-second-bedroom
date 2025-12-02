@@ -427,7 +427,12 @@ lint:
     fi
     # Run shellcheck on all Bash scripts
     # Use -x to follow sourced files so SC1091 informational warnings are resolved (suppressed explicitly)
-    /usr/bin/find . -iname "*.sh" -type f -exec shellcheck -x -e SC1091 "{}" ';'
+    # Exclude .venv, .specify, and other third-party directories
+    /usr/bin/find . -iname "*.sh" -type f \
+        -not -path "./.venv/*" \
+        -not -path "./.specify/*" \
+        -not -path "./node_modules/*" \
+        -exec shellcheck -x -e SC1091 "{}" ';'
 
 # Runs shfmt on all Bash scripts
 format:
@@ -435,8 +440,13 @@ format:
     set -eoux pipefail
     # Check if shfmt is installed
     if ! command -v shfmt &> /dev/null; then
-        echo "shellcheck could not be found. Please install it."
+        echo "shfmt could not be found. Please install it."
         exit 1
     fi
     # Run shfmt on all Bash scripts
-    /usr/bin/find . -iname "*.sh" -type f -exec shfmt --write "{}" ';'
+    # Exclude .venv, .specify, and other third-party directories
+    /usr/bin/find . -iname "*.sh" -type f \
+        -not -path "./.venv/*" \
+        -not -path "./.specify/*" \
+        -not -path "./node_modules/*" \
+        -exec shfmt --write "{}" ';'
