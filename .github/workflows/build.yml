@@ -363,7 +363,7 @@ jobs:
             exit 1
           fi
           # attach SBOM using cosign
-          cosign attach sbom -y --key env://COSIGN_PRIVATE_KEY "$IMAGE_FULL" --sbom "$SBOM_FILE"
+          cosign attach sbom --sbom "$SBOM_FILE" "$IMAGE_FULL"
         env:
           COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
 
