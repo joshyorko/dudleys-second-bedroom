@@ -295,8 +295,12 @@ jobs:
           df -h /
 
       # ----------------------------------------
-      # Step 1: Install supply chain tools
+      # Step 1: Install supply chain tools (Cosign, SBOM, ORAS)
       # ----------------------------------------
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@faadad0cce49287aee09b3a48701e75088a2c6ad # v4.0.0
+        if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+
       - name: Install SBOM & ORAS tools
         # trivy is used for SBOM generation (faster than syft) and oras is used to push/pull OCI metadata artifacts
         if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
@@ -313,6 +317,7 @@ jobs:
           tar -xzf "oras_${ORAS_VERSION}_linux_amd64.tar.gz" -C /usr/local/bin oras
           rm -f "oras_${ORAS_VERSION}_linux_amd64.tar.gz"
           echo "Installed versions:"
+          cosign version
           trivy version
           oras version
 
@@ -405,14 +410,7 @@ jobs:
           COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
 
       # ----------------------------------------
-      # Step 6: Install Cosign for signing
-      # ----------------------------------------
-      - name: Install Cosign
-        uses: sigstore/cosign-installer@faadad0cce49287aee09b3a48701e75088a2c6ad # v4.0.0
-        if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
-
-      # ----------------------------------------
-      # Step 7: Key-based signing
+      # Step 6: Key-based signing
       # ----------------------------------------
       # Signs the image using the project's private key.
       # Verify with: cosign verify --key cosign.pub <image>
