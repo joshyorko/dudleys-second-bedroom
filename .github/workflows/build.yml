@@ -350,11 +350,13 @@ jobs:
           echo "=== Disk space before SBOM generation ==="
           df -h / /tmp 2>/dev/null || df -h
 
-          REGISTRY_IMAGE="${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
-          echo "Generating SPDX JSON SBOM for registry image: $REGISTRY_IMAGE"
+          # Use local image to avoid pulling and save bandwidth/time
+          # The image is already in podman storage from the build step
+          LOCAL_IMAGE="podman:localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
+          echo "Generating SPDX JSON SBOM for local image: $LOCAL_IMAGE"
 
           # syft image with SPDX output
-          $SYFT_CMD "$REGISTRY_IMAGE" -o spdx-json=./sbom-${{ env.DEFAULT_TAG }}.spdx.json
+          $SYFT_CMD "$LOCAL_IMAGE" -o spdx-json=./sbom-${{ env.DEFAULT_TAG }}.spdx.json
 
           echo "=== SBOM generation complete ==="
           echo "SBOM file: ./sbom-${{ env.DEFAULT_TAG }}.spdx.json"
