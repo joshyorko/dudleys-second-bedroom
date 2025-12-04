@@ -77,11 +77,13 @@ jobs:
     name: Build and push image
     runs-on: ubuntu-24.04
     needs: [pre-build-validation, unit-tests]
+    outputs:
+      tags: ${{ steps.metadata.outputs.tags }}
+      build_date: ${{ steps.date.outputs.date }}
 
     permissions:
       contents: read
       packages: write
-      id-token: write
 
     steps:
       - name: Prepare environment
@@ -254,6 +256,7 @@ jobs:
         uses: redhat-actions/push-to-registry@5ed88d269cf581ea9ef6dd6806d01562096bee9c # v2
         if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
         id: push
+        timeout-minutes: 60
         env:
           REGISTRY_USER: ${{ github.actor }}
           REGISTRY_PASSWORD: ${{ github.token }}
@@ -264,62 +267,64 @@ jobs:
           username: ${{ env.REGISTRY_USER }}
           password: ${{ env.REGISTRY_PASSWORD }}
 
-      # ============================================
-      # SUPPLY CHAIN SECURITY
-      # ============================================
-      # This section implements OCI supply chain security features:
-      # - SBOM (Software Bill of Materials) generation and attachment
-      # - SLSA provenance attestation
-      # - Build metadata artifact (specs, docs, build_files)
-      # - Dual signing: key-based + keyless (OIDC)
-      #
-      # All steps are conditional on:
-      # 1. Not being a pull request
-      # 2. Running on the default branch (main)
-      #
-      # Required secrets:
-      # - COSIGN_PRIVATE_KEY: PEM-encoded private key for key-based signing
-      #
-      # For more information, see:
-      # - docs/SIGNATURE-VERIFICATION.md
-      # - specs/004-oci-supply-chain/quickstart.md
+  # ============================================
+  # SUPPLY CHAIN SECURITY JOB
+  # ============================================
+  # This job runs on a fresh runner after the image is pushed.
+  # It pulls the image from the registry (faster than copying blobs)
+  # and performs all supply chain security operations:
+  # - SBOM generation and attestation
+  # - SLSA provenance attestation
+  # - Key-based and keyless signing
+  # - Build metadata artifact upload
+  supply_chain_security:
+    name: Supply chain security
+    runs-on: ubuntu-24.04
+    needs: [build_push]
+    if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
 
-      # This section is optional and only needs to be enabled if you plan on distributing
-      # your project for others to consume. You will need to create a public and private key
-      # using Cosign and save the private key as a repository secret in Github for this workflow
-      # to consume. For more details, review the image signing section of the README.
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
 
-      # ----------------------------------------
-      # Step 0: Free disk space for SBOM generation
-      # ----------------------------------------
-      # Large images (~13GB) can exhaust runner disk during syft analysis
-      - name: Free disk space for supply chain steps
-        if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+    steps:
+      - name: Prepare environment
         run: |
-          echo "Disk space before cleanup:"
-          df -h /
-          # Clean up Docker build cache and unused images
-          docker system prune -af --volumes || true
-          # Remove unnecessary large directories
-          sudo rm -rf /usr/local/lib/android || true
-          sudo rm -rf /usr/share/dotnet || true
-          echo "Disk space after cleanup:"
-          df -h /
+          # Lowercase the image uri
+          echo "IMAGE_REGISTRY=${IMAGE_REGISTRY,,}" >> ${GITHUB_ENV}
+          echo "IMAGE_NAME=${IMAGE_NAME,,}" >> ${GITHUB_ENV}
+
+      - name: Checkout
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v5
+
+      # Free up disk space for pulling and unpacking ~13GB image during SBOM generation
+      - name: Maximize build space
+        uses: ublue-os/remove-unwanted-software@cc0becac701cf642c8f0a6613bbdaf5dc36b259e # v9
+        with:
+          remove-dotnet: 'true'
+          remove-android: 'true'
+          remove-haskell: 'true'
+          remove-codeql: 'true'
+          remove-docker-images: 'false'  # Keep docker, we need it to pull the image
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       # ----------------------------------------
-      # Step 1: Install supply chain tools (Cosign, SBOM, ORAS)
+      # Install supply chain tools
       # ----------------------------------------
       - name: Install Cosign
         uses: sigstore/cosign-installer@faadad0cce49287aee09b3a48701e75088a2c6ad # v4.0.0
-        if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
 
       - name: Install ORAS
-        # oras is used to push/pull OCI metadata artifacts
-        if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
         run: |
           set -euo pipefail
           echo "Installing oras"
-          # Install oras using the official installation method
           ORAS_VERSION="1.2.0"
           curl -LO "https://github.com/oras-project/oras/releases/download/v${ORAS_VERSION}/oras_${ORAS_VERSION}_linux_amd64.tar.gz"
           tar -xzf "oras_${ORAS_VERSION}_linux_amd64.tar.gz" -C /usr/local/bin oras
@@ -331,15 +336,24 @@ jobs:
       - name: Setup Syft
         id: setup-syft
         uses: anchore/sbom-action/download-syft@fbfd9c6c189226748411491745178e0c2017392d # v0.15.10
-        if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
 
       # ----------------------------------------
-      # Step 2: Generate SBOM (Software Bill of Materials)
+      # Pull the image from registry for SBOM generation
       # ----------------------------------------
-      # Uses syft to create an SPDX JSON SBOM listing all packages in the image.
-      # This enables security scanning and license compliance verification.
+      - name: Pull image from registry
+        run: |
+          set -euo pipefail
+          IMAGE_FULL="${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
+          echo "Pulling image: $IMAGE_FULL"
+          # Use docker for syft compatibility (no socket setup needed)
+          docker pull "$IMAGE_FULL"
+          echo "Image pulled successfully"
+          docker images
+
+      # ----------------------------------------
+      # Generate SBOM (Software Bill of Materials)
+      # ----------------------------------------
       - name: Generate SBOM (SPDX JSON)
-        if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
         id: gen-sbom
         timeout-minutes: 30
         env:
@@ -350,31 +364,11 @@ jobs:
           echo "=== Disk space before SBOM generation ==="
           df -h / /tmp 2>/dev/null || df -h
 
-          # Use local image to avoid pulling and save bandwidth/time
-          # The image is already in podman storage from the build step
-          LOCAL_IMAGE="podman:localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
-          echo "Generating SPDX JSON SBOM for local image: $LOCAL_IMAGE"
+          IMAGE_FULL="${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
+          echo "Generating SPDX JSON SBOM for: $IMAGE_FULL"
 
-          # Start podman socket manually (systemd is not available in GHA)
-          # Syft requires the podman socket to be active to inspect images in podman storage
-          echo "Starting podman socket..."
-          podman system service -t 0 &
-
-          # Wait for socket to be ready (max 30s)
-          SOCK_PATH="${XDG_RUNTIME_DIR}/podman/podman.sock"
-          for i in {1..30}; do
-            if [ -S "$SOCK_PATH" ]; then
-              echo "Socket ready at $SOCK_PATH"
-              break
-            fi
-            sleep 1
-          done
-
-          # Point syft to the socket
-          export DOCKER_HOST="unix://$SOCK_PATH"
-
-          # syft image with SPDX output
-          $SYFT_CMD "$LOCAL_IMAGE" -o spdx-json=./sbom-${{ env.DEFAULT_TAG }}.spdx.json
+          # Generate SBOM from the pulled image
+          $SYFT_CMD "docker:$IMAGE_FULL" -o spdx-json=./sbom-${{ env.DEFAULT_TAG }}.spdx.json
 
           echo "=== SBOM generation complete ==="
           echo "SBOM file: ./sbom-${{ env.DEFAULT_TAG }}.spdx.json"
@@ -382,11 +376,9 @@ jobs:
           echo "SBOM lines: $(wc -l < ./sbom-${{ env.DEFAULT_TAG }}.spdx.json)"
 
       # ----------------------------------------
-      # Step 3: Attest SBOM to image
+      # Attest SBOM to image
       # ----------------------------------------
-      # Attests the SBOM to the image using cosign
-      - name: Attest SBOM to pushed image with cosign
-        if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+      - name: Attest SBOM to image with cosign
         run: |
           set -euo pipefail
           IMAGE_FULL="${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
@@ -395,7 +387,6 @@ jobs:
             echo "SBOM file not found: $SBOM_FILE" >&2
             exit 1
           fi
-          # attest SBOM using cosign
           cosign attest -y \
             --predicate "$SBOM_FILE" \
             --type spdxjson \
@@ -405,14 +396,9 @@ jobs:
           COSIGN_PRIVATE_KEY: ${{ secrets.SIGNING_SECRET }}
 
       # ----------------------------------------
-      # Step 4: Create SLSA provenance predicate
+      # Create and attest SLSA provenance
       # ----------------------------------------
-      # Creates the SLSA v0.2 provenance predicate containing build context:
-      # - Builder ID (GitHub Actions)
-      # - Build type and metadata
-      # - Git SHA and workflow run ID
       - name: Create SLSA provenance predicate
-        if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
         id: create-predicate
         run: |
           set -euo pipefail
@@ -422,7 +408,7 @@ jobs:
             "builder": {"id": "gh-action/dudley-build"},
             "buildType": "https://github.com/joshyorko/dudleys-second-bedroom/build",
             "metadata": {
-              "buildStartedOn": "${{ steps.date.outputs.date }}",
+              "buildStartedOn": "${{ needs.build_push.outputs.build_date }}",
               "completeness": {"parameters": true, "environment": true, "materials": true},
               "reproducible": false
             },
@@ -442,13 +428,7 @@ jobs:
           }
           EOF
 
-      # ----------------------------------------
-      # Step 5: Attest image with SLSA provenance
-      # ----------------------------------------
-      # Signs and attaches the provenance attestation to the image.
-      # Verify with: cosign verify-attestation --type slsaprovenance <image>
-      - name: Attest image with SLSA provenance (cosign attest)
-        if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+      - name: Attest image with SLSA provenance
         run: |
           set -euo pipefail
           IMAGE_FULL="${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
@@ -457,32 +437,22 @@ jobs:
           COSIGN_PRIVATE_KEY: ${{ secrets.SIGNING_SECRET }}
 
       # ----------------------------------------
-      # Step 6: Key-based signing
+      # Key-based signing
       # ----------------------------------------
-      # Signs the image using the project's private key.
-      # Verify with: cosign verify --key cosign.pub <image>
       - name: Sign container image (key-based)
-        if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
         run: |
           IMAGE_FULL="${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}"
-          for tag in ${{ steps.metadata.outputs.tags }}; do
-            cosign sign -y --key env://COSIGN_PRIVATE_KEY $IMAGE_FULL:$tag
+          for tag in ${{ needs.build_push.outputs.tags }}; do
+            cosign sign -y --key env://COSIGN_PRIVATE_KEY "$IMAGE_FULL:$tag"
           done
         env:
-          TAGS: ${{ steps.push.outputs.digest }}
           COSIGN_EXPERIMENTAL: false
           COSIGN_PRIVATE_KEY: ${{ secrets.SIGNING_SECRET }}
 
-      # ============================================
-      # User Story 2: Build Metadata Artifact (ORAS)
-      # ============================================
-      # Step 8-10: Package and push build metadata
-      # Package specs/, docs/, and build_files/ as an OCI artifact
-      # so developers/auditors can trace exactly what went into a given image.
-      # Retrieve with: oras pull <registry>/<image>:sha256-<digest>.metadata
-
+      # ----------------------------------------
+      # Build metadata artifact (ORAS)
+      # ----------------------------------------
       - name: Create metadata archive
-        if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
         id: metadata-archive
         run: |
           set -euo pipefail
@@ -491,7 +461,6 @@ jobs:
           ls -lh metadata.tar.gz
 
       - name: Extract image digest and construct metadata tag
-        if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
         id: metadata-tag
         run: |
           set -euo pipefail
@@ -509,7 +478,6 @@ jobs:
           echo "metadata_tag=$METADATA_TAG" >> "$GITHUB_OUTPUT"
 
       - name: Push metadata artifact with ORAS
-        if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
         run: |
           set -euo pipefail
           METADATA_REF="${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.metadata-tag.outputs.metadata_tag }}"
@@ -519,21 +487,15 @@ jobs:
             metadata.tar.gz:application/gzip
           echo "Metadata artifact pushed successfully"
 
-      # ============================================
-      # User Story 4: Keyless (OIDC) Signing
-      # ============================================
-      # Step 11: Sign image using GitHub Actions OIDC identity
-      # Sign the image using GitHub Actions OIDC identity for keyless verification.
-      # This provides an additional verification path without requiring public key distribution.
-      # Verify with: cosign verify --certificate-oidc-issuer <issuer> --certificate-identity-regexp <pattern> <image>
-
+      # ----------------------------------------
+      # Keyless (OIDC) signing
+      # ----------------------------------------
       - name: Sign container image (keyless/OIDC)
-        if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
         run: |
           set -euo pipefail
           IMAGE_FULL="${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}"
           echo "Performing keyless (OIDC) signing for all tags"
-          for tag in ${{ steps.metadata.outputs.tags }}; do
+          for tag in ${{ needs.build_push.outputs.tags }}; do
             cosign sign -y "$IMAGE_FULL:$tag"
           done
         env:
