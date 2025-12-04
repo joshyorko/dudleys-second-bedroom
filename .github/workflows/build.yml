@@ -313,16 +313,12 @@ jobs:
         uses: sigstore/cosign-installer@faadad0cce49287aee09b3a48701e75088a2c6ad # v4.0.0
         if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
 
-      - name: Install SBOM & ORAS tools
-        # trivy is used for SBOM generation (faster than syft) and oras is used to push/pull OCI metadata artifacts
+      - name: Install ORAS
+        # oras is used to push/pull OCI metadata artifacts
         if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
         run: |
           set -euo pipefail
-          echo "Installing trivy and oras"
-          # Install trivy using the official installation method
-          TRIVY_VERSION="0.58.0"
-          curl -sSfL https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz \
-            | tar -xz -C /usr/local/bin trivy
+          echo "Installing oras"
           # Install oras using the official installation method
           ORAS_VERSION="1.2.0"
           curl -LO "https://github.com/oras-project/oras/releases/download/v${ORAS_VERSION}/oras_${ORAS_VERSION}_linux_amd64.tar.gz"
@@ -330,19 +326,24 @@ jobs:
           rm -f "oras_${ORAS_VERSION}_linux_amd64.tar.gz"
           echo "Installed versions:"
           cosign version
-          trivy version
           oras version
+
+      - name: Setup Syft
+        id: setup-syft
+        uses: anchore/sbom-action/download-syft@fbfd9c6c189226748411491745178e0c2017392d # v0.15.10
+        if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
 
       # ----------------------------------------
       # Step 2: Generate SBOM (Software Bill of Materials)
       # ----------------------------------------
-      # Uses trivy to create an SPDX JSON SBOM listing all packages in the image.
-      # Trivy is faster than syft for large container images.
+      # Uses syft to create an SPDX JSON SBOM listing all packages in the image.
       # This enables security scanning and license compliance verification.
       - name: Generate SBOM (SPDX JSON)
         if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
         id: gen-sbom
         timeout-minutes: 30
+        env:
+          SYFT_CMD: ${{ steps.setup-syft.outputs.cmd }}
         run: |
           set -euo pipefail
 
@@ -352,8 +353,8 @@ jobs:
           REGISTRY_IMAGE="${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
           echo "Generating SPDX JSON SBOM for registry image: $REGISTRY_IMAGE"
 
-          # trivy image with SPDX output - faster than syft for large images
-          trivy image --format spdx-json --output ./sbom-${{ env.DEFAULT_TAG }}.spdx.json "$REGISTRY_IMAGE"
+          # syft image with SPDX output
+          $SYFT_CMD "$REGISTRY_IMAGE" -o spdx-json=./sbom-${{ env.DEFAULT_TAG }}.spdx.json
 
           echo "=== SBOM generation complete ==="
           echo "SBOM file: ./sbom-${{ env.DEFAULT_TAG }}.spdx.json"
@@ -361,10 +362,10 @@ jobs:
           echo "SBOM lines: $(wc -l < ./sbom-${{ env.DEFAULT_TAG }}.spdx.json)"
 
       # ----------------------------------------
-      # Step 3: Attach SBOM to image
+      # Step 3: Attest SBOM to image
       # ----------------------------------------
-      # Links the SBOM to the image for retrieval via `cosign download sbom`
-      - name: Attach SBOM to pushed image with cosign
+      # Attests the SBOM to the image using cosign
+      - name: Attest SBOM to pushed image with cosign
         if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
         run: |
           set -euo pipefail
@@ -374,8 +375,12 @@ jobs:
             echo "SBOM file not found: $SBOM_FILE" >&2
             exit 1
           fi
-          # attach SBOM using cosign
-          cosign attach sbom --sbom "$SBOM_FILE" "$IMAGE_FULL"
+          # attest SBOM using cosign
+          cosign attest -y \
+            --predicate "$SBOM_FILE" \
+            --type spdxjson \
+            --key env://COSIGN_PRIVATE_KEY \
+            "$IMAGE_FULL"
         env:
           COSIGN_PRIVATE_KEY: ${{ secrets.SIGNING_SECRET }}
 
