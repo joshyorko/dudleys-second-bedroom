@@ -85,12 +85,20 @@ cosign verify-attestation \
   --key cosign.pub \
   ghcr.io/joshyorko/dudleys-second-bedroom:latest | \
   jq -r '.payload' | base64 -d | jq .
+
+# View specific provenance fields
+cosign verify-attestation \
+  --type slsaprovenance \
+  --key cosign.pub \
+  ghcr.io/joshyorko/dudleys-second-bedroom:latest | \
+  jq -r '.payload' | base64 -d | jq '.predicate.invocation.configSource'
 ```
 
 The provenance includes:
-- **Builder ID**: Identifies the build system (GitHub Actions)
-- **Git SHA**: Source commit that produced this image
-- **Workflow Run ID**: Specific CI run that built the image
+- **Builder ID**: Identifies the build system (`gh-action/dudley-build`)
+- **Build Type**: URI describing the build process
+- **Config Source**: Repository URI, Git SHA, and workflow entry point
+- **Materials**: Source repository and commit digest
 
 ## 4. Access Build Metadata (ORAS)
 

@@ -53,6 +53,8 @@ verify_sbom() {
 
 verify_provenance() {
 	local image_ref=${1:-}
+	local public_key=${2:-cosign.pub}
+
 	if [[ -z "$image_ref" ]]; then
 		echo "verify_provenance: missing image ref" >&2
 		return 2
@@ -65,14 +67,25 @@ verify_provenance() {
 		return 1
 	fi
 
-	# verify-attestation returns non-zero if verification fails
-	if ! cosign verify-attestation --type slsaprovenance "$image_ref" >/dev/null 2>&1; then
-		echo "ERROR: provenance verification failed for $image_ref" >&2
-		return 1
+	# Try key-based verification first (attestation was signed with private key)
+	if [[ -f "$public_key" ]]; then
+		if cosign verify-attestation --type slsaprovenance --key "$public_key" "$image_ref" >/dev/null 2>&1; then
+			echo "OK: provenance attestation verified (key-based) for $image_ref"
+			return 0
+		fi
 	fi
 
-	echo "OK: provenance attestation verified for $image_ref"
-	return 0
+	# Fallback to OIDC/keyless verification
+	if cosign verify-attestation --type slsaprovenance \
+		--certificate-oidc-issuer "$DEFAULT_OIDC_ISSUER" \
+		--certificate-identity-regexp "$DEFAULT_OIDC_IDENTITY_REGEXP" \
+		"$image_ref" >/dev/null 2>&1; then
+		echo "OK: provenance attestation verified (OIDC) for $image_ref"
+		return 0
+	fi
+
+	echo "ERROR: provenance verification failed for $image_ref" >&2
+	return 1
 }
 
 # T018: Verify metadata artifact exists and can be pulled
@@ -135,7 +148,9 @@ verify_metadata() {
 	fi
 
 	# Verify tarball contains expected directories
-	if ! tar -tzf "$tmp_dir/metadata.tar.gz" | grep -qE '^(specs|docs|build_files)/'; then
+	local tar_contents
+	tar_contents=$(tar -tzf "$tmp_dir/metadata.tar.gz" 2>/dev/null) || true
+	if ! echo "$tar_contents" | grep -qE '(specs/|docs/|build_files/)'; then
 		echo "ERROR: metadata.tar.gz does not contain expected directories (specs/, docs/, build_files/)" >&2
 		cleanup_metadata_tmp
 		return 1
