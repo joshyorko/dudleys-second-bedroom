@@ -352,11 +352,13 @@ jobs:
 
           # Use local image to avoid pulling and save bandwidth/time
           # The image is already in podman storage from the build step
+          # Note: We must use sudo because the image is in root's podman storage
           LOCAL_IMAGE="podman:localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
           echo "Generating SPDX JSON SBOM for local image: $LOCAL_IMAGE"
 
           # syft image with SPDX output
-          $SYFT_CMD "$LOCAL_IMAGE" -o spdx-json=./sbom-${{ env.DEFAULT_TAG }}.spdx.json
+          # Run with sudo to access root podman socket
+          sudo $SYFT_CMD "$LOCAL_IMAGE" -o spdx-json=./sbom-${{ env.DEFAULT_TAG }}.spdx.json
 
           echo "=== SBOM generation complete ==="
           echo "SBOM file: ./sbom-${{ env.DEFAULT_TAG }}.spdx.json"
