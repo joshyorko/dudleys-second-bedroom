@@ -298,16 +298,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v5
 
-      # Free up disk space for pulling and unpacking ~13GB image during SBOM generation
-      - name: Maximize build space
-        uses: ublue-os/remove-unwanted-software@cc0becac701cf642c8f0a6613bbdaf5dc36b259e # v9
-        with:
-          remove-dotnet: 'true'
-          remove-android: 'true'
-          remove-haskell: 'true'
-          remove-codeql: 'true'
-          remove-docker-images: 'false'  # Keep docker, we need it to pull the image
-
       - name: Login to GitHub Container Registry
         uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3
         with:
@@ -333,31 +323,20 @@ jobs:
           cosign version
           oras version
 
-      - name: Setup Syft
-        id: setup-syft
-        uses: anchore/sbom-action/download-syft@fbfd9c6c189226748411491745178e0c2017392d # v0.15.10
-
-      # ----------------------------------------
-      # Pull the image from registry for SBOM generation
-      # ----------------------------------------
-      - name: Pull image from registry
+      - name: Install Trivy
         run: |
           set -euo pipefail
-          IMAGE_FULL="${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
-          echo "Pulling image: $IMAGE_FULL"
-          # Use docker for syft compatibility (no socket setup needed)
-          docker pull "$IMAGE_FULL"
-          echo "Image pulled successfully"
-          docker images
+          echo "Installing Trivy"
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
+          trivy version
 
       # ----------------------------------------
       # Generate SBOM (Software Bill of Materials)
+      # Uses trivy which handles large images more efficiently than syft
       # ----------------------------------------
       - name: Generate SBOM (SPDX JSON)
         id: gen-sbom
-        timeout-minutes: 30
-        env:
-          SYFT_CMD: ${{ steps.setup-syft.outputs.cmd }}
+        timeout-minutes: 45
         run: |
           set -euo pipefail
 
@@ -366,9 +345,11 @@ jobs:
 
           IMAGE_FULL="${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
           echo "Generating SPDX JSON SBOM for: $IMAGE_FULL"
+          echo "Using trivy with registry scanning (handles large images efficiently)"
 
-          # Generate SBOM from the pulled image
-          $SYFT_CMD "docker:$IMAGE_FULL" -o spdx-json=./sbom-${{ env.DEFAULT_TAG }}.spdx.json
+          # Generate SBOM directly from registry using trivy
+          # Trivy handles large images better than syft by streaming layers
+          trivy image --format spdx-json --output ./sbom-${{ env.DEFAULT_TAG }}.spdx.json "$IMAGE_FULL"
 
           echo "=== SBOM generation complete ==="
           echo "SBOM file: ./sbom-${{ env.DEFAULT_TAG }}.spdx.json"
