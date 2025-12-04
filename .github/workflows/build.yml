@@ -389,16 +389,13 @@ jobs:
           mkdir -p .slsa
           cat > .slsa/predicate.json <<'JSON'
           {
-            "predicateType": "https://slsa.dev/provenance/v0.2",
-            "predicate": {
-              "builder": {"id": "gh-action/dudley-build"},
-              "buildType": "https://github.com/ublue-os/dudley/build",
-              "metadata": {
-                "buildStartedOn": "${{ steps.date.outputs.date }}",
-                "completeness": {"parameters": true, "environment": true, "materials": true}
-              },
-              "invocation": {"workflowRunId": "${{ github.run_id }}", "gitSha": "${{ github.sha }}"}
-            }
+            "builder": {"id": "gh-action/dudley-build"},
+            "buildType": "https://github.com/joshyorko/dudleys-second-bedroom/build",
+            "metadata": {
+              "buildStartedOn": "${{ steps.date.outputs.date }}",
+              "completeness": {"parameters": true, "environment": true, "materials": true}
+            },
+            "invocation": {"workflowRunId": "${{ github.run_id }}", "gitSha": "${{ github.sha }}"}
           }
           JSON
 
