@@ -372,7 +372,7 @@ jobs:
           # attach SBOM using cosign
           cosign attach sbom --sbom "$SBOM_FILE" "$IMAGE_FULL"
         env:
-          COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
+          COSIGN_PRIVATE_KEY: ${{ secrets.SIGNING_SECRET }}
 
       # ----------------------------------------
       # Step 4: Create SLSA provenance predicate
@@ -411,7 +411,7 @@ jobs:
           IMAGE_FULL="${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
           cosign attest -y --key env://COSIGN_PRIVATE_KEY --type slsaprovenance --predicate .slsa/predicate.json "$IMAGE_FULL"
         env:
-          COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
+          COSIGN_PRIVATE_KEY: ${{ secrets.SIGNING_SECRET }}
 
       # ----------------------------------------
       # Step 6: Key-based signing
@@ -428,7 +428,7 @@ jobs:
         env:
           TAGS: ${{ steps.push.outputs.digest }}
           COSIGN_EXPERIMENTAL: false
-          COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
+          COSIGN_PRIVATE_KEY: ${{ secrets.SIGNING_SECRET }}
 
       # ============================================
       # User Story 2: Build Metadata Artifact (ORAS)
