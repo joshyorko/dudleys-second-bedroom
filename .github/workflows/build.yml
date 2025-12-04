@@ -199,33 +199,40 @@ jobs:
       # This does not make your image faster to download, just provides better resumability and fixes a few errors.
       # Documentation for Rechunk is provided on their github repository at https://github.com/hhd-dev/rechunk
       # You can enable it by uncommenting the following lines:
-      - name: Copy image to root storage for rechunking
-        run: |
-          # Save image from user storage to tarball
-          # Use workspace to avoid /tmp size limits
-          podman save -o image.tar "localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
-          # Load image into root storage
-          sudo podman load -i image.tar
-          # Cleanup
-          rm image.tar
+      # - name: Copy image to root storage for rechunking
+      #   run: |
+      #     # Save image from user storage to tarball
+      #     # Use workspace to avoid /tmp size limits
+      #     podman save -o image.tar "localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
+      #     # Load image into root storage
+      #     sudo podman load -i image.tar
+      #     # Cleanup
+      #     rm image.tar
+      #
+      # - name: Run Rechunker
+      #   id: rechunk
+      #   uses: hhd-dev/rechunk@5fbe1d3a639615d2548d83bc888360de6267b1a2 # v1.2.4
+      #   with:
+      #     rechunk: 'ghcr.io/hhd-dev/rechunk:v1.0.1'
+      #     ref: "localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
+      #     prev-ref: "${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
+      #     skip_compression: true
+      #     labels: ${{ steps.metadata.outputs.labels }}
+      #
+      # # Load the rechunked image back into podman storage
+      # - name: Load rechunked image in podman and tag
+      #   run: |
+      #     IMAGE=$(podman pull ${{ steps.rechunk.outputs.ref }})
+      #     sudo rm -rf ${{ steps.rechunk.outputs.output }}
+      #     for tag in ${{ steps.metadata.outputs.tags }}; do
+      #       podman tag $IMAGE ${{ env.IMAGE_NAME }}:$tag
+      #     done
 
-      - name: Run Rechunker
-        id: rechunk
-        uses: hhd-dev/rechunk@5fbe1d3a639615d2548d83bc888360de6267b1a2 # v1.2.4
-        with:
-          rechunk: 'ghcr.io/hhd-dev/rechunk:v1.0.1'
-          ref: "localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
-          prev-ref: "${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
-          skip_compression: true
-          labels: ${{ steps.metadata.outputs.labels }}
-
-      # Load the rechunked image back into podman storage
-      - name: Load rechunked image in podman and tag
+      # Tag the built image with all metadata tags (without rechunking)
+      - name: Tag image with all metadata tags
         run: |
-          IMAGE=$(podman pull ${{ steps.rechunk.outputs.ref }})
-          sudo rm -rf ${{ steps.rechunk.outputs.output }}
           for tag in ${{ steps.metadata.outputs.tags }}; do
-            podman tag $IMAGE ${{ env.IMAGE_NAME }}:$tag
+            podman tag "localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}" "${{ env.IMAGE_NAME }}:$tag"
           done
 
       # These `if` statements are so that pull requests for your custom images do not make it publish any packages under your name without you knowing
