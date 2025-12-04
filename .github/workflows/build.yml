@@ -352,13 +352,29 @@ jobs:
 
           # Use local image to avoid pulling and save bandwidth/time
           # The image is already in podman storage from the build step
-          # Note: We must use sudo because the image is in root's podman storage
           LOCAL_IMAGE="podman:localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
           echo "Generating SPDX JSON SBOM for local image: $LOCAL_IMAGE"
 
+          # Start podman socket manually (systemd is not available in GHA)
+          # Syft requires the podman socket to be active to inspect images in podman storage
+          echo "Starting podman socket..."
+          podman system service -t 0 &
+
+          # Wait for socket to be ready (max 30s)
+          SOCK_PATH="${XDG_RUNTIME_DIR}/podman/podman.sock"
+          for i in {1..30}; do
+            if [ -S "$SOCK_PATH" ]; then
+              echo "Socket ready at $SOCK_PATH"
+              break
+            fi
+            sleep 1
+          done
+
+          # Point syft to the socket
+          export DOCKER_HOST="unix://$SOCK_PATH"
+
           # syft image with SPDX output
-          # Run with sudo to access root podman socket
-          sudo $SYFT_CMD "$LOCAL_IMAGE" -o spdx-json=./sbom-${{ env.DEFAULT_TAG }}.spdx.json
+          $SYFT_CMD "$LOCAL_IMAGE" -o spdx-json=./sbom-${{ env.DEFAULT_TAG }}.spdx.json
 
           echo "=== SBOM generation complete ==="
           echo "SBOM file: ./sbom-${{ env.DEFAULT_TAG }}.spdx.json"
