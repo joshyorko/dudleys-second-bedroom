@@ -78,10 +78,8 @@ jobs:
     runs-on: ubuntu-24.04
     needs: [pre-build-validation, unit-tests]
     outputs:
-      tags: ${{ steps.final-tags.outputs.tags }}
+      tags: ${{ steps.metadata.outputs.tags }}
       build_date: ${{ steps.date.outputs.date }}
-      digest: ${{ steps.push.outputs.digest }}
-      version: ${{ steps.rechunk.outputs.version }}
 
     permissions:
       contents: read
@@ -204,66 +202,45 @@ jobs:
           # Run verification using just command
           just verify-build "localhost/${{ env.IMAGE_NAME }}" "${{ env.DEFAULT_TAG }}"
 
-      # ----------------------------------------
-      # Rechunk: Optimize image layers for faster updates
-      # Rechunk reprocesses the OSTree OCI image to create optimally-sized layers
-      # that minimize update bandwidth by 40-80% for regular updates.
-      # See: https://github.com/hhd-dev/rechunk
-      # ----------------------------------------
+      # Rechunk is a script that we use on Universal Blue to make sure there isnt a single huge layer when your image gets published.
+      # This does not make your image faster to download, just provides better resumability and fixes a few errors.
+      # Documentation for Rechunk is provided on their github repository at https://github.com/hhd-dev/rechunk
+      # You can enable it by uncommenting the following lines:
+      # - name: Copy image to root storage for rechunking
+      #   run: |
+      #     # Save image from user storage to tarball
+      #     # Use workspace to avoid /tmp size limits
+      #     podman save -o image.tar "localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
+      #     # Load image into root storage
+      #     sudo podman load -i image.tar
+      #     # Cleanup
+      #     rm image.tar
+      #
+      # - name: Run Rechunker
+      #   id: rechunk
+      #   uses: hhd-dev/rechunk@5fbe1d3a639615d2548d83bc888360de6267b1a2 # v1.2.4
+      #   with:
+      #     rechunk: 'ghcr.io/hhd-dev/rechunk:v1.0.1'
+      #     ref: "localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
+      #     prev-ref: "${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
+      #     skip_compression: true
+      #     labels: ${{ steps.metadata.outputs.labels }}
+      #
+      # # Load the rechunked image back into podman storage
+      # - name: Load rechunked image in podman and tag
+      #   run: |
+      #     IMAGE=$(podman pull ${{ steps.rechunk.outputs.ref }})
+      #     sudo rm -rf ${{ steps.rechunk.outputs.output }}
+      #     for tag in ${{ steps.metadata.outputs.tags }}; do
+      #       podman tag $IMAGE ${{ env.IMAGE_NAME }}:$tag
+      #     done
 
-      # Copy image to root storage for rechunking (rechunk requires root podman)
-      - name: Copy image to root storage for rechunking
+      # Tag the built image with all metadata tags (without rechunking)
+      - name: Tag image with all metadata tags
         run: |
-          # Save image from user storage to tarball
-          # Use workspace to avoid /tmp size limits
-          podman save -o ${{ github.workspace }}/image.tar "localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
-          # Load image into root storage
-          sudo podman load -i ${{ github.workspace }}/image.tar
-          # Cleanup tarball to free space
-          rm ${{ github.workspace }}/image.tar
-
-      - name: Run Rechunker
-        id: rechunk
-        uses: hhd-dev/rechunk@5fbe1d3a639615d2548d83bc888360de6267b1a2 # v1.2.4
-        with:
-          rechunk: 'ghcr.io/hhd-dev/rechunk:v1.2.4'
-          ref: "localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
-          prev-ref: "${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
-          version: "${{ env.DEFAULT_TAG }}"
-          labels: |
-            io.artifacthub.package.readme-url=https://raw.githubusercontent.com/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}/${{ github.sha }}/README.md
-            org.opencontainers.image.created=<timestamp>
-            org.opencontainers.image.description=${{ env.IMAGE_DESC }}
-            org.opencontainers.image.documentation=https://raw.githubusercontent.com/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}/${{ github.sha }}/README.md
-            org.opencontainers.image.source=https://github.com/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}/blob/${{ github.sha }}/Containerfile
-            org.opencontainers.image.title=${{ env.IMAGE_NAME }}
-            org.opencontainers.image.url=https://github.com/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}/tree/${{ github.sha }}
-            org.opencontainers.image.vendor=${{ github.repository_owner }}
-            org.opencontainers.image.revision=${{ github.sha }}
-            io.artifacthub.package.deprecated=false
-            io.artifacthub.package.keywords=${{ env.IMAGE_KEYWORDS }}
-            io.artifacthub.package.license=Apache-2.0
-            io.artifacthub.package.logo-url=${{ env.IMAGE_LOGO_URL }}
-            io.artifacthub.package.prerelease=false
-            containers.bootc=1
-
-      # Generate final tags using the version from rechunk (which may have been suffixed)
-      - name: Generate final tags
-        id: final-tags
-        run: |
-          # Use rechunk's version output which handles version deduplication
-          VERSION="${{ steps.rechunk.outputs.version }}"
-
-          # Generate tag list for pushing
-          TAGS="${VERSION} ${VERSION}.$(date +%Y%m%d) $(date +%Y%m%d)"
-
-          # Add SHA tag for pull requests
-          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            TAGS="${TAGS} sha-${GITHUB_SHA::7} pr-${{ github.event.pull_request.number }}"
-          fi
-
-          echo "tags=${TAGS}" >> $GITHUB_OUTPUT
-          echo "Generated tags: ${TAGS}"
+          for tag in ${{ steps.metadata.outputs.tags }}; do
+            podman tag "localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}" "${{ env.IMAGE_NAME }}:$tag"
+          done
 
       # These `if` statements are so that pull requests for your custom images do not make it publish any packages under your name without you knowing
       # They also check if the runner is on the default branch so that things like the merge queue (if you enable it), are going to work
@@ -275,26 +252,20 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # Push rechunked image using skopeo (the proper way for OCI directories)
-      - name: Push Rechunked Image To GHCR
+      - name: Push To GHCR
+        uses: redhat-actions/push-to-registry@5ed88d269cf581ea9ef6dd6806d01562096bee9c # v2
         if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
         id: push
         timeout-minutes: 60
-        run: |
-          # Login with skopeo for pushing OCI directories
-          echo "${{ secrets.GITHUB_TOKEN }}" | sudo skopeo login ghcr.io -u ${{ github.actor }} --password-stdin
-
-          # Push each tag using skopeo copy from OCI directory to registry
-          for tag in ${{ steps.final-tags.outputs.tags }}; do
-            dest_image="${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${tag}"
-            echo "Pushing to: ${dest_image}"
-            sudo skopeo copy ${{ steps.rechunk.outputs.ref }} docker://${dest_image}
-          done
-
-          # Get digest for signing later
-          DIGEST=$(sudo skopeo inspect --format '{{.Digest}}' ${{ steps.rechunk.outputs.ref }})
-          echo "digest=${DIGEST}" >> $GITHUB_OUTPUT
-          echo "Pushed image digest: ${DIGEST}"
+        env:
+          REGISTRY_USER: ${{ github.actor }}
+          REGISTRY_PASSWORD: ${{ github.token }}
+        with:
+          registry: ${{ env.IMAGE_REGISTRY }}
+          image: ${{ env.IMAGE_NAME }}
+          tags: ${{ steps.metadata.outputs.tags }}
+          username: ${{ env.REGISTRY_USER }}
+          password: ${{ env.REGISTRY_PASSWORD }}
 
   # ============================================
   # SUPPLY CHAIN SECURITY JOB
@@ -475,12 +446,8 @@ jobs:
         run: |
           set -euo pipefail
           IMAGE_FULL="${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
-          # Use digest from build job if available, otherwise query registry
-          if [[ -n "${{ needs.build_push.outputs.digest }}" ]]; then
-            DIGEST=$(echo "${{ needs.build_push.outputs.digest }}" | cut -d: -f2)
-          else
-            DIGEST=$(skopeo inspect --format '{{.Digest}}' "docker://$IMAGE_FULL" | cut -d: -f2)
-          fi
+          # Get the digest of the pushed image using skopeo
+          DIGEST=$(skopeo inspect --format '{{.Digest}}' "docker://$IMAGE_FULL" | cut -d: -f2)
           if [[ -z "$DIGEST" ]]; then
             echo "ERROR: Failed to extract image digest" >&2
             exit 1
