@@ -13,7 +13,7 @@ set -eoux pipefail
 # Module metadata
 readonly MODULE_NAME="rcc-cli"
 readonly CATEGORY="developer"
-readonly RCC_VERSION="${RCC_VERSION:-v18.12.0}"
+readonly RCC_VERSION="${RCC_VERSION:-v18.12.1}"
 
 # Logging helper
 log() {
