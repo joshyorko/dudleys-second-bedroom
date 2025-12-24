@@ -77,6 +77,8 @@ jobs:
     name: Build and push image
     runs-on: ubuntu-24.04
     needs: [pre-build-validation, unit-tests]
+    # Only build on push to main, schedule, or manual dispatch - skip PRs to save CI time
+    if: github.event_name != 'pull_request'
     outputs:
       tags: ${{ steps.metadata.outputs.tags }}
       build_date: ${{ steps.date.outputs.date }}
