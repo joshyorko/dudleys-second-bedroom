@@ -307,6 +307,24 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Resolve pushed image digest
+        id: resolve-digest
+        run: |
+          set -euo pipefail
+          IMAGE_TAG_REF="${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
+          DIGEST=$(skopeo inspect --format '{{.Digest}}' "docker://${IMAGE_TAG_REF}")
+          if [[ -z "${DIGEST}" ]]; then
+            echo "ERROR: Failed to extract image digest" >&2
+            exit 1
+          fi
+          IMAGE_DIGEST_REF="${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}@${DIGEST}"
+          echo "Resolved digest: ${DIGEST}"
+          echo "Resolved digest ref: ${IMAGE_DIGEST_REF}"
+          echo "digest=${DIGEST}" >> "$GITHUB_OUTPUT"
+          echo "digest_ref=${IMAGE_DIGEST_REF}" >> "$GITHUB_OUTPUT"
+          echo "IMAGE_DIGEST=${DIGEST}" >> "$GITHUB_ENV"
+          echo "IMAGE_DIGEST_REF=${IMAGE_DIGEST_REF}" >> "$GITHUB_ENV"
+
       # ----------------------------------------
       # Install supply chain tools
       # ----------------------------------------
@@ -345,13 +363,13 @@ jobs:
           echo "=== Disk space before SBOM generation ==="
           df -h / /tmp 2>/dev/null || df -h
 
-          IMAGE_FULL="${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
-          echo "Generating SPDX JSON SBOM for: $IMAGE_FULL"
+          IMAGE_REF="${IMAGE_DIGEST_REF:-${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}}"
+          echo "Generating SPDX JSON SBOM for: $IMAGE_REF"
           echo "Using trivy with registry scanning (handles large images efficiently)"
 
           # Generate SBOM directly from registry using trivy
           # Trivy handles large images better than syft by streaming layers
-          trivy image --format spdx-json --output ./sbom-${{ env.DEFAULT_TAG }}.spdx.json "$IMAGE_FULL"
+          trivy image --format spdx-json --output ./sbom-${{ env.DEFAULT_TAG }}.spdx.json "$IMAGE_REF"
 
           echo "=== SBOM generation complete ==="
           echo "SBOM file: ./sbom-${{ env.DEFAULT_TAG }}.spdx.json"
@@ -364,7 +382,7 @@ jobs:
       - name: Attest SBOM to image with cosign
         run: |
           set -euo pipefail
-          IMAGE_FULL="${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
+          IMAGE_REF="${IMAGE_DIGEST_REF}"
           SBOM_FILE=./sbom-${{ env.DEFAULT_TAG }}.spdx.json
           if [[ ! -f "$SBOM_FILE" ]]; then
             echo "SBOM file not found: $SBOM_FILE" >&2
@@ -374,7 +392,7 @@ jobs:
             --predicate "$SBOM_FILE" \
             --type spdxjson \
             --key env://COSIGN_PRIVATE_KEY \
-            "$IMAGE_FULL"
+            "$IMAGE_REF"
         env:
           COSIGN_PRIVATE_KEY: ${{ secrets.SIGNING_SECRET }}
 
@@ -414,8 +432,7 @@ jobs:
       - name: Attest image with SLSA provenance
         run: |
           set -euo pipefail
-          IMAGE_FULL="${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
-          cosign attest -y --key env://COSIGN_PRIVATE_KEY --type slsaprovenance --predicate .slsa/predicate.json "$IMAGE_FULL"
+          cosign attest -y --key env://COSIGN_PRIVATE_KEY --type slsaprovenance --predicate .slsa/predicate.json "${IMAGE_DIGEST_REF}"
         env:
           COSIGN_PRIVATE_KEY: ${{ secrets.SIGNING_SECRET }}
 
@@ -424,10 +441,7 @@ jobs:
       # ----------------------------------------
       - name: Sign container image (key-based)
         run: |
-          IMAGE_FULL="${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}"
-          for tag in ${{ needs.build_push.outputs.tags }}; do
-            cosign sign -y --key env://COSIGN_PRIVATE_KEY "$IMAGE_FULL:$tag"
-          done
+          cosign sign -y --key env://COSIGN_PRIVATE_KEY "${IMAGE_DIGEST_REF}"
         env:
           COSIGN_EXPERIMENTAL: false
           COSIGN_PRIVATE_KEY: ${{ secrets.SIGNING_SECRET }}
@@ -447,17 +461,12 @@ jobs:
         id: metadata-tag
         run: |
           set -euo pipefail
-          IMAGE_FULL="${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
-          # Get the digest of the pushed image using skopeo
-          DIGEST=$(skopeo inspect --format '{{.Digest}}' "docker://$IMAGE_FULL" | cut -d: -f2)
-          if [[ -z "$DIGEST" ]]; then
-            echo "ERROR: Failed to extract image digest" >&2
-            exit 1
-          fi
-          METADATA_TAG="sha256-${DIGEST}.metadata"
-          echo "Image digest: sha256:$DIGEST"
+          DIGEST="${IMAGE_DIGEST:-${{ steps.resolve-digest.outputs.digest }}}"
+          DIGEST_NO_PREFIX="${DIGEST#sha256:}"
+          METADATA_TAG="sha256-${DIGEST_NO_PREFIX}.metadata"
+          echo "Image digest: ${DIGEST}"
           echo "Metadata tag: $METADATA_TAG"
-          echo "digest=$DIGEST" >> "$GITHUB_OUTPUT"
+          echo "digest=${DIGEST}" >> "$GITHUB_OUTPUT"
           echo "metadata_tag=$METADATA_TAG" >> "$GITHUB_OUTPUT"
 
       - name: Push metadata artifact with ORAS
@@ -476,10 +485,7 @@ jobs:
       - name: Sign container image (keyless/OIDC)
         run: |
           set -euo pipefail
-          IMAGE_FULL="${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}"
-          echo "Performing keyless (OIDC) signing for all tags"
-          for tag in ${{ needs.build_push.outputs.tags }}; do
-            cosign sign -y "$IMAGE_FULL:$tag"
-          done
+          echo "Performing keyless (OIDC) signing for image digest"
+          cosign sign -y "${IMAGE_DIGEST_REF}"
         env:
           COSIGN_EXPERIMENTAL: "1"
