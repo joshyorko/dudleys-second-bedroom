@@ -1,77 +1,87 @@
 {
-  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": [
-    "config:best-practices"
+  $schema: 'https://docs.renovatebot.com/renovate-schema.json',
+  extends: [
+    'config:best-practices',
   ],
-
-  // Dependency Dashboard - creates a pinned issue to track all updates (like Bluefin)
-  "dependencyDashboard": true,
-  "dependencyDashboardTitle": "Dependency Dashboard",
-
-  "rebaseWhen": "never",
-
-  // Custom managers to track versions in shell scripts
-  "customManagers": [
+  dependencyDashboard: true,
+  dependencyDashboardTitle: 'Dependency Dashboard',
+  rebaseWhen: 'never',
+  customManagers: [
     {
-      // Track RCC_VERSION in rcc-cli.sh
-      "customType": "regex",
-      "fileMatch": ["^build_files/developer/rcc-cli\\.sh$"],
-      "matchStrings": [
-        "RCC_VERSION=\"\\$\\{RCC_VERSION:-(?<currentValue>v[0-9]+\\.[0-9]+\\.[0-9]+)\\}\""
+      customType: 'regex',
+      managerFilePatterns: [
+        '/^build_files/developer/rcc-cli\\.sh$/',
       ],
-      "depNameTemplate": "joshyorko/rcc",
-      "datasourceTemplate": "github-releases"
+      matchStrings: [
+        'RCC_VERSION="\\$\\{RCC_VERSION:-(?<currentValue>v[0-9]+\\.[0-9]+\\.[0-9]+)\\}"',
+      ],
+      depNameTemplate: 'joshyorko/rcc',
+      datasourceTemplate: 'github-releases',
     },
     {
-      // Track ACTION_SERVER_VERSION if using version file
-      "customType": "regex",
-      "fileMatch": ["^action-server-version\\.txt$"],
-      "matchStrings": [
-        "(?<currentValue>v?[0-9]+\\.[0-9]+\\.[0-9]+)"
+      customType: 'regex',
+      managerFilePatterns: [
+        '/^action-server-version\\.txt$/',
       ],
-      "depNameTemplate": "sema4ai/action-server",
-      "datasourceTemplate": "github-releases"
+      matchStrings: [
+        '(?<currentValue>v?[0-9]+\\.[0-9]+\\.[0-9]+)',
+      ],
+      depNameTemplate: 'sema4ai/action-server',
+      datasourceTemplate: 'github-releases',
     },
     {
-      // Track ORAS_VERSION in build.yml
-      "customType": "regex",
-      "fileMatch": ["^\\.github/workflows/build\\.yml$"],
-      "matchStrings": [
-        "ORAS_VERSION=\"(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)\""
+      customType: 'regex',
+      managerFilePatterns: [
+        '/^\\.github/workflows/build\\.yml$/',
       ],
-      "depNameTemplate": "oras-project/oras",
-      "datasourceTemplate": "github-releases"
-    }
+      matchStrings: [
+        'ORAS_VERSION="(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)"',
+      ],
+      depNameTemplate: 'oras-project/oras',
+      datasourceTemplate: 'github-releases',
+    },
   ],
-
-  "packageRules": [
-    // Automerge pin and pinDigest updates
+  packageRules: [
     {
-      "automerge": true,
-      "matchUpdateTypes": ["pin", "pinDigest"]
+      automerge: true,
+      matchUpdateTypes: [
+        'pin',
+        'pinDigest',
+      ],
     },
-    // Automerge Dockerfile/Containerfile digest updates (keeps base image fresh)
     {
-      "automerge": true,
-      "matchManagers": ["dockerfile"],
-      "matchUpdateTypes": ["digest"]
+      automerge: true,
+      matchManagers: [
+        'dockerfile',
+      ],
+      matchUpdateTypes: [
+        'digest',
+      ],
     },
-    // Automerge GitHub Actions digest updates
     {
-      "automerge": true,
-      "matchManagers": ["github-actions"],
-      "matchUpdateTypes": ["digest"]
+      automerge: true,
+      matchManagers: [
+        'github-actions',
+      ],
+      matchUpdateTypes: [
+        'digest',
+      ],
     },
-    // Group Universal Blue related updates together
     {
-      "groupName": "Universal Blue dependencies",
-      "matchPackagePatterns": ["^ghcr\\.io/ublue-os/"]
+      groupName: 'Universal Blue dependencies',
+      matchPackageNames: [
+        '/^ghcr\\.io/ublue-os//',
+      ],
     },
-    // Group all GitHub Actions updates by action name
     {
-      "groupName": "GitHub Actions",
-      "matchManagers": ["github-actions"],
-      "matchUpdateTypes": ["minor", "patch"]
-    }
-  ]
+      groupName: 'GitHub Actions',
+      matchManagers: [
+        'github-actions',
+      ],
+      matchUpdateTypes: [
+        'minor',
+        'patch',
+      ],
+    },
+  ],
 }
