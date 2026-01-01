@@ -1,14 +1,17 @@
 <!--
 Sync Impact Report:
-- Version change: 1.0.0 (Initial)
+- Version change: 1.0.0 → 1.1.0
+- Modified Principles: None
 - Added Principles:
-  - I. Modular & Ordered Execution
-  - II. Declarative Over Imperative
-  - III. Content-Addressable State
-  - IV. Idempotency & Safety
-  - V. Mandatory Validation
-- Added Governance: Standard amendment process.
-- Templates requiring updates: None (Templates are generic enough).
+  - VI. Supply Chain Integrity (NEW)
+- Added Sections:
+  - Supply Chain Requirements (NEW subsection under Build System Constraints)
+- Removed Sections: None
+- Templates requiring updates:
+  - ✅ plan-template.md (generic, no changes needed)
+  - ✅ spec-template.md (generic, no changes needed)
+  - ✅ tasks-template.md (generic, no changes needed)
+- Follow-up TODOs: None
 -->
 # Dudley's Second Bedroom Constitution
 
@@ -29,6 +32,9 @@ All build modules and user hooks MUST be idempotent. They must handle re-executi
 ### V. Mandatory Validation
 No changes are complete without passing the relevant validation suites (`just check`, `validate-modules.sh`). Validation scripts are the primary gatekeepers for code quality and correctness.
 
+### VI. Supply Chain Integrity
+Production images MUST include verifiable provenance and software bill of materials. All images built from the default branch MUST be signed (dual key-based and keyless OIDC signatures), include an SBOM (SPDX JSON format), and carry SLSA provenance attestation. This ensures end users can verify the authenticity and contents of any image they deploy.
+
 ## Build System Constraints
 
 ### Module Contract
@@ -36,6 +42,13 @@ Every build module MUST adhere to the standard header format, including Purpose,
 
 ### File System Hierarchy
 Modules must operate within the `/ctx` context during build and target `/usr/share/dudley` or standard system paths. Hardcoded paths outside these boundaries are prohibited.
+
+### Supply Chain Requirements
+- **SBOM Generation**: Every production build MUST generate an SPDX JSON software bill of materials.
+- **Provenance Attestation**: Production images MUST include SLSA v0.2 provenance capturing Git SHA and workflow context.
+- **Dual Signatures**: Images MUST carry both key-based (`cosign.pub`) and keyless (GitHub OIDC) signatures.
+- **Metadata Archival**: Build context (specs, docs, build_files) MUST be archived as an OCI artifact for traceability.
+- **Verification Tools**: The repository MUST provide verification scripts (`tests/verify-supply-chain.sh`) and documentation (`docs/SIGNATURE-VERIFICATION.md`).
 
 ## Development Workflow
 
@@ -48,9 +61,18 @@ Changes to the build architecture or module contracts MUST be reflected in `docs
 ## Governance
 
 ### Amendment Process
-Amendments to this constitution require a Pull Request with a clear rationale. The `CONSTITUTION_VERSION` must be incremented according to semantic versioning.
+Amendments to this constitution require a Pull Request with a clear rationale. The `CONSTITUTION_VERSION` must be incremented according to semantic versioning:
+- **MAJOR**: Backward incompatible governance/principle removals or redefinitions.
+- **MINOR**: New principle/section added or materially expanded guidance.
+- **PATCH**: Clarifications, wording, typo fixes, non-semantic refinements.
 
 ### Compliance
 All Pull Requests must be reviewed against these principles. Deviations must be explicitly justified and approved by maintainers.
 
-**Version**: 1.0.0 | **Ratified**: 2025-11-21 | **Last Amended**: 2025-11-21
+### Version History
+| Version | Date | Summary |
+|---------|------|---------|
+| 1.0.0 | 2025-11-21 | Initial ratification with 5 core principles |
+| 1.1.0 | 2026-01-01 | Added Principle VI (Supply Chain Integrity) and Supply Chain Requirements |
+
+**Version**: 1.1.0 | **Ratified**: 2025-11-21 | **Last Amended**: 2026-01-01
