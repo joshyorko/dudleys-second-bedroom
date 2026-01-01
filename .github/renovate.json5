@@ -44,6 +44,9 @@
     }
   ],
 
+  // Platform automerge - tells Renovate to use GitHub's automerge feature
+  "platformAutomerge": true,
+
   "packageRules": [
     // Automerge pin and pinDigest updates
     {
