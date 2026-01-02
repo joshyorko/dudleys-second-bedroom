@@ -73,6 +73,10 @@ Build Information:
   Base:   $base_image
   Commit: $git_commit
 
+Homebrew Packages:
+  Install dev tools:  ujust dudley-brews-dev
+  Install all brews:  ujust dudley-brews-all
+
 Content Versions:
 EOF
 
@@ -89,11 +93,6 @@ EOF
 		# Get hook-specific metadata
 		local extra_info=""
 		case "$hook" in
-			"vscode-extensions")
-				local ext_count
-				ext_count=$(jq -r ".hooks[\"$hook\"].metadata.extension_count // 0" "$manifest_path")
-				extra_info=" ($ext_count extensions)"
-				;;
 			"wallpaper")
 				local wp_count
 				wp_count=$(jq -r ".hooks[\"$hook\"].metadata.wallpaper_count // 0" "$manifest_path")

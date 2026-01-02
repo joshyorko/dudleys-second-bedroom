@@ -87,3 +87,11 @@ dudley-brews-list:
     else
         echo "Homebrew directory not found"
     fi
+
+# Install VS Code Insiders via Homebrew
+dudley-vscode-insiders:
+    #!/usr/bin/bash
+    set -euo pipefail
+    echo "Installing VS Code Insiders via Homebrew..."
+    brew install --cask visual-studio-code-insiders
+    echo "✓ VS Code Insiders installation complete"

@@ -62,7 +62,6 @@ run_check "Fedora 43" "podman run --rm ${IMAGE_NAME} cat /etc/os-release" "VERSI
 # Check 3: Developer Tools
 echo ""
 echo "=== Developer Tools ==="
-run_check "VS Code Insiders" "podman run --rm ${IMAGE_NAME} which code-insiders" "/usr/sbin/code-insiders"
 run_check "Action Server" "podman run --rm ${IMAGE_NAME} which action-server" "/usr/sbin/action-server"
 run_check "RCC CLI" "podman run --rm ${IMAGE_NAME} which rcc" "/usr/sbin/rcc"
 

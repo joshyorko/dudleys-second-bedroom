@@ -1,6 +1,6 @@
 # System-wide Flatpak applications
 # One app ID per line, blank lines and lines starting with # are ignored
-# Note: VS Code Insiders is installed via RPM, not flatpak (beta flatpak is broken)
+# Note: VS Code Insiders is installed via Homebrew (ujust dudley-brews-dev)
 
 # File Management & System Tools
 app/com.github.tchx84.Flatseal

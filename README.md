@@ -123,25 +123,6 @@ For developers adding new hooks or modifying the versioning system:
 
 See [specs/002-implement-automatic-content/](./specs/002-implement-automatic-content/) for complete documentation.
 
-## VS Code Insiders (RPM)
-
-Flatpak Insiders (flathub-beta) is unreliable right now for this workflow, so this image layers the official Microsoft `code-insiders` RPM.
-
-After rebasing:
-```bash
-code-insiders --version
-```
-
-User extensions (Remote Containers, Remote SSH, Remote Repositories, C++ tools pack) are auto-installed on first login via a user setup hook.
-
-If you later want to switch to the Flatpak variant, you can remove the RPM:
-```bash
-sudo rpm-ostree override remove code-insiders
-```
-…then install the Flatpak manually.
-
-To pin a specific version, adjust the install script to request `code-insiders-<version>` and rebuild.
-
 ## Default Wallpaper & Branding
 
 **Dynamic multi-image wallpaper system** for desktop sessions only:
