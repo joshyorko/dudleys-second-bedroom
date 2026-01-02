@@ -89,7 +89,7 @@ run_check "DX flatpaks list" "podman run --rm ${IMAGE_NAME} test -f /usr/share/u
 # Check 7: User Hooks
 echo ""
 echo "=== User Setup Hooks ==="
-run_check "wallpaper hook" "podman run --rm ${IMAGE_NAME} test -f /usr/share/ublue-os/user-setup.hooks.d/20-dudley-wallpaper.sh && echo exists" "exists"
+run_check "wallpaper hook" "podman run --rm ${IMAGE_NAME} test -f /usr/share/ublue-os/user-setup.hooks.d/10-wallpaper-enforcement.sh && echo exists" "exists"
 run_check "Holotree init hook" "podman run --rm ${IMAGE_NAME} test -f /usr/share/ublue-os/user-setup.hooks.d/30-holotree-init.sh && echo exists" "exists"
 
 # Check 7b: VS Code Runtime Configuration
