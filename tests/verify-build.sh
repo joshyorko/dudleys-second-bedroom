@@ -90,9 +90,13 @@ run_check "DX flatpaks list" "podman run --rm ${IMAGE_NAME} test -f /usr/share/u
 echo ""
 echo "=== User Setup Hooks ==="
 run_check "wallpaper hook" "podman run --rm ${IMAGE_NAME} test -f /usr/share/ublue-os/user-setup.hooks.d/20-dudley-wallpaper.sh && echo exists" "exists"
-run_check "VS Code extensions hook" "podman run --rm ${IMAGE_NAME} test -f /usr/share/ublue-os/user-setup.hooks.d/20-vscode-extensions.sh && echo exists" "exists"
-run_check "VS Code extensions list" "podman run --rm ${IMAGE_NAME} test -f /etc/skel/.config/vscode-extensions.list && echo exists" "exists"
 run_check "Holotree init hook" "podman run --rm ${IMAGE_NAME} test -f /usr/share/ublue-os/user-setup.hooks.d/30-holotree-init.sh && echo exists" "exists"
+
+# Check 7b: VS Code Runtime Configuration
+echo ""
+echo "=== VS Code Runtime Configuration ==="
+run_check "VS Code extensions list" "podman run --rm ${IMAGE_NAME} test -f /usr/share/ublue-os/vscode-extensions.list && echo exists" "exists"
+run_check "Dudley just recipes" "podman run --rm ${IMAGE_NAME} test -f /usr/share/ublue-os/just/60-dudley.just && echo exists" "exists"
 
 # Check 9: Shared Holotree
 # Note: Shared holotree directory may not exist at build time in container builds
