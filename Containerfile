@@ -14,7 +14,7 @@
 # For more information, see: specs/001-implement-modular-build/
 # =============================================================================
 
-ARG BASE_IMAGE="ghcr.io/ublue-os/bluefin-dx:stable@sha256:e32adc140296dac9f277f8e8ed5b2b7f32c25c52db49feee53f1ab5899c948b5"
+ARG BASE_IMAGE="ghcr.io/ublue-os/bluefin-dx:latest"
 
 # =============================================================================
 # Stage 1: Context Layer (Static Build Files)
@@ -37,7 +37,7 @@ COPY cosign.pub /cosign.pub
 # =============================================================================
 # Inherits from Universal Blue's Bluefin-DX (Developer Experience) image
 # with desktop environment pre-configured.
-# Using :stable tag for reproducible builds (Fedora 43)
+# Using :latest tag for newest features (Renovate manages SHA pinning)
 
 FROM ${BASE_IMAGE} AS base
 
