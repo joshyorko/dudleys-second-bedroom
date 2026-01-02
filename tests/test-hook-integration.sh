@@ -48,7 +48,6 @@ test_placeholders_present() {
 		"$PROJECT_ROOT/build_files/user-hooks/10-wallpaper-enforcement.sh"
 		"$PROJECT_ROOT/build_files/user-hooks/20-vscode-extensions.sh"
 		"$PROJECT_ROOT/build_files/user-hooks/30-holotree-init.sh"
-		"$PROJECT_ROOT/build_files/user-hooks/99-first-boot-welcome.sh"
 	)
 
 	local all_have_placeholder=true
@@ -71,7 +70,6 @@ test_version_script_usage() {
 		"$PROJECT_ROOT/build_files/user-hooks/10-wallpaper-enforcement.sh"
 		"$PROJECT_ROOT/build_files/user-hooks/20-vscode-extensions.sh"
 		"$PROJECT_ROOT/build_files/user-hooks/30-holotree-init.sh"
-		"$PROJECT_ROOT/build_files/user-hooks/99-first-boot-welcome.sh"
 	)
 
 	local all_use_version_script=true
@@ -94,7 +92,6 @@ test_libsetup_sourced() {
 		"$PROJECT_ROOT/build_files/user-hooks/10-wallpaper-enforcement.sh"
 		"$PROJECT_ROOT/build_files/user-hooks/20-vscode-extensions.sh"
 		"$PROJECT_ROOT/build_files/user-hooks/30-holotree-init.sh"
-		"$PROJECT_ROOT/build_files/user-hooks/99-first-boot-welcome.sh"
 	)
 
 	local all_source_libsetup=true
@@ -137,19 +134,17 @@ test_manifest_hooks() {
 	MANIFEST_OUTPUT="$temp_manifest" bash "$PROJECT_ROOT/build_files/shared/utils/generate-manifest.sh" >/dev/null 2>&1
 
 	if [[ -f "$temp_manifest" ]]; then
-		local wallpaper vscode holotree welcome
+		local wallpaper vscode holotree
 		wallpaper=$(jq -r '.hooks.wallpaper.version' "$temp_manifest")
 		vscode=$(jq -r '.hooks["vscode-extensions"].version' "$temp_manifest")
 		holotree=$(jq -r '.hooks["holotree-init"].version' "$temp_manifest")
-		welcome=$(jq -r '.hooks.welcome.version' "$temp_manifest")
 
 		if [[ "$wallpaper" =~ ^[a-f0-9]{8}$ ]] &&
 			[[ "$vscode" =~ ^[a-f0-9]{8}$ ]] &&
-			[[ "$holotree" =~ ^[a-f0-9]{8}$ ]] &&
-			[[ "$welcome" =~ ^[a-f0-9]{8}$ ]]; then
+			[[ "$holotree" =~ ^[a-f0-9]{8}$ ]]; then
 			pass "Manifest contains all hooks with valid version hashes"
 		else
-			fail "Manifest hooks" "Missing or invalid hook versions: wallpaper=$wallpaper, vscode=$vscode, holotree=$holotree, welcome=$welcome"
+			fail "Manifest hooks" "Missing or invalid hook versions: wallpaper=$wallpaper, vscode=$vscode, holotree=$holotree"
 		fi
 	else
 		fail "Manifest hooks" "Manifest file not created"
@@ -184,7 +179,6 @@ test_hook_error_handling() {
 		"$PROJECT_ROOT/build_files/user-hooks/10-wallpaper-enforcement.sh"
 		"$PROJECT_ROOT/build_files/user-hooks/20-vscode-extensions.sh"
 		"$PROJECT_ROOT/build_files/user-hooks/30-holotree-init.sh"
-		"$PROJECT_ROOT/build_files/user-hooks/99-first-boot-welcome.sh"
 	)
 
 	local all_have_failfast=true
@@ -208,7 +202,6 @@ test_hook_logging() {
 		"$PROJECT_ROOT/build_files/user-hooks/10-wallpaper-enforcement.sh"
 		"$PROJECT_ROOT/build_files/user-hooks/20-vscode-extensions.sh"
 		"$PROJECT_ROOT/build_files/user-hooks/30-holotree-init.sh"
-		"$PROJECT_ROOT/build_files/user-hooks/99-first-boot-welcome.sh"
 	)
 
 	local all_have_logging=true

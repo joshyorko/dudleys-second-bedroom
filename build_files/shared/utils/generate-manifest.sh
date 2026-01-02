@@ -76,9 +76,24 @@ wallpaper_meta=$(printf '{"wallpaper_count": %d, "changed": true}' "$WALLPAPER_C
 echo "[dudley-versioning]   Version: $wallpaper_hash (${#WALLPAPER_DEPS[@]} files, $WALLPAPER_COUNT wallpapers)" >&2
 manifest=$(add_hook_to_manifest "$manifest" "wallpaper" "$wallpaper_hash" "$wallpaper_deps_json" "$wallpaper_meta")
 
-# NOTE: vscode-extensions hook removed - VS Code Insiders is now installed via homebrew
-# Extensions are installed at runtime when VS Code is first launched
-# See: /usr/share/ublue-os/just/apps.just for the bbrew dudley ide command
+# Compute hash for vscode-extensions hook
+echo "[dudley-versioning] Computing hash for vscode-extensions hook..." >&2
+VSCODE_DEPS=(
+	"$PROJECT_ROOT/build_files/user-hooks/20-vscode-extensions.sh"
+)
+# Add extensions list if it exists
+extension_count=0
+if [[ -f "$PROJECT_ROOT/vscode-extensions.list" ]]; then
+	VSCODE_DEPS+=("$PROJECT_ROOT/vscode-extensions.list")
+	extension_count=$(grep -v '^\s*#' "$PROJECT_ROOT/vscode-extensions.list" | grep -c -v '^\s*$')
+fi
+
+vscode_hash=$(compute_content_hash "${VSCODE_DEPS[@]}")
+vscode_deps_json=$(printf '%s\n' "${VSCODE_DEPS[@]}" | sed "s|$PROJECT_ROOT/||" | jq -R . | jq -s .)
+vscode_meta=$(printf '{"extension_count": %d, "changed": true}' "$extension_count")
+
+echo "[dudley-versioning]   Version: $vscode_hash ($extension_count extensions)" >&2
+manifest=$(add_hook_to_manifest "$manifest" "vscode-extensions" "$vscode_hash" "$vscode_deps_json" "$vscode_meta")
 
 # Compute hash for holotree hook (script only, no data dependencies)
 echo "[dudley-versioning] Computing hash for holotree hook..." >&2
@@ -88,15 +103,6 @@ holotree_meta='{"changed": true}'
 
 echo "[dudley-versioning]   Version: $holotree_hash" >&2
 manifest=$(add_hook_to_manifest "$manifest" "holotree-init" "$holotree_hash" "$holotree_deps_json" "$holotree_meta")
-
-# Compute hash for welcome hook (script only, no data dependencies)
-echo "[dudley-versioning] Computing hash for welcome hook..." >&2
-welcome_hash=$(compute_content_hash "$PROJECT_ROOT/build_files/user-hooks/99-first-boot-welcome.sh")
-welcome_deps_json='["build_files/user-hooks/99-first-boot-welcome.sh"]'
-welcome_meta='{"changed": true}'
-
-echo "[dudley-versioning]   Version: $welcome_hash" >&2
-manifest=$(add_hook_to_manifest "$manifest" "welcome" "$welcome_hash" "$welcome_deps_json" "$welcome_meta")
 
 # Validate manifest
 echo "[dudley-versioning]" >&2
@@ -120,5 +126,5 @@ echo "[dudley-versioning] ========================================" >&2
 
 # Export computed hashes for use by Containerfile (optional)
 echo "WALLPAPER_VERSION=$wallpaper_hash"
+echo "VSCODE_VERSION=$vscode_hash"
 echo "HOLOTREE_VERSION=$holotree_hash"
-echo "WELCOME_VERSION=$welcome_hash"

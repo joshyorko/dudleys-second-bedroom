@@ -88,35 +88,18 @@ dudley-brews-list:
         echo "Homebrew directory not found"
     fi
 
-# Install VS Code Insiders via Homebrew
-dudley-vscode-insiders:
-    #!/usr/bin/bash
-    set -euo pipefail
-    echo "Installing VS Code Insiders via Homebrew..."
-    brew install --cask visual-studio-code-insiders
-    echo "✓ VS Code Insiders installation complete"
-    echo ""
-    echo "Installing extensions..."
-    ujust dudley-vscode-extensions
-    echo ""
-    echo "✓ VS Code Insiders setup complete!"
-
 # Install/update VS Code Insiders extensions from list
+
+# VS Code Insiders is pre-installed in the image via RPM
 dudley-vscode-extensions:
     #!/usr/bin/bash
     set -euo pipefail
     EXTENSIONS_FILE="/usr/share/ublue-os/vscode-extensions.list"
-    CODE_CMD=""
 
-    # Find VS Code Insiders binary
-    if command -v code-insiders &>/dev/null; then
-        CODE_CMD="code-insiders"
-    elif [ -x "$HOME/.local/share/applications/../bin/code-insiders" ]; then
-        CODE_CMD="$HOME/.local/share/applications/../bin/code-insiders"
-    elif [ -x "/home/linuxbrew/.linuxbrew/bin/code-insiders" ]; then
-        CODE_CMD="/home/linuxbrew/.linuxbrew/bin/code-insiders"
-    else
-        echo "ERROR: VS Code Insiders not found. Install it first with: ujust dudley-vscode-insiders"
+    # VS Code Insiders is installed system-wide via RPM
+    if ! command -v code-insiders &>/dev/null; then
+        echo "ERROR: VS Code Insiders not found. It should be pre-installed in the image."
+        echo "If missing, report this as a bug."
         exit 1
     fi
 
@@ -133,7 +116,7 @@ dudley-vscode-extensions:
         [[ -z "$ext" || "$ext" =~ ^[[:space:]]*# ]] && continue
         ext=$(echo "$ext" | xargs)  # trim whitespace
         echo "  Installing: $ext"
-        if $CODE_CMD --install-extension "$ext" --force &>/dev/null; then
+        if code-insiders --install-extension "$ext" --force &>/dev/null; then
             ((installed++))
         else
             echo "    ⚠ Failed to install $ext"

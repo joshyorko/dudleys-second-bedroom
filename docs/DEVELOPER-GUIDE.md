@@ -175,9 +175,9 @@ hash=$(compute_content_hash \
     vscode-extensions.list)
 # Result: "8f7a2c3d"
 
-# Welcome hook: script only
+# Holotree hook: script only
 hash=$(compute_content_hash \
-    build_files/user-hooks/99-first-boot-welcome.sh)
+    build_files/user-hooks/30-holotree-init.sh)
 # Result: "5b8d3e1f"
 ```
 
