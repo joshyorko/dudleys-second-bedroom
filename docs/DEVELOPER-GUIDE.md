@@ -174,11 +174,6 @@ hash=$(compute_content_hash \
     build_files/user-hooks/20-vscode-extensions.sh \
     vscode-extensions.list)
 # Result: "8f7a2c3d"
-
-# Holotree hook: script only
-hash=$(compute_content_hash \
-    build_files/user-hooks/30-holotree-init.sh)
-# Result: "5b8d3e1f"
 ```
 
 ---

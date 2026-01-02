@@ -62,7 +62,6 @@ EOF
 # The second manifest should mark hooks as unchanged because no dependencies changed between runs.
 assert_changed_flag "wallpaper" "$MANIFEST_TWO"
 assert_changed_flag "vscode-extensions" "$MANIFEST_TWO"
-assert_changed_flag "holotree-init" "$MANIFEST_TWO"
 
 cat <<'EOF'
 Reproduction complete: manifest metadata.changed stayed "false" after identical rebuild.

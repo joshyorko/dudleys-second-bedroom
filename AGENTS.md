@@ -19,7 +19,7 @@ This document provides essential information for coding agents working with this
 - `build_files/` - Build modules organized by category:
   - `shared/` - Core platform modules and utilities
   - `desktop/` - Desktop environment customizations
-  - `developer/` - Development tools (VS Code, RCC, DevPod)
+  - `developer/` - Development tools (VS Code, DevPod, Action Server)
   - `user-hooks/` - First-boot user configuration hooks
 - `.github/workflows/` - CI/CD pipelines
 - `brew/` - Homebrew Brewfile definitions
@@ -90,7 +90,7 @@ set -euo pipefail
 ### Module Execution Order
 1. `shared/` - Core utilities (00-image-info, package-install, branding, cleanup)
 2. `desktop/` - Desktop customizations (dconf, fonts, GNOME)
-3. `developer/` - Dev tools (devpod, vscode, rcc)
+3. `developer/` - Dev tools (devpod, vscode, action-server)
 4. `user-hooks/` - First-boot scripts installed to `/usr/share/ublue-os/user-setup.hooks.d/`
 
 ### Exit Codes

@@ -313,7 +313,7 @@ The GitHub Actions workflow accepts a `base_image` input:
 This is a customized Universal Blue OS image that extends `ghcr.io/ublue-os/bluefin:stable` with:
 
 - The System76 COSMIC desktop environment (from the `ryanabx/cosmic-epoch` COPR).
-- Developer tooling like `tmux`, `curl`, `gcc-c++`, and the Robocorp `rcc` CLI.
+- Developer tooling like `tmux`, `curl`, `gcc-c++`, and curated Homebrew packages (including RCC via `ujust dudley-brews-dev`).
 - Additional quality-of-life tweaks tailored for my specific workflow.
 
 ## Installation

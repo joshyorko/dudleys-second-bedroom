@@ -47,7 +47,6 @@ test_placeholders_present() {
 	local hooks=(
 		"$PROJECT_ROOT/build_files/user-hooks/10-wallpaper-enforcement.sh"
 		"$PROJECT_ROOT/build_files/user-hooks/20-vscode-extensions.sh"
-		"$PROJECT_ROOT/build_files/user-hooks/30-holotree-init.sh"
 	)
 
 	local all_have_placeholder=true
@@ -69,7 +68,6 @@ test_version_script_usage() {
 	local hooks=(
 		"$PROJECT_ROOT/build_files/user-hooks/10-wallpaper-enforcement.sh"
 		"$PROJECT_ROOT/build_files/user-hooks/20-vscode-extensions.sh"
-		"$PROJECT_ROOT/build_files/user-hooks/30-holotree-init.sh"
 	)
 
 	local all_use_version_script=true
@@ -91,7 +89,6 @@ test_libsetup_sourced() {
 	local hooks=(
 		"$PROJECT_ROOT/build_files/user-hooks/10-wallpaper-enforcement.sh"
 		"$PROJECT_ROOT/build_files/user-hooks/20-vscode-extensions.sh"
-		"$PROJECT_ROOT/build_files/user-hooks/30-holotree-init.sh"
 	)
 
 	local all_source_libsetup=true
@@ -134,17 +131,15 @@ test_manifest_hooks() {
 	MANIFEST_OUTPUT="$temp_manifest" bash "$PROJECT_ROOT/build_files/shared/utils/generate-manifest.sh" >/dev/null 2>&1
 
 	if [[ -f "$temp_manifest" ]]; then
-		local wallpaper vscode holotree
+		local wallpaper vscode
 		wallpaper=$(jq -r '.hooks.wallpaper.version' "$temp_manifest")
 		vscode=$(jq -r '.hooks["vscode-extensions"].version' "$temp_manifest")
-		holotree=$(jq -r '.hooks["holotree-init"].version' "$temp_manifest")
 
 		if [[ "$wallpaper" =~ ^[a-f0-9]{8}$ ]] &&
-			[[ "$vscode" =~ ^[a-f0-9]{8}$ ]] &&
-			[[ "$holotree" =~ ^[a-f0-9]{8}$ ]]; then
+			[[ "$vscode" =~ ^[a-f0-9]{8}$ ]]; then
 			pass "Manifest contains all hooks with valid version hashes"
 		else
-			fail "Manifest hooks" "Missing or invalid hook versions: wallpaper=$wallpaper, vscode=$vscode, holotree=$holotree"
+			fail "Manifest hooks" "Missing or invalid hook versions: wallpaper=$wallpaper, vscode=$vscode"
 		fi
 	else
 		fail "Manifest hooks" "Manifest file not created"
@@ -178,7 +173,6 @@ test_hook_error_handling() {
 	local hooks=(
 		"$PROJECT_ROOT/build_files/user-hooks/10-wallpaper-enforcement.sh"
 		"$PROJECT_ROOT/build_files/user-hooks/20-vscode-extensions.sh"
-		"$PROJECT_ROOT/build_files/user-hooks/30-holotree-init.sh"
 	)
 
 	local all_have_failfast=true
@@ -201,7 +195,6 @@ test_hook_logging() {
 	local hooks=(
 		"$PROJECT_ROOT/build_files/user-hooks/10-wallpaper-enforcement.sh"
 		"$PROJECT_ROOT/build_files/user-hooks/20-vscode-extensions.sh"
-		"$PROJECT_ROOT/build_files/user-hooks/30-holotree-init.sh"
 	)
 
 	local all_have_logging=true

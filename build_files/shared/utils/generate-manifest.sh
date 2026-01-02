@@ -95,15 +95,6 @@ vscode_meta=$(printf '{"extension_count": %d, "changed": true}' "$extension_coun
 echo "[dudley-versioning]   Version: $vscode_hash ($extension_count extensions)" >&2
 manifest=$(add_hook_to_manifest "$manifest" "vscode-extensions" "$vscode_hash" "$vscode_deps_json" "$vscode_meta")
 
-# Compute hash for holotree hook (script only, no data dependencies)
-echo "[dudley-versioning] Computing hash for holotree hook..." >&2
-holotree_hash=$(compute_content_hash "$PROJECT_ROOT/build_files/user-hooks/30-holotree-init.sh")
-holotree_deps_json='["build_files/user-hooks/30-holotree-init.sh"]'
-holotree_meta='{"changed": true}'
-
-echo "[dudley-versioning]   Version: $holotree_hash" >&2
-manifest=$(add_hook_to_manifest "$manifest" "holotree-init" "$holotree_hash" "$holotree_deps_json" "$holotree_meta")
-
 # Validate manifest
 echo "[dudley-versioning]" >&2
 echo "[dudley-versioning] Validating manifest..." >&2
@@ -127,4 +118,3 @@ echo "[dudley-versioning] ========================================" >&2
 # Export computed hashes for use by Containerfile (optional)
 echo "WALLPAPER_VERSION=$wallpaper_hash"
 echo "VSCODE_VERSION=$vscode_hash"
-echo "HOLOTREE_VERSION=$holotree_hash"

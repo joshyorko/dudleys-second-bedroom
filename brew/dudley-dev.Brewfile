@@ -1,5 +1,11 @@
 # Development Tools for Dudley's Second Bedroom
 
+# Custom taps
+tap "joshyorko/tools"
+
+# RCC - Robocorp Control Center CLI for RPA automation
+brew "joshyorko/tools/rcc"
+
 # Configuration management
 brew "ansible"
 
