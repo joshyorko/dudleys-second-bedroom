@@ -60,6 +60,14 @@ main() {
 		log "WARNING" "System files directory not found (checked $sys_shared)"
 	fi
 
+	# Copy VS Code extensions list for runtime installation
+	if [[ -f /ctx/vscode-extensions.list ]]; then
+		install -m644 /ctx/vscode-extensions.list /usr/share/ublue-os/vscode-extensions.list
+		log "INFO" "Installed VS Code extensions list to /usr/share/ublue-os/"
+	else
+		log "WARNING" "VS Code extensions list not found at /ctx/vscode-extensions.list"
+	fi
+
 	# Install wallpapers from custom_wallpapers directory
 	local bg_dir="/usr/share/backgrounds/dudley"
 	mkdir -p "$bg_dir"

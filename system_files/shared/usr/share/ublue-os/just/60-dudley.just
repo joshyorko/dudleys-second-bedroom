@@ -95,3 +95,53 @@ dudley-vscode-insiders:
     echo "Installing VS Code Insiders via Homebrew..."
     brew install --cask visual-studio-code-insiders
     echo "✓ VS Code Insiders installation complete"
+    echo ""
+    echo "Installing extensions..."
+    ujust dudley-vscode-extensions
+    echo ""
+    echo "✓ VS Code Insiders setup complete!"
+
+# Install/update VS Code Insiders extensions from list
+dudley-vscode-extensions:
+    #!/usr/bin/bash
+    set -euo pipefail
+    EXTENSIONS_FILE="/usr/share/ublue-os/vscode-extensions.list"
+    CODE_CMD=""
+
+    # Find VS Code Insiders binary
+    if command -v code-insiders &>/dev/null; then
+        CODE_CMD="code-insiders"
+    elif [ -x "$HOME/.local/share/applications/../bin/code-insiders" ]; then
+        CODE_CMD="$HOME/.local/share/applications/../bin/code-insiders"
+    elif [ -x "/home/linuxbrew/.linuxbrew/bin/code-insiders" ]; then
+        CODE_CMD="/home/linuxbrew/.linuxbrew/bin/code-insiders"
+    else
+        echo "ERROR: VS Code Insiders not found. Install it first with: ujust dudley-vscode-insiders"
+        exit 1
+    fi
+
+    if [ ! -f "$EXTENSIONS_FILE" ]; then
+        echo "ERROR: Extensions list not found at $EXTENSIONS_FILE"
+        exit 1
+    fi
+
+    echo "Installing VS Code Insiders extensions..."
+    installed=0
+    failed=0
+    while IFS= read -r ext || [ -n "$ext" ]; do
+        # Skip empty lines and comments
+        [[ -z "$ext" || "$ext" =~ ^[[:space:]]*# ]] && continue
+        ext=$(echo "$ext" | xargs)  # trim whitespace
+        echo "  Installing: $ext"
+        if $CODE_CMD --install-extension "$ext" --force &>/dev/null; then
+            ((installed++))
+        else
+            echo "    ⚠ Failed to install $ext"
+            ((failed++))
+        fi
+    done < "$EXTENSIONS_FILE"
+
+    echo ""
+    echo "✓ Extensions installed: $installed"
+    [ "$failed" -gt 0 ] && echo "⚠ Extensions failed: $failed"
+    echo "Done!"
