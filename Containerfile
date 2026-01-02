@@ -102,11 +102,9 @@ RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     . /tmp/versions.env && \
     echo "[dudley-versioning] Replacing version placeholders in hooks..." && \
     echo "[dudley-versioning]   Wallpaper: $WALLPAPER_VERSION" && \
-    echo "[dudley-versioning]   VS Code: $VSCODE_VERSION" && \
     echo "[dudley-versioning]   Welcome: $WELCOME_VERSION" && \
     # Replace placeholders in installed hooks
     replace_version_placeholder /usr/share/ublue-os/user-setup.hooks.d/10-wallpaper-enforcement.sh "$WALLPAPER_VERSION" && \
-    replace_version_placeholder /usr/share/ublue-os/user-setup.hooks.d/20-vscode-extensions.sh "$VSCODE_VERSION" && \
     replace_version_placeholder /usr/share/ublue-os/user-setup.hooks.d/99-first-boot-welcome.sh "$WELCOME_VERSION" && \
     # Install build-info CLI tool to /usr/bin (standard location in OSTree images)
     install -m 0755 /tmp/dudley-versioning/show-build-info.sh /usr/bin/dudley-build-info && \
