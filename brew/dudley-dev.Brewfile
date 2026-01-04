@@ -19,6 +19,3 @@ brew "node"
 
 # Dialog utilities
 brew "dialog"
-
-# Visual Studio Code Insiders
-cask "visual-studio-code-insiders"
