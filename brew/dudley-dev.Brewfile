@@ -4,7 +4,7 @@
 tap "joshyorko/tools"
 
 # RCC - Robocorp Control Center CLI for RPA automation
-brew "joshyorko/tools/rcc"
+cask "joshyorko/tools/rcc"
 
 # Configuration management
 brew "ansible"

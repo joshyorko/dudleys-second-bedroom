@@ -2,7 +2,6 @@
 tap "valkyrie00/bbrew"
 
 # Terminal enhancements
-brew "atuin"
 brew "bash-preexec"
 brew "bat"
 brew "dysk"
