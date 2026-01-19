@@ -65,7 +65,7 @@ ENV GIT_COMMIT="${SHA_HEAD_SHORT}"
 # Build Modules in the correct order:
 #   1. shared/ - Core utilities (package install, branding, cleanup)
 #   2. desktop/ - Desktop environment customizations
-#   3. developer/ - Development tools (VS Code, DevPod, Action Server)
+#   3. developer/ - Development tools (VS Code, DevPod)
 #   4. user-hooks/ - First-boot user configuration hooks
 #
 # Mount types:

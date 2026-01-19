@@ -59,12 +59,7 @@ echo "=== Base Operating System ==="
 run_check "Bluefin base" "podman run --rm ${IMAGE_NAME} cat /etc/os-release" "ID=bluefin"
 run_check "Fedora 43" "podman run --rm ${IMAGE_NAME} cat /etc/os-release" "VERSION_ID=43"
 
-# Check 3: Developer Tools
-echo ""
-echo "=== Developer Tools ==="
-run_check "Action Server" "podman run --rm ${IMAGE_NAME} which action-server" "/usr/sbin/action-server"
-
-# Check 4: Packages from packages.json
+# Check 3: Packages from packages.json
 echo ""
 echo "=== Installed Packages ==="
 run_check "tmux" "podman run --rm ${IMAGE_NAME} rpm -q tmux" "tmux-"
