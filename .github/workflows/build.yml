@@ -344,11 +344,10 @@ jobs:
           oras version
 
       - name: Install Trivy
-        run: |
-          set -euo pipefail
-          echo "Installing Trivy"
-          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
-          trivy version
+        uses: aquasecurity/setup-trivy@v0.2.2
+
+      - name: Verify Trivy installation
+        run: trivy version
 
       # ----------------------------------------
       # Generate SBOM (Software Bill of Materials)
