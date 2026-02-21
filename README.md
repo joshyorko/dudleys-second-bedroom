@@ -139,9 +139,11 @@ The build system automatically discovers and installs **any PNG/JPG images** fro
 
 1. **Discovery**: Scans `custom_wallpapers/` for `*.png`, `*.jpg`, `*.jpeg` files
 2. **Installation**: Copies all found images to `/usr/share/backgrounds/dudley/`
-3. **Schema Override**: Points desktop background to `dudleys-second-bedroom-1.png`
-4. **User Hook**: A user-setup hook enforces the branded wallpaper. It now re-applies if settings drift, if its internal version changes, or if you force it.
-5. **Login Screen**: Uses default Bluefin branding (no custom wallpaper)
+3. **Schema Override**: Sets a safe fallback default (`dudleys-second-bedroom-1.png`)
+4. **Login Randomizer**: `/usr/local/bin/dudley-random-wallpaper` picks a random image (avoids immediate repeats) and applies it
+5. **Autostart**: `/etc/xdg/autostart/dudley-random-wallpaper.desktop` runs the randomizer each GNOME login/session start
+6. **User Hook**: `10-wallpaper-enforcement.sh` invokes the same randomizer on first login (content-version tracked)
+7. **Login Screen**: Uses default Bluefin branding (no custom wallpaper)
 
 ### Adding/Changing Wallpapers
 
@@ -164,39 +166,18 @@ gsettings set org.gnome.desktop.background picture-uri "file:///path/to/custom.p
 
 If removing branding entirely, delete the schema + dconf override files and rebuild.
 
-### Forcing / Re-running the Wallpaper Hook
+### Manual Runtime Testing
 
-The hook writes a marker file at `~/.config/.dudley-wallpaper-applied` containing metadata:
+Run random selection immediately in the current session:
 
-```
-version=1
-uri=file:///usr/share/backgrounds/dudley/dudleys-second-bedroom-1.png
-mode=stretched
-```
-
-It will automatically re-run if:
-- The stored version differs from the script's `MARKER_VERSION`.
-- The current `gsettings` picture-uri or picture-options doesn’t match the desired values.
-- You export `DUDLEY_WALLPAPER_FORCE=1` for that run.
-
-Manual force (one shot):
 ```bash
-DUDLEY_WALLPAPER_FORCE=1 bash /usr/share/ublue-os/user-setup.hooks.d/20-dudley-wallpaper.sh
+/usr/local/bin/dudley-random-wallpaper
 ```
 
-Reset and reapply cleanly:
-```bash
-rm -f ~/.config/.dudley-wallpaper-applied
-bash /usr/share/ublue-os/user-setup.hooks.d/20-dudley-wallpaper.sh
-```
+Run first-login hook manually (for troubleshooting/versioning checks):
 
-Change mode (example switch to zoom):
 ```bash
-sed -i "s/DESIRED_MODE=\"stretched\"/DESIRED_MODE=\"zoom\"/" /usr/share/ublue-os/user-setup.hooks.d/20-dudley-wallpaper.sh
-rm -f ~/.config/.dudley-wallpaper-applied
-MARKER_VERSION_BUMP=$(sudo grep -n 'MARKER_VERSION' /usr/share/ublue-os/user-setup.hooks.d/20-dudley-wallpaper.sh | cut -d: -f1)
-# (Optionally bump MARKER_VERSION inside script then re-run)
-bash /usr/share/ublue-os/user-setup.hooks.d/20-dudley-wallpaper.sh
+bash /usr/share/ublue-os/user-setup.hooks.d/10-wallpaper-enforcement.sh
 ```
 
 ### VS Code Insiders Extensions

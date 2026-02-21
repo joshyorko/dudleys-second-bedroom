@@ -1,12 +1,12 @@
 #!/usr/bin/bash
 # Script: 10-wallpaper-enforcement.sh
-# Purpose: Enforce custom wallpaper on first user login
+# Purpose: Install first-login wallpaper hook using random wallpaper selection
 # Category: user-hooks
 # Dependencies: none
 # Parallel-Safe: yes
 # Usage: Installed to /usr/share/ublue-os/user-setup.hooks.d/ and run on first login
 # Author: Build System
-# Last Updated: 2025-10-05
+# Last Updated: 2026-02-21
 
 set -eoux pipefail
 
@@ -48,14 +48,25 @@ fi
 
 echo "Dudley Hook: wallpaper starting (version __CONTENT_VERSION__)"
 
-# Set custom wallpaper via gsettings
-if command -v gsettings &>/dev/null; then
-    # Set wallpaper for GNOME
+# Apply wallpaper via shared runtime randomizer if available.
+# This keeps first-login behavior aligned with per-login autostart rotation.
+if [[ -x /usr/local/bin/dudley-random-wallpaper ]]; then
+    /usr/local/bin/dudley-random-wallpaper || true
+    echo "Random custom wallpaper selected successfully"
+elif command -v gsettings &>/dev/null; then
     WALLPAPER_DIR="/usr/share/backgrounds/dudley"
-    if [[ -f "$WALLPAPER_DIR/dudleys-second-bedroom-1.png" ]]; then
-        gsettings set org.gnome.desktop.background picture-uri "file://$WALLPAPER_DIR/dudleys-second-bedroom-1.png" || true
-        gsettings set org.gnome.desktop.background picture-uri-dark "file://$WALLPAPER_DIR/dudleys-second-bedroom-1.png" || true
-        echo "Custom wallpaper set successfully"
+    mapfile -d '' WALLPAPERS < <(
+        find "$WALLPAPER_DIR" -maxdepth 1 -type f \
+            \( -iname '*.png' -o -iname '*.jpg' -o -iname '*.jpeg' \) \
+            -print0
+    )
+
+    if (( ${#WALLPAPERS[@]} > 0 )); then
+        SELECTED_WALLPAPER="${WALLPAPERS[$((RANDOM % ${#WALLPAPERS[@]}))]}"
+        SELECTED_URI="file://$SELECTED_WALLPAPER"
+        gsettings set org.gnome.desktop.background picture-uri "$SELECTED_URI" || true
+        gsettings set org.gnome.desktop.background picture-uri-dark "$SELECTED_URI" || true
+        echo "Random custom wallpaper selected successfully"
     fi
 fi
 
