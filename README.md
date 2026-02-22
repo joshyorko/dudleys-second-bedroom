@@ -140,7 +140,7 @@ The build system automatically discovers and installs **any PNG/JPG images** fro
 1. **Discovery**: Scans `custom_wallpapers/` for `*.png`, `*.jpg`, `*.jpeg` files
 2. **Installation**: Copies all found images to `/usr/share/backgrounds/dudley/`
 3. **Schema Override**: Sets a safe fallback default (`dudleys-second-bedroom-1.png`)
-4. **Login Randomizer**: `/usr/local/bin/dudley-random-wallpaper` picks a random image (avoids immediate repeats) and applies it
+4. **Login Randomizer**: `/usr/bin/dudley-random-wallpaper` picks a random image (avoids immediate repeats) and applies it
 5. **Autostart**: `/etc/xdg/autostart/dudley-random-wallpaper.desktop` runs the randomizer each GNOME login/session start
 6. **User Hook**: `10-wallpaper-enforcement.sh` invokes the same randomizer on first login (content-version tracked)
 7. **Login Screen**: Uses default Bluefin branding (no custom wallpaper)
@@ -171,7 +171,7 @@ If removing branding entirely, delete the schema + dconf override files and rebu
 Run random selection immediately in the current session:
 
 ```bash
-/usr/local/bin/dudley-random-wallpaper
+/usr/bin/dudley-random-wallpaper
 ```
 
 Run first-login hook manually (for troubleshooting/versioning checks):

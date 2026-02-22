@@ -89,7 +89,8 @@ run_check "DX flatpaks list" "podman run --rm ${IMAGE_NAME} test -f /usr/share/u
 echo ""
 echo "=== User Setup Hooks ==="
 run_check "wallpaper hook" "podman run --rm ${IMAGE_NAME} test -f /usr/share/ublue-os/user-setup.hooks.d/10-wallpaper-enforcement.sh && echo exists" "exists"
-run_check "random wallpaper script" "podman run --rm ${IMAGE_NAME} test -x /usr/local/bin/dudley-random-wallpaper && echo exists" "exists"
+run_check "usr/local symlink target" "podman run --rm ${IMAGE_NAME} sh -c 'test -L /usr/local && readlink /usr/local'" "var/usrlocal"
+run_check "random wallpaper script" "podman run --rm ${IMAGE_NAME} test -x /usr/bin/dudley-random-wallpaper && echo exists" "exists"
 run_check "random wallpaper autostart" "podman run --rm ${IMAGE_NAME} test -f /etc/xdg/autostart/dudley-random-wallpaper.desktop && echo exists" "exists"
 
 # Check 7b: VS Code Runtime Configuration

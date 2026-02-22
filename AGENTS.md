@@ -33,6 +33,13 @@ This document provides essential information for coding agents working with this
 - **Build Process**: Modular shell scripts auto-discovered and executed in category order
 - **Content Versioning**: Automatic hash-based versioning for first-boot hooks
 
+### Immutable Filesystem Guardrails (bootc/ostree)
+- Treat `/usr/local` as a special mutable path (`/var/usrlocal` on ostree/bootc systems).
+- **Never** add files under `system_files/shared/usr/local/` in this repository.
+- Put image-managed executables under immutable paths like `system_files/shared/usr/bin/` instead.
+- Preserve receiver-side symlinks when syncing system files (for example, `rsync --keep-dirlinks`) so `/usr/local` is not replaced by a real directory.
+- When modifying file sync behavior, validate `/usr/local` remains a symlink in image verification tests.
+
 ## Build Instructions
 
 ### Essential Commands

@@ -6,7 +6,7 @@
 # Parallel-Safe: yes
 # Usage: Installed to /usr/share/ublue-os/user-setup.hooks.d/ and run on first login
 # Author: Build System
-# Last Updated: 2026-02-21
+# Last Updated: 2026-02-22
 
 set -eoux pipefail
 
@@ -50,8 +50,14 @@ echo "Dudley Hook: wallpaper starting (version __CONTENT_VERSION__)"
 
 # Apply wallpaper via shared runtime randomizer if available.
 # This keeps first-login behavior aligned with per-login autostart rotation.
-if [[ -x /usr/local/bin/dudley-random-wallpaper ]]; then
-    /usr/local/bin/dudley-random-wallpaper || true
+RANDOMIZER_CMD="/usr/bin/dudley-random-wallpaper"
+if [[ ! -x "$RANDOMIZER_CMD" ]] && [[ -x /usr/local/bin/dudley-random-wallpaper ]]; then
+    # Backward compatibility for previously built images.
+    RANDOMIZER_CMD="/usr/local/bin/dudley-random-wallpaper"
+fi
+
+if [[ -x "$RANDOMIZER_CMD" ]]; then
+    "$RANDOMIZER_CMD" || true
     echo "Random custom wallpaper selected successfully"
 elif command -v gsettings &>/dev/null; then
     WALLPAPER_DIR="/usr/share/backgrounds/dudley"

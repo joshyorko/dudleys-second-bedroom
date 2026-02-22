@@ -6,7 +6,7 @@
 # Parallel-Safe: yes
 # Usage: Called during build to install branding assets
 # Author: Build System
-# Last Updated: 2025-10-05
+# Last Updated: 2026-02-22
 
 set -eoux pipefail
 
@@ -39,8 +39,15 @@ main() {
 	fi
 
 	if [[ -d "$sys_shared" ]]; then
+		local usr_local_source="$sys_shared/usr/local"
+		if [[ -d "$usr_local_source" ]] && [[ -n "$(find "$usr_local_source" -mindepth 1 -print -quit)" ]]; then
+			log "ERROR" "Do not place files under system_files/shared/usr/local (bootc/ostree requires /usr/local -> /var/usrlocal symlink)"
+			exit 1
+		fi
+
 		log "INFO" "Rsyncing branding/system overrides from $sys_shared"
-		rsync -a "$sys_shared"/ / || {
+		# Preserve receiver-side symlinked directories (for example, /usr/local -> /var/usrlocal).
+		rsync -a --keep-dirlinks "$sys_shared"/ / || {
 			log "ERROR" "Failed to rsync system files"
 			exit 1
 		}
