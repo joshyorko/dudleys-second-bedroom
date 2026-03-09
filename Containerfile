@@ -44,6 +44,7 @@ FROM ${BASE_IMAGE} AS base
 # Build arguments
 ARG IMAGE_NAME="dudleys-second-bedroom"
 ARG SHA_HEAD_SHORT="unknown"
+ARG VSCODE_REFRESH_TOKEN="static"
 
 # Environment variables for build modules
 ENV IMAGE_NAME="${IMAGE_NAME}"
@@ -78,6 +79,14 @@ RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     --mount=type=cache,dst=/var/cache/yum,sharing=locked \
     --mount=type=tmpfs,dst=/tmp \
     /ctx/build_files/shared/build-base.sh
+
+# Refresh VS Code Insiders in a dedicated late layer so each build can pick up
+# the newest Microsoft RPM without invalidating the entire module pipeline.
+RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
+    --mount=type=cache,dst=/var/cache/dnf5,sharing=locked \
+    --mount=type=cache,dst=/var/cache/yum,sharing=locked \
+    echo "[dudley-vscode] Refresh token: ${VSCODE_REFRESH_TOKEN}" && \
+    VSCODE_FORCE_REFRESH=1 /ctx/build_files/developer/vscode-insiders.sh
 
 # =============================================================================
 # Content-Based Versioning Integration

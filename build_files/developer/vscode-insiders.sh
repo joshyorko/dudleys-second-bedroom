@@ -13,6 +13,7 @@ set -eoux pipefail
 # Module metadata
 readonly MODULE_NAME="vscode-insiders"
 readonly CATEGORY="developer"
+readonly FORCE_REFRESH="${VSCODE_FORCE_REFRESH:-0}"
 
 # Logging helper
 log() {
@@ -29,7 +30,7 @@ main() {
 	log "INFO" "START"
 
 	# Check if already installed
-	if rpm -q code-insiders &>/dev/null; then
+	if [[ "$FORCE_REFRESH" != "1" ]] && rpm -q code-insiders &>/dev/null; then
 		log "INFO" "VS Code Insiders already installed, skipping"
 		exit 2
 	fi
@@ -44,10 +45,20 @@ gpgcheck=1
 gpgkey=https://packages.microsoft.com/keys/microsoft.asc
 EOF
 
-	log "INFO" "Installing code-insiders RPM..."
-	if ! dnf5 install -y --refresh code-insiders 2>/dev/null && ! dnf install -y --refresh code-insiders; then
-		log "ERROR" "Failed to install code-insiders RPM"
-		exit 1
+	if rpm -q code-insiders &>/dev/null; then
+		log "INFO" "Refreshing installed code-insiders RPM from Microsoft repo..."
+		if ! dnf5 upgrade -y --refresh code-insiders 2>/dev/null &&
+			! dnf upgrade -y --refresh code-insiders; then
+			log "ERROR" "Failed to refresh code-insiders RPM"
+			exit 1
+		fi
+	else
+		log "INFO" "Installing code-insiders RPM..."
+		if ! dnf5 install -y --refresh code-insiders 2>/dev/null &&
+			! dnf install -y --refresh code-insiders; then
+			log "ERROR" "Failed to install code-insiders RPM"
+			exit 1
+		fi
 	fi
 
 	log "INFO" "VS Code Insiders installed successfully"

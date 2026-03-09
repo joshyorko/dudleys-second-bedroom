@@ -212,6 +212,10 @@ build $target_image=image_name $tag=default_tag:
         BUILD_ARGS+=("--build-arg" "SHA_HEAD_SHORT=${GIT_SHA}")
     fi
 
+    # Force the late VS Code refresh layer to run on every build so the image
+    # tracks the newest Microsoft Insiders RPM.
+    BUILD_ARGS+=("--build-arg" "VSCODE_REFRESH_TOKEN=$(date -u +%Y%m%d%H%M%S)")
+
     # Pass BASE_IMAGE build arg if environment variable is set
     if [[ -n "${BASE_IMAGE:-}" ]]; then
         BUILD_ARGS+=("--build-arg" "BASE_IMAGE=${BASE_IMAGE}")

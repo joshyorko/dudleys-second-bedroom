@@ -5,7 +5,7 @@ on:
     branches:
       - main
   schedule:
-    - cron: '05 10 * * *'  # 10:05am UTC everyday
+    - cron: '00 21 * * *'  # 9:00pm UTC everyday (5:00pm EDT / 4:00pm EST)
   push:
     branches:
       - main
@@ -187,6 +187,7 @@ jobs:
           labels: ${{ steps.metadata.outputs.labels }}
           build-args: |
             SHA_HEAD_SHORT=${{ github.sha }}
+            VSCODE_REFRESH_TOKEN=${{ github.run_id }}-${{ github.run_attempt }}
             ${{ inputs.base_image != '' && format('BASE_IMAGE={0}', inputs.base_image) || '' }}
           oci: false
           # Enable layer caching to speed up builds

@@ -83,6 +83,13 @@ Buildah supports native layer caching with `layers: true`. It does **not** suppo
 - No need for extra cache arguments
 - **Estimated savings:** 3-7 minutes per build
 
+### VS Code Insiders Exception
+
+VS Code Insiders is refreshed in a dedicated late build layer with a changing
+`VSCODE_REFRESH_TOKEN` build arg. This intentionally bypasses layer reuse for
+that one step so each build asks Microsoft's RPM repo for the latest
+`code-insiders` package, while leaving the rest of the build cache intact.
+
 ## Cache Invalidation
 
 Caches are automatically invalidated when their cache key changes:
