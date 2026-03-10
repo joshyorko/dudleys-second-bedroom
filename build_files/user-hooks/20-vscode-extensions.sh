@@ -115,12 +115,8 @@ while IFS= read -r ext || [[ -n "$ext" ]]; do
   ext=$(echo "$ext" | xargs)
   [[ -z "$ext" ]] && continue
 
-  echo "Installing extension: $ext"
-  if ! "$CMD" --list-extensions --user-data-dir "$USER_DATA_DIR" --no-sandbox 2>/dev/null | grep -qi "^${ext}$"; then
-    "$CMD" --install-extension "$ext" --user-data-dir "$USER_DATA_DIR" --no-sandbox || echo "Failed to install $ext"
-  else
-    echo "Extension $ext already installed"
-  fi
+  echo "Installing/updating extension: $ext"
+  "$CMD" --install-extension "$ext" --force --user-data-dir "$USER_DATA_DIR" --no-sandbox || echo "Failed to install $ext"
 done < "$EXTENSIONS_LIST"
 
 # Write marker with version
