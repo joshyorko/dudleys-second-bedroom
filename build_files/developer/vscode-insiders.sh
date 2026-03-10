@@ -35,31 +35,34 @@ main() {
 		exit 2
 	fi
 
-	log "INFO" "Adding Microsoft VS Code repository..."
-	cat >/etc/yum.repos.d/vscode-insiders.repo <<'EOF'
-[code-insiders]
-name=Visual Studio Code Insiders Repository
-baseurl=https://packages.microsoft.com/yumrepos/vscode
-enabled=1
-gpgcheck=1
-gpgkey=https://packages.microsoft.com/keys/microsoft.asc
-EOF
+	local cdn_url="https://update.code.visualstudio.com/latest/linux-rpm-x64/insider"
+	local rpm_path="/tmp/code-insiders-latest.rpm"
+
+	log "INFO" "Downloading latest VS Code Insiders RPM from Microsoft CDN..."
+	if ! curl -fsSL -o "$rpm_path" "$cdn_url"; then
+		log "ERROR" "Failed to download VS Code Insiders RPM from CDN"
+		exit 1
+	fi
+
+	local cdn_version
+	cdn_version=$(rpm -qp --queryformat '%{VERSION}-%{RELEASE}' "$rpm_path" 2>/dev/null)
+	log "INFO" "CDN RPM version: $cdn_version"
 
 	if rpm -q code-insiders &>/dev/null; then
-		log "INFO" "Refreshing installed code-insiders RPM from Microsoft repo..."
-		if ! dnf5 upgrade -y --refresh code-insiders 2>/dev/null &&
-			! dnf upgrade -y --refresh code-insiders; then
-			log "ERROR" "Failed to refresh code-insiders RPM"
-			exit 1
-		fi
-	else
-		log "INFO" "Installing code-insiders RPM..."
-		if ! dnf5 install -y --refresh code-insiders 2>/dev/null &&
-			! dnf install -y --refresh code-insiders; then
-			log "ERROR" "Failed to install code-insiders RPM"
-			exit 1
-		fi
+		local installed_version
+		installed_version=$(rpm -q --queryformat '%{VERSION}-%{RELEASE}' code-insiders)
+		log "INFO" "Installed version: $installed_version"
 	fi
+
+	log "INFO" "Installing VS Code Insiders from CDN RPM..."
+	if ! dnf5 install -y --allowerasing "$rpm_path" 2>/dev/null &&
+		! dnf install -y --allowerasing "$rpm_path"; then
+		log "ERROR" "Failed to install VS Code Insiders RPM"
+		rm -f "$rpm_path"
+		exit 1
+	fi
+
+	rm -f "$rpm_path"
 
 	log "INFO" "VS Code Insiders installed successfully"
 
