@@ -31,6 +31,16 @@
       ],
       "depNameTemplate": "oras-project/oras",
       "datasourceTemplate": "github-releases"
+    },
+    {
+      // Track just version in the local setup action
+      "customType": "regex",
+      "fileMatch": ["^\\.github/actions/setup-just/action\\.yml$"],
+      "matchStrings": [
+        "default: \"(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)\""
+      ],
+      "depNameTemplate": "casey/just",
+      "datasourceTemplate": "github-releases"
     }
   ],
 
