@@ -1,0 +1,41 @@
+name: Setup just
+description: Install the just command runner without relying on deprecated Node-based actions
+
+inputs:
+  just-version:
+    description: Version of just to install
+    required: false
+    default: "1.46.0"
+
+runs:
+  using: composite
+  steps:
+    - name: Install just
+      shell: bash
+      run: |
+        set -euo pipefail
+
+        version="${{ inputs.just-version }}"
+        arch="$(uname -m)"
+
+        case "${arch}" in
+          x86_64)
+            target="x86_64-unknown-linux-musl"
+            ;;
+          aarch64|arm64)
+            target="aarch64-unknown-linux-musl"
+            ;;
+          *)
+            echo "Unsupported architecture: ${arch}" >&2
+            exit 1
+            ;;
+        esac
+
+        archive="just-${version}-${target}.tar.gz"
+        url="https://github.com/casey/just/releases/download/${version}/${archive}"
+
+        curl -fsSL "${url}" -o "${RUNNER_TEMP}/${archive}"
+        tar -xzf "${RUNNER_TEMP}/${archive}" -C "${RUNNER_TEMP}" just
+        sudo install -m 0755 "${RUNNER_TEMP}/just" /usr/local/bin/just
+
+        just --version
