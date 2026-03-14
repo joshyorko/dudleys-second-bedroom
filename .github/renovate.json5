@@ -15,7 +15,7 @@
     {
       // Track RCC_VERSION in rcc-cli.sh
       "customType": "regex",
-      "fileMatch": ["^build_files/developer/rcc-cli\\.sh$"],
+      "managerFilePatterns": ["/^build_files/developer/rcc-cli\\.sh$/"],
       "matchStrings": [
         "RCC_VERSION=\"\\$\\{RCC_VERSION:-(?<currentValue>v[0-9]+\\.[0-9]+\\.[0-9]+)\\}\""
       ],
@@ -25,7 +25,7 @@
     {
       // Track ORAS_VERSION in build.yml
       "customType": "regex",
-      "fileMatch": ["^\\.github/workflows/build\\.yml$"],
+      "managerFilePatterns": ["/^\\.github\\/workflows\\/build\\.yml$/"],
       "matchStrings": [
         "ORAS_VERSION=\"(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)\""
       ],
@@ -35,7 +35,7 @@
     {
       // Track just version in the local setup action
       "customType": "regex",
-      "fileMatch": ["^\\.github/actions/setup-just/action\\.yml$"],
+      "managerFilePatterns": ["/^\\.github\\/actions\\/setup-just\\/action\\.yml$/"],
       "matchStrings": [
         "default: \"(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)\""
       ],
@@ -68,7 +68,7 @@
     // Group Universal Blue related updates together
     {
       "groupName": "Universal Blue dependencies",
-      "matchPackagePatterns": ["^ghcr\\.io/ublue-os/"]
+      "matchPackageNames": ["/^ghcr\\.io\\/ublue-os\\//"]
     },
     // Group all GitHub Actions updates by action name
     {
