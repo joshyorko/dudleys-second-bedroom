@@ -29,6 +29,7 @@ env:
   IMAGE_NAME: "${{ github.event.repository.name }}"  # output image name, usually same as repo name
   IMAGE_REGISTRY: "ghcr.io/${{ github.repository_owner }}"  # do not edit
   DEFAULT_TAG: "latest"
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref || github.run_id }}
@@ -176,22 +177,30 @@ jobs:
 
       - name: Build Image
         id: build_image
-        uses: redhat-actions/buildah-build@7a95fa7ee0f02d552a32753e7414641a04307056 # v2
-        with:
-          containerfiles: |
-            ./Containerfile
-          # Postfix image name with -custom to make it a little more descriptive
-          # Syntax: https://docs.github.com/en/actions/learn-github-actions/expressions#format
-          image: ${{ env.IMAGE_NAME }}
-          tags: ${{ steps.metadata.outputs.tags }}
-          labels: ${{ steps.metadata.outputs.labels }}
-          build-args: |
-            SHA_HEAD_SHORT=${{ github.sha }}
-            VSCODE_REFRESH_TOKEN=${{ github.run_id }}-${{ github.run_attempt }}
-            ${{ inputs.base_image != '' && format('BASE_IMAGE={0}', inputs.base_image) || '' }}
-          oci: false
-          # Enable layer caching to speed up builds
-          layers: true
+        run: |
+          set -euo pipefail
+          IMAGE_REF="localhost/${IMAGE_NAME}:${DEFAULT_TAG}"
+          BASE_IMAGE_INPUT="${{ inputs.base_image }}"
+          declare -a build_args=(
+            --file ./Containerfile
+            --format docker
+            --layers
+            --tag "${IMAGE_REF}"
+            --build-arg "SHA_HEAD_SHORT=${GITHUB_SHA}"
+            --build-arg "VSCODE_REFRESH_TOKEN=${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          )
+
+          if [[ -n "${BASE_IMAGE_INPUT}" ]]; then
+            build_args+=(--build-arg "BASE_IMAGE=${BASE_IMAGE_INPUT}")
+          fi
+
+          while IFS= read -r label; do
+            [[ -n "${label}" ]] || continue
+            build_args+=(--label "${label}")
+          done <<< "${{ steps.metadata.outputs.labels }}"
+
+          echo "Building ${IMAGE_REF}"
+          podman build "${build_args[@]}" .
 
       - name: Verify built image
         run: |
@@ -256,19 +265,14 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Push To GHCR
-        uses: redhat-actions/push-to-registry@5ed88d269cf581ea9ef6dd6806d01562096bee9c # v2
         if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
         id: push
         timeout-minutes: 60
-        env:
-          REGISTRY_USER: ${{ github.actor }}
-          REGISTRY_PASSWORD: ${{ github.token }}
-        with:
-          registry: ${{ env.IMAGE_REGISTRY }}
-          image: ${{ env.IMAGE_NAME }}
-          tags: ${{ steps.metadata.outputs.tags }}
-          username: ${{ env.REGISTRY_USER }}
-          password: ${{ env.REGISTRY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          for tag in ${{ steps.metadata.outputs.tags }}; do
+            podman push "${{ env.IMAGE_NAME }}:$tag" "docker://${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:$tag"
+          done
 
   # ============================================
   # SUPPLY CHAIN SECURITY JOB
