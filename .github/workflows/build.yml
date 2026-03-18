@@ -166,15 +166,22 @@ jobs:
       # Pre-pull base image with retry to handle transient network failures
       - name: Pre-pull base image
         run: |
+          set -euo pipefail
           BASE_IMAGE="${{ inputs.base_image || 'ghcr.io/ublue-os/bluefin-dx:stable' }}"
+          MAX_ATTEMPTS=3
+          RETRY_DELAY=30
           echo "Pre-pulling base image: $BASE_IMAGE"
-          for i in 1 2 3; do
+          for attempt in $(seq 1 "${MAX_ATTEMPTS}"); do
             if podman pull "$BASE_IMAGE"; then
-              echo "Successfully pulled base image on attempt $i"
+              echo "Successfully pulled base image on attempt ${attempt}"
               break
             fi
-            echo "Pull attempt $i failed, retrying in 30s..."
-            sleep 30
+            if [[ "${attempt}" -eq "${MAX_ATTEMPTS}" ]]; then
+              echo "ERROR: Failed to pull base image after ${MAX_ATTEMPTS} attempts" >&2
+              exit 1
+            fi
+            echo "Pull attempt ${attempt} failed, retrying in ${RETRY_DELAY}s..."
+            sleep "${RETRY_DELAY}"
           done
 
       - name: Build Image
@@ -183,6 +190,8 @@ jobs:
           set -euo pipefail
           IMAGE_REF="localhost/${IMAGE_NAME}:${DEFAULT_TAG}"
           BASE_IMAGE_INPUT="${{ inputs.base_image }}"
+          MAX_ATTEMPTS=3
+          RETRY_DELAY=30
           declare -a build_args=(
             --file ./Containerfile
             --format docker
@@ -202,7 +211,18 @@ jobs:
           done <<< "${{ steps.metadata.outputs.labels }}"
 
           echo "Building ${IMAGE_REF}"
-          podman build "${build_args[@]}" .
+          for attempt in $(seq 1 "${MAX_ATTEMPTS}"); do
+            if podman build "${build_args[@]}" .; then
+              echo "Build succeeded on attempt ${attempt}"
+              break
+            fi
+            if [[ "${attempt}" -eq "${MAX_ATTEMPTS}" ]]; then
+              echo "ERROR: Image build failed after ${MAX_ATTEMPTS} attempts" >&2
+              exit 1
+            fi
+            echo "Build attempt ${attempt} failed, retrying in ${RETRY_DELAY}s..."
+            sleep "${RETRY_DELAY}"
+          done
 
       - name: Verify built image
         run: |
