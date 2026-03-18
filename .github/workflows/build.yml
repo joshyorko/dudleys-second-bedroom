@@ -250,9 +250,14 @@ jobs:
       # Tag the built image with all metadata tags (without rechunking)
       - name: Tag image with all metadata tags
         run: |
-          for tag in ${{ steps.metadata.outputs.tags }}; do
-            podman tag "localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}" "${{ env.IMAGE_NAME }}:$tag"
-          done
+          set -euo pipefail
+          while IFS= read -r tag; do
+            [[ -n "${tag}" ]] || continue
+            if [[ "${tag}" == "${{ env.DEFAULT_TAG }}" ]]; then
+              continue
+            fi
+            podman tag "localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}" "localhost/${{ env.IMAGE_NAME }}:$tag"
+          done < <(printf '%s\n' "${{ steps.metadata.outputs.tags }}" | tr ' ' '\n')
 
       # These `if` statements are so that pull requests for your custom images do not make it publish any packages under your name without you knowing
       # They also check if the runner is on the default branch so that things like the merge queue (if you enable it), are going to work
@@ -270,9 +275,10 @@ jobs:
         timeout-minutes: 60
         run: |
           set -euo pipefail
-          for tag in ${{ steps.metadata.outputs.tags }}; do
-            podman push "${{ env.IMAGE_NAME }}:$tag" "docker://${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:$tag"
-          done
+          while IFS= read -r tag; do
+            [[ -n "${tag}" ]] || continue
+            podman push "localhost/${{ env.IMAGE_NAME }}:$tag" "docker://${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:$tag"
+          done < <(printf '%s\n' "${{ steps.metadata.outputs.tags }}" | tr ' ' '\n')
 
   # ============================================
   # SUPPLY CHAIN SECURITY JOB
