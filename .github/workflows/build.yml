@@ -83,6 +83,8 @@ jobs:
     outputs:
       tags: ${{ steps.metadata.outputs.tags }}
       build_date: ${{ steps.date.outputs.date }}
+      digest: ${{ steps.push.outputs.digest }}
+      digest_ref: ${{ steps.push.outputs.digest_ref }}
 
     permissions:
       contents: read
@@ -262,12 +264,11 @@ jobs:
       # These `if` statements are so that pull requests for your custom images do not make it publish any packages under your name without you knowing
       # They also check if the runner is on the default branch so that things like the merge queue (if you enable it), are going to work
       - name: Login to GitHub Container Registry
-        uses: docker/login-action@b45d80f862d83dbcd57f89517bcf500b2ab88fb2 # v4
         if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          echo "${{ secrets.GITHUB_TOKEN }}" | podman login ghcr.io -u "${{ github.actor }}" --password-stdin
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
 
       - name: Push To GHCR
         if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
@@ -279,6 +280,13 @@ jobs:
             [[ -n "${tag}" ]] || continue
             podman push "localhost/${{ env.IMAGE_NAME }}:$tag" "docker://${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:$tag"
           done < <(printf '%s\n' "${{ steps.metadata.outputs.tags }}" | tr ' ' '\n')
+          DIGEST=$(skopeo inspect --format '{{.Digest}}' "docker://${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}")
+          if [[ -z "${DIGEST}" ]]; then
+            echo "ERROR: Failed to extract pushed image digest" >&2
+            exit 1
+          fi
+          echo "digest=${DIGEST}" >> "$GITHUB_OUTPUT"
+          echo "digest_ref=${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}@${DIGEST}" >> "$GITHUB_OUTPUT"
 
   # ============================================
   # SUPPLY CHAIN SECURITY JOB
@@ -312,27 +320,16 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
       - name: Login to GitHub Container Registry
-        uses: docker/login-action@b45d80f862d83dbcd57f89517bcf500b2ab88fb2 # v4
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Resolve pushed image digest
-        id: resolve-digest
         run: |
           set -euo pipefail
-          IMAGE_TAG_REF="${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
-          DIGEST=$(skopeo inspect --format '{{.Digest}}' "docker://${IMAGE_TAG_REF}")
+          echo "${{ secrets.GITHUB_TOKEN }}" | podman login ghcr.io -u "${{ github.actor }}" --password-stdin
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+          DIGEST="${{ needs.build_push.outputs.digest }}"
           if [[ -z "${DIGEST}" ]]; then
-            echo "ERROR: Failed to extract image digest" >&2
+            echo "ERROR: Missing pushed image digest from build job" >&2
             exit 1
           fi
           IMAGE_DIGEST_REF="${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}@${DIGEST}"
-          echo "Resolved digest: ${DIGEST}"
-          echo "Resolved digest ref: ${IMAGE_DIGEST_REF}"
-          echo "digest=${DIGEST}" >> "$GITHUB_OUTPUT"
-          echo "digest_ref=${IMAGE_DIGEST_REF}" >> "$GITHUB_OUTPUT"
           echo "IMAGE_DIGEST=${DIGEST}" >> "$GITHUB_ENV"
           echo "IMAGE_DIGEST_REF=${IMAGE_DIGEST_REF}" >> "$GITHUB_ENV"
 
@@ -471,7 +468,7 @@ jobs:
         id: metadata-tag
         run: |
           set -euo pipefail
-          DIGEST="${IMAGE_DIGEST:-${{ steps.resolve-digest.outputs.digest }}}"
+          DIGEST="${IMAGE_DIGEST:-${{ needs.build_push.outputs.digest }}}"
           DIGEST_NO_PREFIX="${DIGEST#sha256:}"
           METADATA_TAG="sha256-${DIGEST_NO_PREFIX}.metadata"
           echo "Image digest: ${DIGEST}"
