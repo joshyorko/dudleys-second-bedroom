@@ -224,11 +224,11 @@ jobs:
             sleep "${RETRY_DELAY}"
           done
 
+      - name: Install Just
+        uses: ./.github/actions/setup-just
+
       - name: Verify built image
         run: |
-          # Install Just
-          curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to /usr/local/bin
-
           # Install dependencies for verification
           sudo apt-get update
           sudo apt-get install -y jq
