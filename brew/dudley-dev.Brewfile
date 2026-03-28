@@ -3,6 +3,9 @@
 # Custom taps
 tap "joshyorko/tools"
 
+# VS Code Insiders packaged for Linux Homebrew
+cask "joshyorko/tools/vscode-insiders-linux"
+
 # RCC - Robocorp Control Center CLI for RPA automation
 cask "joshyorko/tools/rcc"
 

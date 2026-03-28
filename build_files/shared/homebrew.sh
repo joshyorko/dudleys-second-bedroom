@@ -58,7 +58,7 @@ main() {
 		log "WARNING" "Brew directory not found at $build_context/brew, skipping"
 	fi
 
-	log "INFO" "Brewfiles will be available for user installation via ujust commands"
+	log "INFO" "Brewfiles will be available for user installation via 'ujust dudley'"
 
 	local end_time duration
 	end_time=$(date +%s)

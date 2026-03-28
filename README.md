@@ -180,20 +180,25 @@ Run first-login hook manually (for troubleshooting/versioning checks):
 bash /usr/share/ublue-os/user-setup.hooks.d/10-wallpaper-enforcement.sh
 ```
 
-### VS Code Insiders Extensions
+### VS Code Extensions
 
-VS Code Insiders extensions are automatically installed from the list at `/etc/skel/.config/vscode-extensions.list` on first login. The hook uses the ublue versioning system to track installation state in `~/.local/share/ublue/setup_versioning.json`.
+VS Code extensions are automatically installed from the list at `/usr/share/ublue-os/vscode-extensions.list` once a compatible CLI is available. The hook prefers Homebrew-managed `code-insiders`, falls back to `code` if needed, and uses the ublue versioning system to track installation state in `~/.local/share/ublue/setup_versioning.json`.
 
 The hook will:
 - Install all extensions listed in the file on first run
-- Track installation with version `2` in the ublue setup system
-- Also create a marker at `~/.config/Code - Insiders/.extensions-installed` for debugging
+- Wait until VS Code is actually installed before recording a successful run
+- Create a marker at `~/.config/Code - Insiders/.extensions-installed` or `~/.config/Code/.extensions-installed` for debugging
 - Skip installation on subsequent boots (version already recorded)
 - Re-run automatically if the hook version is updated in a new image
 
+Manual install/update through the consolidated Dudley entrypoint:
+```bash
+ujust dudley extensions
+```
+
 Manual force reinstall (resets version tracking and reinstalls):
 ```bash
-VSCODE_EXTENSIONS_FORCE=1 bash /usr/share/ublue-os/user-setup.hooks.d/20-vscode-extensions.sh
+ujust dudley extensions force
 ```
 
 Reset version tracking manually:
@@ -206,7 +211,7 @@ bash /usr/share/ublue-os/user-setup.hooks.d/20-vscode-extensions.sh
 
 Check which extensions are configured:
 ```bash
-cat /etc/skel/.config/vscode-extensions.list
+cat /usr/share/ublue-os/vscode-extensions.list
 ```
 
 Check current version tracking:
@@ -216,38 +221,38 @@ jq '.version.user."vscode-extensions"' ~/.local/share/ublue/setup_versioning.jso
 
 ## Homebrew Package Installation
 
-The image includes curated Brewfile configurations for installing additional tools via Homebrew. These packages are organized by category and can be installed using `ujust` commands.
+The image includes curated Brewfile configurations for installing additional tools via Homebrew. These packages are organized by category and exposed through a single `ujust dudley` entrypoint.
 
 ### Available Brewfile Categories
 
 - **CLI Tools** (`dudley-cli.Brewfile`): Terminal utilities like `bat`, `eza`, `ripgrep`, `starship`, `zoxide`
-- **Development Tools** (`dudley-dev.Brewfile`): Development environments including Python, Node.js, Ansible, UV
+- **Development Tools** (`dudley-dev.Brewfile`): Development environments including VS Code Insiders, Python, Node.js, Ansible, UV
 - **Fonts** (`dudley-fonts.Brewfile`): Nerd Fonts collection for terminal and code editors
 - **Kubernetes/Cloud-Native** (`dudley-k8s.Brewfile`): kubectl, helm, k9s, kind, and container tools
 
 ### Installation Commands
 
-Install packages by category:
+Primary entrypoints:
 ```bash
-# Install CLI tools and utilities
-ujust dudley-brews-cli
+# Install all Dudley Brewfiles, then install VS Code extensions
+ujust dudley
 
-# Install development tools
-ujust dudley-brews-dev
+# Install just the development bundle
+ujust dudley brew dev
 
-# Install fonts
-ujust dudley-brews-fonts
+# Install just the CLI bundle
+ujust dudley brew cli
 
-# Install Kubernetes and cloud-native tools
-ujust dudley-brews-k8s
+# Install just the fonts bundle
+ujust dudley brew fonts
 
-# Install everything at once
-ujust dudley-brews-all
+# Install just the Kubernetes bundle
+ujust dudley brew k8s
 ```
 
-List available Brewfiles:
+List available bundles:
 ```bash
-ujust dudley-brews-list
+ujust dudley list
 ```
 
 ### Manual Installation
@@ -262,7 +267,7 @@ brew bundle --file=/usr/share/ublue-os/homebrew/dudley-cli.Brewfile
 To add or modify packages:
 1. Edit the appropriate Brewfile in the `brew/` directory
 2. Rebuild the image
-3. After rebasing, run the corresponding `ujust` command
+3. After rebasing, run the corresponding `ujust dudley ...` command
 
 ## Building with Custom Base Images
 
@@ -294,7 +299,7 @@ The GitHub Actions workflow accepts a `base_image` input:
 This is a customized Universal Blue OS image that extends `ghcr.io/ublue-os/bluefin:stable` with:
 
 - The System76 COSMIC desktop environment (from the `ryanabx/cosmic-epoch` COPR).
-- Developer tooling like `tmux`, `curl`, `gcc-c++`, and curated Homebrew packages (including RCC via `ujust dudley-brews-dev`).
+- Developer tooling like `tmux`, `curl`, `gcc-c++`, and curated Homebrew packages (including RCC via `ujust dudley brew dev`).
 - Additional quality-of-life tweaks tailored for my specific workflow.
 
 ## Installation

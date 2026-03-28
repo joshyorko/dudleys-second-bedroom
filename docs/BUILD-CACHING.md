@@ -55,13 +55,9 @@ Works in conjunction with Containerfile cache mounts:
 **Cache Key:** `${{ runner.os }}-binaries-${{ hashFiles('build_files/developer/*.sh') }}`
 
 This caches:
-- GitHub release binaries (VS Code Insiders, RCC CLI, Action Server)
-- Other downloaded tools and assets
+- Other downloaded tools and assets when developer modules fetch them at build time
 
 Relevant to these build modules:
-- `build_files/developer/vscode-insiders.sh`
-- `build_files/developer/rcc-cli.sh`
-- `build_files/developer/action-server.sh`
 - Any script using `github-release-install.sh`
 
 **Benefits:**
@@ -83,12 +79,11 @@ Buildah supports native layer caching with `layers: true`. It does **not** suppo
 - No need for extra cache arguments
 - **Estimated savings:** 3-7 minutes per build
 
-### VS Code Insiders Exception
+### Homebrew-Managed Developer Apps
 
-VS Code Insiders is refreshed in a dedicated late build layer with a changing
-`VSCODE_REFRESH_TOKEN` build arg. This intentionally bypasses layer reuse for
-that one step so each build asks Microsoft's RPM repo for the latest
-`code-insiders` package, while leaving the rest of the build cache intact.
+VS Code Insiders is no longer baked into the image. It is installed from the
+Homebrew bundle at runtime, so editor updates no longer force any special
+Containerfile cache-busting behavior.
 
 ## Cache Invalidation
 

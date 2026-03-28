@@ -1,12 +1,12 @@
 #!/usr/bin/bash
 # Script: 20-vscode-extensions.sh
-# Purpose: Install VS Code Insiders extensions for user
+# Purpose: Install VS Code extensions for the user once a CLI is available
 # Category: user-hooks
-# Dependencies: developer/vscode-insiders.sh (must be installed first)
+# Dependencies: none
 # Parallel-Safe: yes
 # Usage: Installed to /usr/share/ublue-os/user-setup.hooks.d/ and run on first login
 # Author: Build System
-# Last Updated: 2025-10-05
+# Last Updated: 2026-03-28
 
 set -eoux pipefail
 
@@ -29,24 +29,24 @@ main() {
 	log "INFO" "START - Installing VS Code extensions hook"
 
 	local hook_dir="/usr/share/ublue-os/user-setup.hooks.d"
-	install -d "$hook_dir"
+	local runtime_dir="/usr/share/ublue-os"
+	install -d "$hook_dir" "$runtime_dir"
 
 	log "INFO" "Creating VS Code extensions hook..."
 
 	# Get build context path
 	local build_context="${BUILD_CONTEXT:-/ctx}"
 
-	# Copy the extensions list to the system
-	local extensions_list="/etc/skel/.config/vscode-extensions.list"
-	install -d "$(dirname "$extensions_list")"
+	# Install the extensions list to a single runtime path used by both
+	# first-login hooks and manual ujust entrypoints.
+	local extensions_list="$runtime_dir/vscode-extensions.list"
 	if [[ -f "$build_context/vscode-extensions.list" ]]; then
-		cp "$build_context/vscode-extensions.list" "$extensions_list"
-		chmod 0644 "$extensions_list"
+		install -m 0644 "$build_context/vscode-extensions.list" "$extensions_list"
 		log "INFO" "VS Code extensions list copied to $extensions_list"
 	else
 		log "WARNING" "vscode-extensions.list not found, creating default list"
 		cat >"$extensions_list" <<'EXTENSIONS_EOF'
-# VS Code Insiders Extensions - one per line
+# VS Code Extensions - one per line
 ms-vscode-remote.remote-containers
 ms-vscode-remote.remote-ssh
 ms-vscode.remote-repositories
@@ -59,8 +59,42 @@ EXTENSIONS_EOF
 
 	cat >"$hook_dir/20-vscode-extensions.sh" <<'HOOK_EOF'
 #!/usr/bin/env bash
-# VS Code Insiders extensions user hook
+# VS Code extensions user hook
 set -euo pipefail
+
+resolve_vscode_cli() {
+    local brew_prefix=""
+    if command -v brew >/dev/null 2>&1; then
+        brew_prefix="$(brew --prefix 2>/dev/null || true)"
+    fi
+
+    local candidates=()
+    if [[ -n "$brew_prefix" ]]; then
+        candidates+=("$brew_prefix/bin/code-insiders" "$brew_prefix/bin/code")
+    fi
+    candidates+=("code-insiders" "code")
+
+    local candidate
+    for candidate in "${candidates[@]}"; do
+        if [[ -x "$candidate" ]]; then
+            printf '%s\n' "$candidate"
+            return 0
+        fi
+
+        if command -v "$candidate" >/dev/null 2>&1; then
+            command -v "$candidate"
+            return 0
+        fi
+    done
+
+    return 1
+}
+
+VSCODE_CMD="$(resolve_vscode_cli || true)"
+if [[ -z "$VSCODE_CMD" ]]; then
+    echo "Dudley Hook: vscode-extensions skipped because no VS Code CLI is installed yet"
+    exit 0
+fi
 
 # Source ublue setup library for version tracking
 source /usr/lib/ublue/setup-services/libsetup.sh
@@ -73,12 +107,12 @@ fi
 
 echo "Dudley Hook: vscode-extensions starting (version __CONTENT_VERSION__)"
 
-CMD="code-insiders"
-command -v "$CMD" >/dev/null 2>&1 || exit 0
-
 # Ensure config directories exist
 mkdir -p "$HOME/.config" || true
 USER_DATA_DIR="$HOME/.config/Code - Insiders"
+if [[ "$(basename "$VSCODE_CMD")" == "code" ]]; then
+  USER_DATA_DIR="$HOME/.config/Code"
+fi
 mkdir -p "$USER_DATA_DIR" || true
 
 # Keep marker file for manual tracking/debugging
@@ -96,13 +130,13 @@ if [[ "${VSCODE_EXTENSIONS_FORCE:-}" == "1" ]]; then
   fi
 fi
 
-echo "Installing VS Code Insiders extensions..."
+echo "Installing VS Code extensions with $(basename "$VSCODE_CMD")..."
 
 # Read extensions from list file
-EXTENSIONS_LIST="/etc/skel/.config/vscode-extensions.list"
+EXTENSIONS_LIST="/usr/share/ublue-os/vscode-extensions.list"
 if [[ ! -f "$EXTENSIONS_LIST" ]]; then
-  echo "Warning: $EXTENSIONS_LIST not found"
-  exit 0
+  echo "ERROR: $EXTENSIONS_LIST not found"
+  exit 1
 fi
 
 # Install each extension from the list
@@ -116,14 +150,15 @@ while IFS= read -r ext || [[ -n "$ext" ]]; do
   [[ -z "$ext" ]] && continue
 
   echo "Installing/updating extension: $ext"
-  "$CMD" --install-extension "$ext" --force --user-data-dir "$USER_DATA_DIR" --no-sandbox || echo "Failed to install $ext"
+  "$VSCODE_CMD" --install-extension "$ext" --force --user-data-dir "$USER_DATA_DIR" --no-sandbox || echo "Failed to install $ext"
 done < "$EXTENSIONS_LIST"
 
 # Write marker with version
 cat >"$MARKER" <<MARKER_CONTENT
-# VSCode Insiders extensions installed
+# VS Code extensions installed
 # VERSION=__CONTENT_VERSION__
 # Date: $(date -Iseconds)
+# CLI: $VSCODE_CMD
 MARKER_CONTENT
 
 echo "Dudley Hook: vscode-extensions completed successfully"

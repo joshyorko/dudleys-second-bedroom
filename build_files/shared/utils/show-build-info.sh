@@ -74,8 +74,8 @@ Build Information:
   Commit: $git_commit
 
 Homebrew Packages:
-  Install dev tools:  ujust dudley-brews-dev
-  Install all brews:  ujust dudley-brews-all
+  Install dev tools:  ujust dudley brew dev
+  Full setup:         ujust dudley
 
 Content Versions:
 EOF
