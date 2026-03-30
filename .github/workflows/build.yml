@@ -484,8 +484,23 @@ jobs:
         id: metadata-archive
         run: |
           set -euo pipefail
-          echo "Creating metadata.tar.gz from specs/, docs/, and build_files/"
-          tar -czvf metadata.tar.gz specs/ docs/ build_files/
+          echo "Creating metadata.tar.gz from available dirs: specs/, docs/, and build_files/"
+          archive_inputs=()
+          for directory in specs docs build_files; do
+            if [[ -d "${directory}" ]]; then
+              archive_inputs+=("${directory}")
+            else
+              echo "Skipping missing directory: ${directory}"
+            fi
+          done
+
+          if [[ ${#archive_inputs[@]} -eq 0 ]]; then
+            echo "No metadata directories found; creating an empty archive"
+            tar -czf metadata.tar.gz --files-from /dev/null
+          else
+            tar -czvf metadata.tar.gz "${archive_inputs[@]}"
+          fi
+
           ls -lh metadata.tar.gz
 
       - name: Extract image digest and construct metadata tag
