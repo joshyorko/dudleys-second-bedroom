@@ -5,7 +5,7 @@ inputs:
   just-version:
     description: Version of just to install
     required: false
-    default: "1.48.1"
+    default: "1.49.0"
 
 runs:
   using: composite
