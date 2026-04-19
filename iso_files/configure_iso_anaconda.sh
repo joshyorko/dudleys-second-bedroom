@@ -201,12 +201,12 @@ if [[ ! -d "/sys/firmware/efi" ]]; then
     exit 0
 fi
 
-if [[ ! -f "$SECUREBOOT_KEY" ]]; then
-    echo "Secure boot key not provided: $SECUREBOOT_KEY"
+if [[ ! -f "\$SECUREBOOT_KEY" ]]; then
+    echo "Secure boot key not provided: \$SECUREBOOT_KEY"
     exit 0
 fi
 
 mokutil --timeout -1 || :
-echo -e "$ENROLLMENT_PASSWORD\n$ENROLLMENT_PASSWORD" | mokutil --import "$SECUREBOOT_KEY" || :
+echo -e "\$ENROLLMENT_PASSWORD\n\$ENROLLMENT_PASSWORD" | mokutil --import "\$SECUREBOOT_KEY" || :
 %end
 EOF
