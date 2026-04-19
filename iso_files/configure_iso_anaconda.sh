@@ -7,6 +7,8 @@ IMAGE_TAG="$(jq -r '."image-tag"' <<<"$IMAGE_INFO")"
 IMAGE_REF="$(jq -r '."image-ref"' <<<"$IMAGE_INFO")"
 IMAGE_REF="${IMAGE_REF##*://}"
 SECURE_BOOT_KEY_URL='https://github.com/ublue-os/akmods/raw/main/certs/public_key.der'
+MOK_ENROLLMENT_PASSWORD="${DUDLEY_MOK_ENROLLMENT_PASSWORD:-$(hexdump -vn 10 -e '/1 "%02x"' /dev/urandom)}"
+MOK_PASSWORD_FILE="/usr/share/dudley-installer/mok-enrollment-password.txt"
 
 # Configure the live environment for installer-focused use.
 tee /usr/share/glib-2.0/schemas/zz2-org.gnome.shell.gschema.override <<'EOF'
@@ -50,6 +52,8 @@ systemctl --global disable ublue-user-setup.service || true
 
 # Install Anaconda and the storage helpers needed for Btrfs installs.
 mkdir -p /etc/anaconda/profile.d
+mkdir -p /etc/motd.d
+mkdir -p /usr/share/dudley-installer
 mkdir -p /usr/share/anaconda/post-scripts
 
 dnf install -y \
@@ -58,6 +62,7 @@ dnf install -y \
 	libblockdev-dm \
 	anaconda-live \
 	mokutil \
+	openssl \
 	rsync \
 	firefox
 
@@ -106,7 +111,8 @@ sed -i 's|Activities|the dock|' /usr/share/anaconda/gnome/fedora-welcome || true
 
 # Configure the interactive install to target the published Dudley image.
 tee -a /usr/share/anaconda/interactive-defaults.ks <<EOF
-ostreecontainer --url=$IMAGE_REF:$IMAGE_TAG --transport=containers-storage --no-signature-verification
+# Require the configured container signature policy/keys to validate the image.
+ostreecontainer --url=$IMAGE_REF:$IMAGE_TAG --transport=containers-storage
 %include /usr/share/anaconda/post-scripts/install-configure-upgrade.ks
 %include /usr/share/anaconda/post-scripts/install-flatpaks.ks
 %include /usr/share/anaconda/post-scripts/secureboot-enroll-key.ks
@@ -127,13 +133,32 @@ rsync -aAXUHKP /var/lib/flatpak "$target"
 %end
 EOF
 
-curl --retry 15 -Lo /etc/sb_pubkey.der "$SECURE_BOOT_KEY_URL"
+tee "$MOK_PASSWORD_FILE" <<EOF
+Secure Boot key enrollment password for this installer build:
+$MOK_ENROLLMENT_PASSWORD
 
-tee /usr/share/anaconda/post-scripts/secureboot-enroll-key.ks <<'EOF'
+Set DUDLEY_MOK_ENROLLMENT_PASSWORD during the ISO build if you need a custom value.
+EOF
+
+tee /etc/motd.d/90-dudley-mok-password <<EOF
+Secure Boot enrollment password:
+$MOK_ENROLLMENT_PASSWORD
+
+Saved at $MOK_PASSWORD_FILE
+EOF
+
+curl --fail --show-error --location --retry 15 --output /etc/sb_pubkey.der "$SECURE_BOOT_KEY_URL"
+if ! openssl x509 -inform DER -in /etc/sb_pubkey.der -noout >/dev/null 2>&1; then
+	echo "Downloaded secure boot key is not a valid DER certificate: /etc/sb_pubkey.der" >&2
+	rm -f /etc/sb_pubkey.der
+	exit 1
+fi
+
+tee /usr/share/anaconda/post-scripts/secureboot-enroll-key.ks <<EOF
 %post --erroronfail --nochroot
 set -euo pipefail
 
-readonly ENROLLMENT_PASSWORD="universalblue"
+readonly ENROLLMENT_PASSWORD="$MOK_ENROLLMENT_PASSWORD"
 readonly SECUREBOOT_KEY="/etc/sb_pubkey.der"
 
 if [[ ! -d "/sys/firmware/efi" ]]; then
