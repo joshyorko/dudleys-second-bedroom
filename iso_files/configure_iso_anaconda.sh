@@ -1,0 +1,152 @@
+#!/usr/bin/env bash
+
+set -eoux pipefail
+
+IMAGE_INFO="$(cat /usr/share/ublue-os/image-info.json)"
+IMAGE_TAG="$(jq -r '."image-tag"' <<<"$IMAGE_INFO")"
+IMAGE_REF="$(jq -r '."image-ref"' <<<"$IMAGE_INFO")"
+IMAGE_REF="${IMAGE_REF##*://}"
+SECURE_BOOT_KEY_URL='https://github.com/ublue-os/akmods/raw/main/certs/public_key.der'
+
+# Configure the live environment for installer-focused use.
+tee /usr/share/glib-2.0/schemas/zz2-org.gnome.shell.gschema.override <<'EOF'
+[org.gnome.shell]
+welcome-dialog-last-shown-version='4294967295'
+favorite-apps = ['anaconda.desktop', 'org.mozilla.firefox.desktop', 'org.gnome.Nautilus.desktop']
+EOF
+
+tee /usr/share/glib-2.0/schemas/zz3-dudley-installer-power.gschema.override <<'EOF'
+[org.gnome.settings-daemon.plugins.power]
+sleep-inactive-ac-type='nothing'
+sleep-inactive-battery-type='nothing'
+sleep-inactive-ac-timeout=0
+sleep-inactive-battery-timeout=0
+
+[org.gnome.desktop.session]
+idle-delay=uint32 0
+EOF
+
+rm -f /etc/xdg/autostart/org.gnome.Software.desktop
+
+tee /usr/share/gnome-shell/search-providers/org.gnome.Software-search-provider.ini <<'EOF'
+DefaultDisabled=true
+EOF
+
+glib-compile-schemas /usr/share/glib-2.0/schemas
+
+systemctl disable rpm-ostree-countme.service || true
+systemctl disable tailscaled.service || true
+systemctl disable bootloader-update.service || true
+systemctl disable brew-upgrade.timer || true
+systemctl disable brew-update.timer || true
+systemctl disable brew-setup.service || true
+systemctl disable rpm-ostreed-automatic.timer || true
+systemctl disable uupd.timer || true
+systemctl disable ublue-system-setup.service || true
+systemctl disable flatpak-preinstall.service || true
+systemctl --global disable ublue-flatpak-manager.service || true
+systemctl --global disable podman-auto-update.timer || true
+systemctl --global disable ublue-user-setup.service || true
+
+# Install Anaconda and the storage helpers needed for Btrfs installs.
+mkdir -p /etc/anaconda/profile.d
+mkdir -p /usr/share/anaconda/post-scripts
+
+dnf install -y \
+	libblockdev-btrfs \
+	libblockdev-lvm \
+	libblockdev-dm \
+	anaconda-live \
+	mokutil \
+	rsync \
+	firefox
+
+# Create a Dudley-specific Anaconda profile while still matching the Bluefin base image.
+tee /etc/anaconda/profile.d/dudley.conf <<'EOF'
+# Anaconda configuration file for Dudley's Second Bedroom
+
+[Profile]
+profile_id = dudley
+
+[Profile Detection]
+os_id = bluefin
+
+[Network]
+default_on_boot = FIRST_WIRED_WITH_LINK
+
+[Bootloader]
+efi_dir = fedora
+menu_auto_hide = True
+
+[Storage]
+default_scheme = BTRFS
+btrfs_compression = zstd:1
+default_partitioning =
+    /     (min 1 GiB, max 70 GiB)
+    /home (min 500 MiB, free 50 GiB)
+    /var  (btrfs)
+
+[User Interface]
+hidden_spokes =
+    NetworkSpoke
+    PasswordSpoke
+    UserSpoke
+hidden_webui_pages =
+    anaconda-screen-accounts
+
+[Localization]
+use_geolocation = False
+EOF
+
+. /etc/os-release
+echo "Dudley's Second Bedroom installer for Bluefin $VERSION_ID" >/etc/system-release
+sed -i 's/ANACONDA_PRODUCTVERSION=.*/ANACONDA_PRODUCTVERSION=""/' /usr/{,s}bin/liveinst || true
+sed -i 's| Fedora| Dudley|' /usr/share/anaconda/gnome/fedora-welcome || true
+sed -i 's|Activities|the dock|' /usr/share/anaconda/gnome/fedora-welcome || true
+
+# Configure the interactive install to target the published Dudley image.
+tee -a /usr/share/anaconda/interactive-defaults.ks <<EOF
+ostreecontainer --url=$IMAGE_REF:$IMAGE_TAG --transport=containers-storage --no-signature-verification
+%include /usr/share/anaconda/post-scripts/install-configure-upgrade.ks
+%include /usr/share/anaconda/post-scripts/install-flatpaks.ks
+%include /usr/share/anaconda/post-scripts/secureboot-enroll-key.ks
+EOF
+
+tee /usr/share/anaconda/post-scripts/install-configure-upgrade.ks <<EOF
+%post --erroronfail
+bootc switch --mutate-in-place --transport registry $IMAGE_REF:$IMAGE_TAG
+%end
+EOF
+
+tee /usr/share/anaconda/post-scripts/install-flatpaks.ks <<'EOF'
+%post --erroronfail --nochroot
+deployment="$(ostree rev-parse --repo=/mnt/sysimage/ostree/repo ostree/0/1/0)"
+target="/mnt/sysimage/ostree/deploy/default/deploy/$deployment.0/var/lib/"
+mkdir -p "$target"
+rsync -aAXUHKP /var/lib/flatpak "$target"
+%end
+EOF
+
+curl --retry 15 -Lo /etc/sb_pubkey.der "$SECURE_BOOT_KEY_URL"
+
+tee /usr/share/anaconda/post-scripts/secureboot-enroll-key.ks <<'EOF'
+%post --erroronfail --nochroot
+set -euo pipefail
+
+readonly ENROLLMENT_PASSWORD="universalblue"
+readonly SECUREBOOT_KEY="/etc/sb_pubkey.der"
+
+if [[ ! -d "/sys/firmware/efi" ]]; then
+    echo "EFI mode not detected. Skipping key enrollment."
+    exit 0
+fi
+
+if [[ ! -f "$SECUREBOOT_KEY" ]]; then
+    echo "Secure boot key not provided: $SECUREBOOT_KEY"
+    exit 0
+fi
+
+mokutil --timeout -1 || :
+echo -e "$ENROLLMENT_PASSWORD\n$ENROLLMENT_PASSWORD" | mokutil --import "$SECUREBOOT_KEY" || :
+%end
+EOF

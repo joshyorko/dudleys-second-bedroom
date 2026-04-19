@@ -15,7 +15,7 @@
     {
       // Track ORAS_VERSION in build.yml
       "customType": "regex",
-      "managerFilePatterns": ["/^\\.github\\/workflows\\/build\\.yml$/"],
+      "fileMatch": ["^\\.github/workflows/build\\.yml$"],
       "matchStrings": [
         "ORAS_VERSION=\"(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)\""
       ],
@@ -25,7 +25,7 @@
     {
       // Track just version in the local setup action
       "customType": "regex",
-      "managerFilePatterns": ["/^\\.github\\/actions\\/setup-just\\/action\\.yml$/"],
+      "fileMatch": ["^\\.github/actions/setup-just/action\\.yml$"],
       "matchStrings": [
         "default: \"(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)\""
       ],
@@ -33,14 +33,10 @@
       "datasourceTemplate": "github-releases"
     },
     {
-      // Track the bootc image builder digest in CI and local Just recipes
+      // Track the local legacy bootc image builder digest in Just recipes
       "customType": "regex",
-      "managerFilePatterns": [
-        "/^\\.github\\/workflows\\/build-disk\\.yml$/",
-        "/^Justfile$/"
-      ],
+      "fileMatch": ["^Justfile$"],
       "matchStrings": [
-        "BIB_IMAGE: \"(?<depName>quay\\.io/centos-bootc/bootc-image-builder):(?<currentValue>[^@\"]+)@(?<currentDigest>sha256:[a-f0-9]+)\"",
         "export bib_image := env\\(\"BIB_IMAGE\", \"(?<depName>quay\\.io/centos-bootc/bootc-image-builder):(?<currentValue>[^@\"]+)@(?<currentDigest>sha256:[a-f0-9]+)\"\\)"
       ],
       "datasourceTemplate": "docker",

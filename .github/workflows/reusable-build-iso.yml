@@ -1,0 +1,87 @@
+---
+name: Reusable installer ISO build
+
+on:
+  workflow_call:
+    inputs:
+      image_tag:
+        description: OCI image tag to build the installer from
+        type: string
+        default: latest
+      checkout_ref:
+        description: Git ref to check out for hook scripts and flatpak lists
+        type: string
+        default: ""
+      upload_artifacts:
+        description: Upload the generated ISO and checksum as Actions artifacts
+        type: boolean
+        default: true
+
+jobs:
+  build:
+    name: Build installer ISO
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: read
+      id-token: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          ref: ${{ inputs.checkout_ref != '' && inputs.checkout_ref || github.sha }}
+
+      - name: Install Just
+        uses: ./.github/actions/setup-just
+
+      - name: Run validation checks
+        run: just check
+
+      - name: Prepare image reference
+        id: image_ref
+        run: |
+          set -euo pipefail
+          image_ref="ghcr.io/${GITHUB_REPOSITORY,,}"
+          image_name="${GITHUB_REPOSITORY##*/}"
+          image_name="${image_name,,}"
+          artifact_name="${image_name}-${{ inputs.image_tag }}-installer-x86_64"
+          echo "image_ref=${image_ref}" >> "${GITHUB_OUTPUT}"
+          echo "artifact_name=${artifact_name}" >> "${GITHUB_OUTPUT}"
+
+      - name: Build installer ISO
+        id: build
+        uses: ublue-os/titanoboa@main
+        with:
+          image-ref: ${{ steps.image_ref.outputs.image_ref }}:${{ inputs.image_tag }}
+          flatpaks-list: ${{ github.workspace }}/flatpaks/system-flatpaks.list
+          hook-post-rootfs: ${{ github.workspace }}/iso_files/configure_iso_anaconda.sh
+          kargs: NONE
+          builder-distro: fedora
+
+      - name: Rename ISO and generate checksum
+        id: package
+        env:
+          OUTPUT_PATH: ${{ steps.build.outputs.iso-dest }}
+          OUTPUT_NAME: ${{ steps.image_ref.outputs.artifact_name }}
+        run: |
+          set -euo pipefail
+          mkdir -p output
+          output_directory="$(realpath output)"
+          mv "${OUTPUT_PATH}" "${output_directory}/${OUTPUT_NAME}.iso"
+          (
+            cd "${output_directory}"
+            sha256sum "${OUTPUT_NAME}.iso" | tee "${OUTPUT_NAME}.iso-CHECKSUM"
+          )
+          echo "output_directory=${output_directory}" >> "${GITHUB_OUTPUT}"
+
+      - name: Upload ISO artifacts
+        if: inputs.upload_artifacts
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: ${{ steps.image_ref.outputs.artifact_name }}
+          if-no-files-found: error
+          path: ${{ steps.package.outputs.output_directory }}
+          retention-days: 7
+          compression-level: 0
+          overwrite: true
