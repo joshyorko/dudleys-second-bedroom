@@ -111,11 +111,14 @@ jobs:
           sudo apt install -y \
             podman
 
-      - name: Maximize build space
-        if: inputs.platform != 'arm64'
-        uses: ublue-os/remove-unwanted-software@cc0becac701cf642c8f0a6613bbdaf5dc36b259e # v9
-        with:
-          remove-codeql: true
+      # Keep this disabled for now.
+      # It was mainly helpful when we needed extra runner headroom for very large image/rechunk-style flows.
+      # Re-enable it if disk-image builds start hitting GitHub runner space limits again.
+      # - name: Maximize build space
+      #   if: inputs.platform != 'arm64'
+      #   uses: ublue-os/remove-unwanted-software@cc0becac701cf642c8f0a6613bbdaf5dc36b259e # v9
+      #   with:
+      #     remove-codeql: true
 
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
