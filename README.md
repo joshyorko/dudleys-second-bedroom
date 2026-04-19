@@ -394,27 +394,23 @@ Key points:
 - **Signature Verification**: [docs/SIGNATURE-VERIFICATION.md](./docs/SIGNATURE-VERIFICATION.md)
 - **Policy Examples**: [docs/signature-policy/](./docs/signature-policy/)
 
-# Building Disk Images
+# Building Installer Media
 
-This template provides an out of the box workflow for creating disk images (ISO, qcow, raw) for your custom OCI image which can be used to directly install onto your machines.
+This repo now follows the current Bluefin-style pattern for installer media: CI builds an installer ISO from the published OCI image using [Titanoboa](https://github.com/ublue-os/titanoboa) plus an Anaconda hook script, instead of using `bootc-image-builder` directly in GitHub Actions.
 
-This template provides a way to upload the disk images that is generated from the workflow to a S3 bucket. The disk images will also be available as an artifact from the job, if you wish to use an alternate provider. To upload to S3 we use [rclone](https://rclone.org/) which is able to use [many S3 providers](https://rclone.org/s3/).
+## CI installer workflow
 
-## Setting Up ISO Builds
+The [build-iso.yml](./.github/workflows/build-iso.yml) workflow builds an installer ISO after a successful `main` branch container-image publish, or on manual dispatch. The installer behavior is defined in [iso_files/configure_iso_anaconda.sh](./iso_files/configure_iso_anaconda.sh).
 
-The [build-disk.yml](./.github/workflows/build-disk.yml) Github Actions workflow creates a disk image from your OCI image by utilizing the [bootc-image-builder](https://osbuild.org/docs/bootc/). In order to use this workflow you must complete the following steps:
+Current defaults:
+- build from `ghcr.io/joshyorko/dudleys-second-bedroom:latest`
+- build `amd64` installer media
+- use Btrfs as the installer storage default
+- upload the ISO and checksum as GitHub Actions artifacts
 
-1. Modify `disk_config/iso.toml` to point to your custom container image before generating an ISO image. The default file is tuned for the GNOME variant of this project and already targets `ghcr.io/joshyorko/dudleys-second-bedroom:latest`. If you need a different desktop experience, copy the relevant settings from `disk_config/iso-kde.toml` (or create your own) and update the workflow/Just recipe to point at that file instead.
-2. If you changed your image name from the default in `build.yml` then in the `build-disk.yml` file edit the `IMAGE_REGISTRY`, `IMAGE_NAME` and `DEFAULT_TAG` environment variables with the correct values. If you did not make changes, skip this step.
-3. Finally, if you want to upload your disk images to S3 then you will need to add your S3 configuration to the repository's Action secrets. This can be found by going to your repository settings, under `Secrets and Variables` -> `Actions`. You will need to add the following
-  - `S3_PROVIDER` - Must match one of the values from the [supported list](https://rclone.org/s3/)
-  - `S3_BUCKET_NAME` - Your unique bucket name
-  - `S3_ACCESS_KEY_ID` - It is recommended that you make a separate key just for this workflow
-  - `S3_SECRET_ACCESS_KEY` - See above.
-  - `S3_REGION` - The region your bucket lives in. If you do not know then set this value to `auto`.
-  - `S3_ENDPOINT` - This value will be specific to the bucket as well.
+## Local legacy VM image helpers
 
-Once the workflow is done, you'll find the disk images either in your S3 bucket or as part of the summary under `Artifacts` after the workflow is completed.
+Local `just` commands for `qcow2`, `raw`, and legacy BIB-based `iso` images are still available for experimentation and local testing, but they are no longer the primary CI installer path.
 
 # Artifacthub
 
@@ -432,7 +428,7 @@ The `Justfile` contains various commands and configurations for building and man
 
 ## Environment Variables
 
-- `image_name`: The name of the image (default: "image-template").
+- `image_name`: The name of the image (default: "dudleys-second-bedroom").
 - `default_tag`: The default tag for the image (default: "latest").
 - `bib_image`: The Bootc Image Builder (BIB) image (default: `quay.io/centos-bootc/bootc-image-builder:latest@sha256:bc7f1fe3f56afe3dee8f69e9cb94601648e40a30ecbd8dbe61ca7a04dae3f4aa`; Renovate updates the digest).
 
@@ -478,9 +474,9 @@ Cleans the repository by removing build artifacts.
 
 Cleans build artifacts and removes container images.
 
-## Building and Running Virtual Machines and ISOs
+## Local Legacy VM Images
 
-The below commands all build QCOW2 images. To produce or use a different type of image, substitute in the command with that type in the place of `qcow2`. The available types are `qcow2`, `iso`, and `raw`.
+The commands below are local-only helpers for legacy BIB-based `qcow2`, `raw`, and `iso` image experiments.
 
 ### `just build-qcow2`
 

@@ -1,4 +1,4 @@
-export image_name := env("IMAGE_NAME", "image-template")
+export image_name := env("IMAGE_NAME", "dudleys-second-bedroom")
 export default_tag := env("DEFAULT_TAG", "latest")
 export bib_image := env("BIB_IMAGE", "quay.io/centos-bootc/bootc-image-builder:latest@sha256:bc7f1fe3f56afe3dee8f69e9cb94601648e40a30ecbd8dbe61ca7a04dae3f4aa")
 
@@ -320,28 +320,28 @@ _build-bib $target_image $tag $type $config: (_rootful_load_image target_image t
 # Example: just _rebuild-bib localhost/fedora latest qcow2 disk_config/disk.toml
 _rebuild-bib $target_image $tag $type $config: (build target_image tag) && (_build-bib target_image tag type config)
 
-# Build a QCOW2 virtual machine image
-[group('Build Virtal Machine Image')]
+# Local-only legacy BIB helper for a QCOW2 virtual machine image
+[group('Local VM Image')]
 build-qcow2 $target_image=("localhost/" + image_name) $tag=default_tag: && (_build-bib target_image tag "qcow2" "disk_config/disk.toml")
 
-# Build a RAW virtual machine image
-[group('Build Virtal Machine Image')]
+# Local-only legacy BIB helper for a RAW virtual machine image
+[group('Local VM Image')]
 build-raw $target_image=("localhost/" + image_name) $tag=default_tag: && (_build-bib target_image tag "raw" "disk_config/disk.toml")
 
-# Build an ISO virtual machine image
-[group('Build Virtal Machine Image')]
+# Local-only legacy BIB helper for an ISO image
+[group('Local VM Image')]
 build-iso $target_image=("localhost/" + image_name) $tag=default_tag: && (_build-bib target_image tag "iso" "disk_config/iso.toml")
 
-# Rebuild a QCOW2 virtual machine image
-[group('Build Virtal Machine Image')]
+# Rebuild a local-only legacy QCOW2 virtual machine image
+[group('Local VM Image')]
 rebuild-qcow2 $target_image=("localhost/" + image_name) $tag=default_tag: && (_rebuild-bib target_image tag "qcow2" "disk_config/disk.toml")
 
-# Rebuild a RAW virtual machine image
-[group('Build Virtal Machine Image')]
+# Rebuild a local-only legacy RAW virtual machine image
+[group('Local VM Image')]
 rebuild-raw $target_image=("localhost/" + image_name) $tag=default_tag: && (_rebuild-bib target_image tag "raw" "disk_config/disk.toml")
 
-# Rebuild an ISO virtual machine image
-[group('Build Virtal Machine Image')]
+# Rebuild a local-only legacy ISO image
+[group('Local VM Image')]
 rebuild-iso $target_image=("localhost/" + image_name) $tag=default_tag: && (_rebuild-bib target_image tag "iso" "disk_config/iso.toml")
 
 # Run a virtual machine with the specified image type and configuration
@@ -386,20 +386,20 @@ _run-vm $target_image $tag $type $config:
     (sleep 30 && xdg-open http://localhost:"$port") &
     podman run "${run_args[@]}"
 
-# Run a virtual machine from a QCOW2 image
-[group('Run Virtal Machine')]
+# Run a local-only QCOW2 image
+[group('Local VM Image')]
 run-vm-qcow2 $target_image=("localhost/" + image_name) $tag=default_tag: && (_run-vm target_image tag "qcow2" "disk_config/disk.toml")
 
-# Run a virtual machine from a RAW image
-[group('Run Virtal Machine')]
+# Run a local-only RAW image
+[group('Local VM Image')]
 run-vm-raw $target_image=("localhost/" + image_name) $tag=default_tag: && (_run-vm target_image tag "raw" "disk_config/disk.toml")
 
-# Run a virtual machine from an ISO
-[group('Run Virtal Machine')]
+# Run a local-only legacy ISO image
+[group('Local VM Image')]
 run-vm-iso $target_image=("localhost/" + image_name) $tag=default_tag: && (_run-vm target_image tag "iso" "disk_config/iso.toml")
 
-# Run a virtual machine using systemd-vmspawn
-[group('Run Virtal Machine')]
+# Run a local-only virtual machine using systemd-vmspawn
+[group('Local VM Image')]
 spawn-vm rebuild="0" type="qcow2" ram="6G":
     #!/usr/bin/env bash
 

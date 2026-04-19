@@ -35,16 +35,16 @@ This directory contains the CI/CD workflows for Dudley's Second Bedroom.
 3. **Integration Tests** - Integration tests (`just test-integration`)
 4. **Full Test Suite** - Complete verification (`just test-all`)
 
-### `build-disk.yml` - Disk Image Build
-**Purpose:** Build bootable disk images (QCOW2, ISO, RAW)
+### `build-iso.yml` - Installer ISO Build
+**Purpose:** Build a Bluefin-style installer ISO from the published OCI image
 
 **Triggers:**
 - Manual dispatch
-- Pull requests affecting disk configuration
+- Automatic run after a successful `main` branch container-image publish
 
 **Stages:**
-1. **Validation** - Configuration validation (PR only)
-2. **Build** - Disk image generation
+1. **Reusable Build** - Titanoboa/Anaconda installer build
+2. **Artifacts** - Upload ISO and checksum
 
 ### `clean.yml` - Image Cleanup
 **Purpose:** Remove old container images
@@ -103,8 +103,8 @@ build.yml:
 test.yml:
   validation ──> unit-tests ──> integration-tests ──> full-test-suite
 
-build-disk.yml:
-  validate ──> build
+build-iso.yml:
+  build-container-image ──> build-installer-iso
 ```
 
 ## Security

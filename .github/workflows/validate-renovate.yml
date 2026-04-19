@@ -20,12 +20,14 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6
         with:
-          node-version: latest
+          # Renovate 43 expects Node 24; avoid floating to incompatible majors.
+          node-version: "24.11.1"
 
       - name: Install dependencies
         shell: bash
         env:
-          RENOVATE_VERSION: latest
+          # Keep validation deterministic so strict mode doesn't drift on config aliases.
+          RENOVATE_VERSION: 43.130.0
         run: npm install -g renovate@${RENOVATE_VERSION}
 
       - name: Validate Renovate config

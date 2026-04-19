@@ -33,14 +33,10 @@
       "datasourceTemplate": "github-releases"
     },
     {
-      // Track the bootc image builder digest in CI and local Just recipes
+      // Track the local legacy bootc image builder digest in Just recipes
       "customType": "regex",
-      "managerFilePatterns": [
-        "/^\\.github\\/workflows\\/build-disk\\.yml$/",
-        "/^Justfile$/"
-      ],
+      "managerFilePatterns": ["/^Justfile$/"],
       "matchStrings": [
-        "BIB_IMAGE: \"(?<depName>quay\\.io/centos-bootc/bootc-image-builder):(?<currentValue>[^@\"]+)@(?<currentDigest>sha256:[a-f0-9]+)\"",
         "export bib_image := env\\(\"BIB_IMAGE\", \"(?<depName>quay\\.io/centos-bootc/bootc-image-builder):(?<currentValue>[^@\"]+)@(?<currentDigest>sha256:[a-f0-9]+)\"\\)"
       ],
       "datasourceTemplate": "docker",

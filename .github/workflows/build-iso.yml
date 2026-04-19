@@ -1,0 +1,32 @@
+---
+name: Build installer ISO
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: OCI image tag to build the installer from
+        required: false
+        default: latest
+        type: string
+  workflow_run:
+    workflows:
+      - Build container image
+    types:
+      - completed
+    branches:
+      - main
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  build-installer-iso:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    uses: ./.github/workflows/reusable-build-iso.yml
+    with:
+      image_tag: ${{ github.event_name == 'workflow_dispatch' && inputs.image_tag || 'latest' }}
+      checkout_ref: ${{ github.event_name == 'workflow_dispatch' && github.sha || github.event.workflow_run.head_sha }}
+      upload_artifacts: true
+    secrets: inherit

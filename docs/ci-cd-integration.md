@@ -94,26 +94,16 @@ Validates the built image contains expected components.
 #### Stage 5: Push and Sign
 Only executes if all previous stages pass and the event is not a pull request.
 
-### 2. Build Disk Workflow (`build-disk.yml`)
+### 2. Build Installer ISO Workflow (`build-iso.yml`)
 
 **Triggers:**
 - Manual dispatch
-- Pull requests affecting disk configuration
+- Automatic runs after the `main` branch container-image workflow completes successfully
 
 **Test Stages:**
 
-#### Validation (PR only)
-Runs the same validation checks as the build workflow plus disk-specific validation.
-
-**What it does:**
-- All checks from `just check`
-- Validates disk_config/disk.toml exists
-- Validates disk_config/iso.toml exists
-
-**Why PR only:** Manual builds are typically urgent; validation has already passed in main branch.
-
 #### Build
-Disk image build only proceeds if validation passes.
+Builds an installer ISO with `ublue-os/titanoboa` using the published OCI image from GHCR and a Dudley-specific Anaconda hook script.
 
 ### 3. Test Suite Workflow (`test.yml`)
 
