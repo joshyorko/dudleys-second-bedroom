@@ -79,7 +79,10 @@ systemctl --global disable podman-auto-update.timer || true
 systemctl --global disable ublue-user-setup.service || true
 
 # Work around the Fedora logos dependency conflict pulled in by anaconda-webui.
+# Bluefin-derived images already carry bluefin-logos, which conflicts with the
+# temporary fedora-logos package metadata Titanoboa expects during ISO assembly.
 rpm --erase --nodeps --justdb generic-logos || true
+rpm --erase --nodeps --justdb bluefin-logos || true
 dnf download -y fedora-logos
 rpm -i --justdb fedora-logos*.rpm
 
