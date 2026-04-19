@@ -28,7 +28,7 @@ env:
   IMAGE_NAME: ${{ github.event.repository.name }} # output of build.yml, keep in sync
   IMAGE_REGISTRY: "ghcr.io/${{ github.repository_owner }}"  # do not edit
   DEFAULT_TAG: "latest"
-  BIB_IMAGE: "quay.io/centos-bootc/bootc-image-builder:latest" # keep aligned with the current ublue-os/image-template workflow
+  BIB_IMAGE: "quay.io/centos-bootc/bootc-image-builder:latest@sha256:bc7f1fe3f56afe3dee8f69e9cb94601648e40a30ecbd8dbe61ca7a04dae3f4aa" # pinned digest; Renovate should keep this fresh
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref || github.run_id }}

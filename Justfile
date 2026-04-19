@@ -1,6 +1,6 @@
 export image_name := env("IMAGE_NAME", "image-template")
 export default_tag := env("DEFAULT_TAG", "latest")
-export bib_image := env("BIB_IMAGE", "quay.io/centos-bootc/bootc-image-builder:latest")
+export bib_image := env("BIB_IMAGE", "quay.io/centos-bootc/bootc-image-builder:latest@sha256:bc7f1fe3f56afe3dee8f69e9cb94601648e40a30ecbd8dbe61ca7a04dae3f4aa")
 
 alias build-vm := build-qcow2
 alias rebuild-vm := rebuild-qcow2

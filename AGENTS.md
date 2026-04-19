@@ -1,165 +1,24 @@
-# Dudley's Second Bedroom - Copilot Instructions
+# Repository Guidelines
 
-This document provides essential information for coding agents working with this repository to minimize exploration time and avoid common build failures.
+## Project Structure & Module Organization
+This repository builds a customized Universal Blue / Bluefin image rather than a traditional app. Core build logic lives in `build_files/`: `shared/` for common image steps, `desktop/` for GNOME and theme changes, `developer/` for dev tooling, and `user-hooks/` for first-login actions such as `10-wallpaper-enforcement.sh`. Runtime assets live in `custom_wallpapers/`, `flatpaks/`, `system_files/`, and `disk_config/`. Tests and repro scripts live in `tests/` and `tests/reproductions/`. CI definitions and contributor-facing shell instructions live under `.github/`.
 
-## Repository Overview
+## Build, Test, and Development Commands
+Use `just` as the main entrypoint:
 
-**Dudley's Second Bedroom** is a custom Universal Blue Fedora Atomic remix with a modular build system, declarative configuration, and a content-versioned first-boot experience.
+- `just check` runs syntax checks, ShellCheck, package validation, and module validation.
+- `just test-unit` runs hash and manifest unit tests.
+- `just test-integration` validates hook integration behavior.
+- `just test-all` runs the complete local test sweep.
+- `just build localhost/dudleys-second-bedroom latest` builds the container image with Podman.
+- `just verify-build localhost/dudleys-second-bedroom latest` checks the built image contents.
+- `just build-qcow2` or `just build-iso` builds bootable artifacts from `disk_config/`.
 
-- **Type**: Container-based Linux distribution build system
-- **Base**: Universal Blue's Bluefin-DX (Developer Experience) image
-- **Languages**: Bash scripts, JSON configuration
-- **Build System**: Just (command runner), Podman containers, GitHub Actions
-- **Target**: Personalized developer desktop OS
+## Coding Style & Naming Conventions
+Most repo code is Bash. Start scripts with `#!/usr/bin/env bash` and `set -euo pipefail`. Format shell with `just format` (`shfmt`) and lint with `just lint` (`shellcheck -x -e SC1091`). The repo standard is 2-space indentation. Keep module filenames descriptive and kebab-case; use numeric prefixes when order matters, for example `20-vscode-extensions.sh`. New `build_files/` modules must include the metadata header described in `.github/instructions/module-contract.instructions.md`.
 
-## Repository Structure
+## Testing Guidelines
+Add or update a focused shell test whenever you change build utilities, manifest generation, or user hooks. Place unit-style coverage beside existing scripts in `tests/`, and store one-off bug repros in `tests/reproductions/`. Run at least `just check` and the most relevant test target before opening a PR; use `just test-all` for changes that touch shared utilities, hooks, or the `Containerfile`.
 
-### Key Directories
-- `system_files/` - User-space files, configurations copied into the image
-- `build_files/` - Build modules organized by category:
-  - `shared/` - Core platform modules and utilities
-  - `desktop/` - Desktop environment customizations
-  - `developer/` - Development tools (VS Code, DevPod)
-  - `user-hooks/` - First-boot user configuration hooks
-- `.github/workflows/` - CI/CD pipelines
-- `brew/` - Homebrew Brewfile definitions
-- `flatpaks/` - Flatpak application lists
-- `custom_wallpapers/` - Wallpaper assets (content-versioned)
-- `tests/` - Validation and test scripts
-- `docs/` and `specs/` - Architecture references and design docs
-
-### Architecture
-- **Base Image**: `ghcr.io/ublue-os/bluefin-dx:stable`
-- **Build Process**: Modular shell scripts auto-discovered and executed in category order
-- **Content Versioning**: Automatic hash-based versioning for first-boot hooks
-
-### Immutable Filesystem Guardrails (bootc/ostree)
-- Treat `/usr/local` as a special mutable path (`/var/usrlocal` on ostree/bootc systems).
-- **Never** add files under `system_files/shared/usr/local/` in this repository.
-- Put image-managed executables under immutable paths like `system_files/shared/usr/bin/` instead.
-- Preserve receiver-side symlinks when syncing system files (for example, `rsync --keep-dirlinks`) so `/usr/local` is not replaced by a real directory.
-- When modifying file sync behavior, validate `/usr/local` remains a symlink in image verification tests.
-
-## Build Instructions
-
-### Essential Commands
-
-**Build validation (ALWAYS run before making changes):**
-```bash
-# Run all validation checks
-just check
-
-# Run full test suite
-just test-all
-
-# Fix formatting issues
-just fix
-```
-
-**Build commands:**
-```bash
-# Build container image
-just build
-
-# Build and verify
-just build && just verify-build
-
-# Build bootable media
-just build-qcow2  # Virtual machine image
-just build-iso    # ISO installer
-```
-
-### Common Build Failures & Workarounds
-
-**Module validation failures:**
-- Ensure module has required header (Purpose, Category, Dependencies, etc.)
-- Check file has execute permission: `chmod +x build_files/.../*.sh`
-- Run `just validate-modules` to identify issues
-
-**Package conflicts:**
-- Check `packages.json` for duplicates: `just validate-packages`
-- Ensure packages aren't in both install and remove lists
-
-## Module Development
-
-### Module Header Contract
-Every module **must** start with:
-```bash
-#!/usr/bin/env bash
-# Purpose: <succinct summary>
-# Category: <shared|desktop|developer|user-hooks>
-# Dependencies: <comma-separated module names or 'none'>
-# Parallel-Safe: <yes|no>
-# Cache-Friendly: <yes|no>
-set -euo pipefail
-```
-
-### Module Execution Order
-1. `shared/` - Core utilities (00-image-info, package-install, branding, cleanup)
-2. `desktop/` - Desktop customizations (dconf, fonts, GNOME)
-3. `developer/` - Dev tools (devpod, vscode)
-4. `user-hooks/` - First-boot scripts installed to `/usr/share/ublue-os/user-setup.hooks.d/`
-
-### Exit Codes
-- `0` - Success
-- `1` - Failure (halts build)
-- `2` - Intentional skip (non-error, continues build)
-
-## Configuration Files
-
-### Key Files
-- `packages.json` - Declarative package install/remove lists
-- `flatpaks/system-flatpaks.list` - System Flatpak applications
-- `vscode-extensions.list` - VS Code extensions for first-boot
-- `brew/*.Brewfile` - Homebrew package collections
-
-### Making Package Changes
-1. Edit `packages.json` (prefer this over inline dnf calls)
-2. Run `just validate-packages`
-3. Test with `just build`
-
-## Content Versioning System
-
-### How It Works
-- `generate-manifest.sh` computes content hashes across tracked assets
-- Hashes stored in `/etc/dudley/build-manifest.json`
-- Hooks use `__CONTENT_VERSION__` placeholder replaced at build time
-
-### When to Update
-- Adding new wallpapers to `custom_wallpapers/`
-- Modifying hook scripts in `build_files/user-hooks/`
-- Changing `vscode-extensions.list`
-
-## Development Guidelines
-
-### Making Changes
-1. **ALWAYS validate first:** `just check`
-2. **Make minimal modifications** - prefer configuration over code changes
-3. **Test locally:** `just build` before pushing
-4. **Run tests:** `just test-unit` for quick feedback
-
-### File Editing Best Practices
-- **Shell scripts**: Follow existing patterns, use `shellcheck`
-- **JSON files**: Validate syntax with `jq empty filename.json`
-- **Modules**: Include required header, use logging helper
-
-### Adding a New Module
-1. Create file in appropriate category directory
-2. Add required header metadata
-3. Make executable: `chmod +x`
-4. Test: `just validate-modules && just build`
-
-## Trust These Instructions
-
-The information in this document has been validated against the current repository state. Only search for additional information if:
-- Instructions are incomplete for your specific task
-- You encounter errors not covered here
-- Repository structure has changed significantly
-
-## Important Rules
-
-- Ensure [conventional commits](https://www.conventionalcommits.org/) are used
-- Keep modules idempotent (safe to re-run)
-- Prefer declarative inputs (`packages.json`) over imperative installs
-- Document complex behavior in `docs/` or `specs/`
-- Run validation scripts before pushing changes
+## Commit & Pull Request Guidelines
+Recent history follows Conventional Commit prefixes such as `chore:`, `chore(deps):`, `fix:`, and `feat:`; keep subject lines short and imperative. PRs should describe the user-visible build impact, list the local commands you ran, and link any related issue. Include screenshots only when changing desktop UX, wallpapers, or other visual defaults. Treat signing files, image metadata, and workflow changes as sensitive and call them out explicitly in review.

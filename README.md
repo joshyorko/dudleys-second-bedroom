@@ -434,7 +434,7 @@ The `Justfile` contains various commands and configurations for building and man
 
 - `image_name`: The name of the image (default: "image-template").
 - `default_tag`: The default tag for the image (default: "latest").
-- `bib_image`: The Bootc Image Builder (BIB) image (default: "quay.io/centos-bootc/bootc-image-builder:latest").
+- `bib_image`: The Bootc Image Builder (BIB) image (default: `quay.io/centos-bootc/bootc-image-builder:latest@sha256:bc7f1fe3f56afe3dee8f69e9cb94601648e40a30ecbd8dbe61ca7a04dae3f4aa`; Renovate updates the digest).
 
 ## Validation Commands
 
