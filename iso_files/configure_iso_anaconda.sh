@@ -78,6 +78,11 @@ systemctl --global disable ublue-flatpak-manager.service || true
 systemctl --global disable podman-auto-update.timer || true
 systemctl --global disable ublue-user-setup.service || true
 
+# Work around the Fedora logos dependency conflict pulled in by anaconda-webui.
+rpm --erase --nodeps --justdb generic-logos || true
+dnf download -y fedora-logos
+rpm -i --justdb fedora-logos*.rpm
+
 # Install Anaconda and the storage helpers needed for Btrfs installs.
 mkdir -p /etc/anaconda/profile.d
 mkdir -p /etc/motd.d
@@ -93,6 +98,8 @@ dnf install -y \
 	openssl \
 	rsync \
 	firefox
+
+rpm --erase --nodeps --justdb fedora-logos || true
 
 # Create a Dudley-specific Anaconda profile while still matching the Bluefin base image.
 tee /etc/anaconda/profile.d/dudley.conf <<'EOF'
