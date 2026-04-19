@@ -24,6 +24,10 @@ concurrency:
 jobs:
   build-installer-iso:
     if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    permissions:
+      contents: read
+      packages: read
+      id-token: write
     uses: ./.github/workflows/reusable-build-iso.yml
     with:
       image_tag: ${{ github.event_name == 'workflow_dispatch' && inputs.image_tag || 'latest' }}
