@@ -20,6 +20,11 @@ This directory contains the CI/CD workflows for Dudley's Second Bedroom.
 4. **Verify** - Post-build verification (`just verify-build`)
 5. **Push & Sign** - Publish to registry (main branch only)
 
+**Manual dispatch inputs:**
+- `base_image` to switch the upstream image, for example Bluefin DX Nvidia
+- `image_tag` to force the primary publish tag
+- If `image_tag` is omitted, the workflow keeps default builds on `latest` and auto-separates Nvidia/custom builds onto distinct tags
+
 ### `test.yml` - Comprehensive Test Suite
 **Purpose:** Run full test suite for code changes
 

@@ -21,6 +21,10 @@ on:
         description: 'Base image to build from (default: ghcr.io/ublue-os/bluefin-dx:stable)'
         required: false
         type: string
+      image_tag:
+        description: 'Primary publish tag override. Leave blank to auto-use latest for the default base, nvidia for Nvidia bases, or a sanitized variant name for other custom bases.'
+        required: false
+        type: string
 
 env:
   IMAGE_DESC: "My Customized Universal Blue Image"
@@ -85,6 +89,7 @@ jobs:
       build_date: ${{ steps.date.outputs.date }}
       digest: ${{ steps.push.outputs.digest }}
       digest_ref: ${{ steps.push.outputs.digest_ref }}
+      primary_tag: ${{ steps.resolve-build-config.outputs.primary_tag }}
 
     permissions:
       contents: read
@@ -131,41 +136,9 @@ jobs:
           # https://linux.die.net/man/1/date
           echo "date=$(date -u +%Y\-%m\-%d\T%H\:%M\:%S\Z)" >> $GITHUB_OUTPUT
 
-      # Image metadata for https://artifacthub.io/ - This is optional but is highly recommended so we all can get a index of all the custom images
-      # The metadata by itself is not going to do anything, you choose if you want your image to be on ArtifactHub or not.
-      - name: Image Metadata
-        uses: docker/metadata-action@030e881283bb7a6894de51c315a6bfe6a94e05cf # v6
-        id: metadata
-        with:
-          # This generates all the tags for your image, you can add custom tags here too!
-          # Default tags are "$DEFAULT_TAG" and "$DEFAULT_TAG.$date".
-          tags: |
-            type=raw,value=${{ env.DEFAULT_TAG }}
-            type=raw,value=${{ env.DEFAULT_TAG }}.{{date 'YYYYMMDD'}}
-            type=raw,value={{date 'YYYYMMDD'}}
-            type=sha,enable=${{ github.event_name == 'pull_request' }}
-            type=ref,event=pr
-          labels: |
-            io.artifacthub.package.readme-url=https://raw.githubusercontent.com/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}/${{ github.sha }}/README.md
-            org.opencontainers.image.created=${{ steps.date.outputs.date }}
-            org.opencontainers.image.description=${{ env.IMAGE_DESC }}
-            org.opencontainers.image.documentation=https://raw.githubusercontent.com/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}/${{ github.sha }}/README.md
-            org.opencontainers.image.source=https://github.com/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}/blob/${{ github.sha }}/Containerfile
-            org.opencontainers.image.title=${{ env.IMAGE_NAME }}
-            org.opencontainers.image.url=https://github.com/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}/tree/${{ github.sha }}
-            org.opencontainers.image.vendor=${{ github.repository_owner }}
-            org.opencontainers.image.version=${{ env.DEFAULT_TAG }}.{{date 'YYYYMMDD'}}
-            io.artifacthub.package.deprecated=false
-            io.artifacthub.package.keywords=${{ env.IMAGE_KEYWORDS }}
-            io.artifacthub.package.license=Apache-2.0
-            io.artifacthub.package.logo-url=${{ env.IMAGE_LOGO_URL }}
-            io.artifacthub.package.prerelease=false
-            containers.bootc=1
-          sep-tags: " "
-          sep-annotations: " "
-
       # Pre-pull base image with retry to handle transient network failures
       - name: Pre-pull base image
+        id: pre-pull-base-image
         run: |
           set -euo pipefail
           BASE_IMAGE="${{ inputs.base_image || 'ghcr.io/ublue-os/bluefin-dx:stable' }}"
@@ -185,12 +158,106 @@ jobs:
             sleep "${RETRY_DELAY}"
           done
 
+      - name: Resolve build config
+        id: resolve-build-config
+        run: |
+          set -euo pipefail
+
+          DEFAULT_BASE_IMAGE='ghcr.io/ublue-os/bluefin-dx:stable'
+          BASE_IMAGE_INPUT="${{ inputs.base_image }}"
+          IMAGE_TAG_INPUT="${{ inputs.image_tag }}"
+
+          sanitize_tag() {
+            local value="$1"
+            value="${value,,}"
+            value="$(printf '%s' "${value}" | sed -E 's/[^a-z0-9._-]+/-/g; s/^-+//; s/-+$//')"
+            printf '%s' "${value}"
+          }
+
+          if [[ -n "${BASE_IMAGE_INPUT}" ]]; then
+            BASE_IMAGE="${BASE_IMAGE_INPUT}"
+          else
+            BASE_IMAGE="${DEFAULT_BASE_IMAGE}"
+          fi
+
+          BASE_ID="$(podman run --rm "${BASE_IMAGE}" bash -lc '. /etc/os-release && printf "%s" "${ID}"')"
+          BASE_VERSION_ID="$(podman run --rm "${BASE_IMAGE}" bash -lc '. /etc/os-release && printf "%s" "${VERSION_ID}"')"
+          BASE_VARIANT_ID="$(podman run --rm "${BASE_IMAGE}" bash -lc '. /etc/os-release && printf "%s" "${VARIANT_ID:-}"')"
+
+          if [[ -n "${IMAGE_TAG_INPUT}" ]]; then
+            PRIMARY_TAG="$(sanitize_tag "${IMAGE_TAG_INPUT}")"
+          elif [[ "${BASE_IMAGE}" == "${DEFAULT_BASE_IMAGE}" ]]; then
+            PRIMARY_TAG="${DEFAULT_TAG}"
+          elif [[ "${BASE_IMAGE}" == *nvidia* ]] || [[ "${BASE_VARIANT_ID}" == *nvidia* ]]; then
+            PRIMARY_TAG="nvidia"
+          elif [[ -n "${BASE_VARIANT_ID}" ]]; then
+            PRIMARY_TAG="$(sanitize_tag "${BASE_VARIANT_ID}")"
+          else
+            PRIMARY_TAG="$(sanitize_tag "$(basename "${BASE_IMAGE%%:*}")")"
+          fi
+
+          if [[ -z "${PRIMARY_TAG}" ]]; then
+            echo "ERROR: Could not determine a primary tag for base image ${BASE_IMAGE}" >&2
+            exit 1
+          fi
+
+          if [[ "${PRIMARY_TAG}" == "${DEFAULT_TAG}" ]]; then
+            METADATA_TAGS=$'type=raw,value='"${PRIMARY_TAG}"$'\n''type=raw,value='"${PRIMARY_TAG}"'.{{date '\''YYYYMMDD'\''}}'$'\n''type=raw,value={{date '\''YYYYMMDD'\''}}'
+          else
+            METADATA_TAGS=$'type=raw,value='"${PRIMARY_TAG}"$'\n''type=raw,value='"${PRIMARY_TAG}"'.{{date '\''YYYYMMDD'\''}}'$'\n''type=raw,value='"${PRIMARY_TAG}"'-{{date '\''YYYYMMDD'\''}}'
+          fi
+
+          {
+            echo "resolved_base_image=${BASE_IMAGE}"
+            echo "expected_os_id=${BASE_ID}"
+            echo "expected_version_id=${BASE_VERSION_ID}"
+            echo "expected_variant_id=${BASE_VARIANT_ID}"
+            echo "primary_tag=${PRIMARY_TAG}"
+            echo "metadata_tags<<EOF"
+            printf '%s\n' "${METADATA_TAGS}"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+          {
+            echo "Resolved base image: ${BASE_IMAGE}"
+            echo "Resolved base OS: ${BASE_ID} ${BASE_VERSION_ID}"
+            if [[ -n "${BASE_VARIANT_ID}" ]]; then
+              echo "Resolved base variant: ${BASE_VARIANT_ID}"
+            fi
+            echo "Primary publish tag: ${PRIMARY_TAG}"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      # Image metadata for https://artifacthub.io/ - This is optional but is highly recommended so we all can get an index of all the custom images
+      # The metadata by itself is not going to do anything, you choose if you want your image to be on ArtifactHub or not.
+      - name: Image Metadata
+        uses: docker/metadata-action@030e881283bb7a6894de51c315a6bfe6a94e05cf # v6
+        id: metadata
+        with:
+          tags: ${{ steps.resolve-build-config.outputs.metadata_tags }}
+          labels: |
+            io.artifacthub.package.readme-url=https://raw.githubusercontent.com/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}/${{ github.sha }}/README.md
+            org.opencontainers.image.created=${{ steps.date.outputs.date }}
+            org.opencontainers.image.description=${{ env.IMAGE_DESC }}
+            org.opencontainers.image.documentation=https://raw.githubusercontent.com/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}/${{ github.sha }}/README.md
+            org.opencontainers.image.source=https://github.com/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}/blob/${{ github.sha }}/Containerfile
+            org.opencontainers.image.title=${{ env.IMAGE_NAME }}
+            org.opencontainers.image.url=https://github.com/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}/tree/${{ github.sha }}
+            org.opencontainers.image.vendor=${{ github.repository_owner }}
+            org.opencontainers.image.version=${{ steps.resolve-build-config.outputs.primary_tag }}.{{date 'YYYYMMDD'}}
+            io.artifacthub.package.deprecated=false
+            io.artifacthub.package.keywords=${{ env.IMAGE_KEYWORDS }}
+            io.artifacthub.package.license=Apache-2.0
+            io.artifacthub.package.logo-url=${{ env.IMAGE_LOGO_URL }}
+            io.artifacthub.package.prerelease=false
+            containers.bootc=1
+          sep-tags: " "
+          sep-annotations: " "
+
       - name: Build Image
         id: build_image
         run: |
           set -euo pipefail
-          IMAGE_REF="localhost/${IMAGE_NAME}:${DEFAULT_TAG}"
-          BASE_IMAGE_INPUT="${{ inputs.base_image }}"
+          IMAGE_REF="localhost/${IMAGE_NAME}:${{ steps.resolve-build-config.outputs.primary_tag }}"
           MAX_ATTEMPTS=3
           RETRY_DELAY=30
           declare -a build_args=(
@@ -202,9 +269,7 @@ jobs:
             --build-arg "VSCODE_REFRESH_TOKEN=${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
           )
 
-          if [[ -n "${BASE_IMAGE_INPUT}" ]]; then
-            build_args+=(--build-arg "BASE_IMAGE=${BASE_IMAGE_INPUT}")
-          fi
+          build_args+=(--build-arg "BASE_IMAGE=${{ steps.resolve-build-config.outputs.resolved_base_image }}")
 
           while IFS= read -r label; do
             [[ -n "${label}" ]] || continue
@@ -235,7 +300,10 @@ jobs:
           sudo apt-get install -y jq
 
           # Run verification using just command
-          just verify-build "localhost/${{ env.IMAGE_NAME }}" "${{ env.DEFAULT_TAG }}"
+          EXPECTED_OS_ID="${{ steps.resolve-build-config.outputs.expected_os_id }}" \
+          EXPECTED_VERSION_ID="${{ steps.resolve-build-config.outputs.expected_version_id }}" \
+          EXPECTED_VARIANT_ID="${{ steps.resolve-build-config.outputs.expected_variant_id }}" \
+          just verify-build "localhost/${{ env.IMAGE_NAME }}" "${{ steps.resolve-build-config.outputs.primary_tag }}"
 
       # Rechunk is a script that we use on Universal Blue to make sure there isnt a single huge layer when your image gets published.
       # This does not make your image faster to download, just provides better resumability and fixes a few errors.
@@ -276,10 +344,10 @@ jobs:
           set -euo pipefail
           while IFS= read -r tag; do
             [[ -n "${tag}" ]] || continue
-            if [[ "${tag}" == "${{ env.DEFAULT_TAG }}" ]]; then
+            if [[ "${tag}" == "${{ steps.resolve-build-config.outputs.primary_tag }}" ]]; then
               continue
             fi
-            podman tag "localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}" "localhost/${{ env.IMAGE_NAME }}:$tag"
+            podman tag "localhost/${{ env.IMAGE_NAME }}:${{ steps.resolve-build-config.outputs.primary_tag }}" "localhost/${{ env.IMAGE_NAME }}:$tag"
           done < <(printf '%s\n' "${{ steps.metadata.outputs.tags }}" | tr ' ' '\n')
 
       # These `if` statements are so that pull requests for your custom images do not make it publish any packages under your name without you knowing
@@ -303,7 +371,7 @@ jobs:
             [[ -n "${tag}" ]] || continue
             podman push "localhost/${{ env.IMAGE_NAME }}:$tag" "docker://${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:$tag"
           done < <(printf '%s\n' "${{ steps.metadata.outputs.tags }}" | tr ' ' '\n')
-          DIGEST=$(skopeo inspect --format '{{.Digest}}' "docker://${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}")
+          DIGEST=$(skopeo inspect --format '{{.Digest}}' "docker://${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.resolve-build-config.outputs.primary_tag }}")
           if [[ -z "${DIGEST}" ]]; then
             echo "ERROR: Failed to extract pushed image digest" >&2
             exit 1
@@ -391,22 +459,23 @@ jobs:
         timeout-minutes: 45
         run: |
           set -euo pipefail
+          PRIMARY_TAG="${{ needs.build_push.outputs.primary_tag }}"
 
           echo "=== Disk space before SBOM generation ==="
           df -h / /tmp 2>/dev/null || df -h
 
-          IMAGE_REF="${IMAGE_DIGEST_REF:-${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}}"
+          IMAGE_REF="${IMAGE_DIGEST_REF:-${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${PRIMARY_TAG}}"
           echo "Generating SPDX JSON SBOM for: $IMAGE_REF"
           echo "Using trivy with registry scanning (handles large images efficiently)"
 
           # Generate SBOM directly from registry using trivy
           # Trivy handles large images better than syft by streaming layers
-          trivy image --format spdx-json --output ./sbom-${{ env.DEFAULT_TAG }}.spdx.json "$IMAGE_REF"
+          trivy image --format spdx-json --output "./sbom-${PRIMARY_TAG}.spdx.json" "$IMAGE_REF"
 
           echo "=== SBOM generation complete ==="
-          echo "SBOM file: ./sbom-${{ env.DEFAULT_TAG }}.spdx.json"
-          echo "SBOM size: $(du -h ./sbom-${{ env.DEFAULT_TAG }}.spdx.json | cut -f1)"
-          echo "SBOM lines: $(wc -l < ./sbom-${{ env.DEFAULT_TAG }}.spdx.json)"
+          echo "SBOM file: ./sbom-${PRIMARY_TAG}.spdx.json"
+          echo "SBOM size: $(du -h "./sbom-${PRIMARY_TAG}.spdx.json" | cut -f1)"
+          echo "SBOM lines: $(wc -l < "./sbom-${PRIMARY_TAG}.spdx.json")"
 
       # ----------------------------------------
       # Attest SBOM to image
@@ -415,7 +484,7 @@ jobs:
         run: |
           set -euo pipefail
           IMAGE_REF="${IMAGE_DIGEST_REF}"
-          SBOM_FILE=./sbom-${{ env.DEFAULT_TAG }}.spdx.json
+          SBOM_FILE="./sbom-${{ needs.build_push.outputs.primary_tag }}.spdx.json"
           if [[ ! -f "$SBOM_FILE" ]]; then
             echo "SBOM file not found: $SBOM_FILE" >&2
             exit 1

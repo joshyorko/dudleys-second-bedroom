@@ -287,12 +287,26 @@ BASE_IMAGE="ghcr.io/ublue-os/bazzite:latest" just build
 
 ### CI/CD Build
 
-The GitHub Actions workflow accepts a `base_image` input:
+The GitHub Actions workflow accepts these manual dispatch inputs:
 
 1. Go to **Actions** > **Build container image**.
 2. Click **Run workflow**.
-3. Enter the image reference in **Base image**.
-4. Click **Run workflow**.
+3. Set **Base image** if you want to build from something other than `ghcr.io/ublue-os/bluefin-dx:stable`.
+4. Optionally set **Primary publish tag** if you want an explicit tag name.
+5. Click **Run workflow**.
+
+Tag behavior:
+
+- Default Bluefin DX builds publish the normal `latest`, `latest.YYYYMMDD`, and `YYYYMMDD` tags.
+- Nvidia base images automatically publish under `nvidia` unless you override the tag.
+- Other custom base images use a sanitized variant-based tag unless you override it.
+
+Example manual Nvidia build:
+
+```text
+base_image: ghcr.io/ublue-os/bluefin-dx-nvidia:stable
+image_tag: nvidia
+```
 
 ## About This Image
 
@@ -330,7 +344,7 @@ The [build.sh](./build_files/build.sh) file is called from your Containerfile. I
 
 ## build.yml
 
-The [build.yml](./.github/workflows/build.yml) Github Actions workflow creates your custom OCI image and publishes it to the Github Container Registry (GHCR). By default, the image name will match the Github repository name. There are several environment variables at the start of the workflow which may be of interest to change.
+The [build.yml](./.github/workflows/build.yml) GitHub Actions workflow creates your custom OCI image and publishes it to GHCR. By default, the image name matches the repository name. Manual dispatch supports both `base_image` and `image_tag`, and the workflow automatically keeps non-default builds on separate tags so an Nvidia build does not overwrite `latest`.
 
 ### Image signing and supply-chain artifacts
 

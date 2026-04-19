@@ -1,4 +1,4 @@
-#!/usr/bin/bash
+#!/usr/bin/env bash
 # Script: verify-build.sh
 # Purpose: Verify the built container image has all expected components
 # Usage: bash tests/verify-build.sh [image-name:tag]
@@ -9,6 +9,10 @@ set -euo pipefail
 IMAGE_NAME="${1:-localhost/dudleys-second-bedroom:latest}"
 FAILED_CHECKS=0
 EXPECTED_WALLPAPER_COUNT=6
+EXPECTED_OS_ID="${EXPECTED_OS_ID:-bluefin}"
+EXPECTED_VERSION_ID="${EXPECTED_VERSION_ID:-}"
+EXPECTED_VARIANT_ID="${EXPECTED_VARIANT_ID:-}"
+OS_RELEASE_CONTENT=""
 
 if [[ -d custom_wallpapers ]]; then
 	EXPECTED_WALLPAPER_COUNT=$(find custom_wallpapers -maxdepth 1 -type f \( -name "*.png" -o -name "*.jpg" -o -name "*.jpeg" \) | wc -l | tr -d ' ')
@@ -54,6 +58,31 @@ run_check() {
 	fi
 }
 
+escape_regex() {
+	printf '%s' "$1" | sed -e 's/[][(){}.^$*+?|\\/]/\\&/g'
+}
+
+run_os_release_check() {
+	local description="$1"
+	local key="$2"
+	local expected_value="$3"
+	local escaped_value
+	local pattern
+
+	escaped_value=$(escape_regex "${expected_value}")
+	pattern="^${key}=\"?${escaped_value}\"?$"
+
+	echo -n "Checking ${description}... "
+	if printf '%s\n' "${OS_RELEASE_CONTENT}" | grep -Eq "${pattern}"; then
+		echo -e "${GREEN}✓${NC}"
+		return 0
+	fi
+
+	echo -e "${RED}✗${NC} (expected ${key}=${expected_value}, got: ${OS_RELEASE_CONTENT})"
+	FAILED_CHECKS=$((FAILED_CHECKS + 1))
+	return 1
+}
+
 # Check 1: Image exists
 echo "=== Image Existence ==="
 run_check "image exists" "podman images -q ${IMAGE_NAME}" ""
@@ -61,8 +90,20 @@ run_check "image exists" "podman images -q ${IMAGE_NAME}" ""
 # Check 2: Base OS
 echo ""
 echo "=== Base Operating System ==="
-run_check "Bluefin base" "podman run --rm ${IMAGE_NAME} cat /etc/os-release" "ID=bluefin"
-run_check "Fedora 43" "podman run --rm ${IMAGE_NAME} cat /etc/os-release" "VERSION_ID=43"
+if OS_RELEASE_CONTENT="$(podman run --rm "${IMAGE_NAME}" cat /etc/os-release 2>&1)"; then
+	run_os_release_check "base OS" "ID" "${EXPECTED_OS_ID}"
+
+	if [[ -n "${EXPECTED_VERSION_ID}" ]]; then
+		run_os_release_check "Fedora version" "VERSION_ID" "${EXPECTED_VERSION_ID}"
+	fi
+
+	if [[ -n "${EXPECTED_VARIANT_ID}" ]]; then
+		run_os_release_check "base variant" "VARIANT_ID" "${EXPECTED_VARIANT_ID}"
+	fi
+else
+	echo -e "${RED}✗${NC} (failed to read /etc/os-release)"
+	FAILED_CHECKS=$((FAILED_CHECKS + 1))
+fi
 
 # Check 3: Packages from packages.json
 echo ""
