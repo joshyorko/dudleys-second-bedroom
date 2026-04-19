@@ -79,12 +79,13 @@ systemctl --global disable podman-auto-update.timer || true
 systemctl --global disable ublue-user-setup.service || true
 
 # Work around the Fedora logos dependency conflict pulled in by anaconda-webui.
-# Bluefin-derived images already carry bluefin-logos, which conflicts with the
-# temporary fedora-logos package metadata Titanoboa expects during ISO assembly.
+# Bluefin-derived images already carry bluefin-logos (and plymouth assets) that
+# overlap with the temporary fedora-logos metadata Titanoboa expects during ISO
+# assembly, so allow the RPM db entry to reuse those files.
 rpm --erase --nodeps --justdb generic-logos || true
 rpm --erase --nodeps --justdb bluefin-logos || true
 dnf download -y fedora-logos
-rpm -i --justdb fedora-logos*.rpm
+rpm -i --replacefiles --justdb fedora-logos*.rpm
 
 # Install Anaconda and the storage helpers needed for Btrfs installs.
 mkdir -p /etc/anaconda/profile.d
