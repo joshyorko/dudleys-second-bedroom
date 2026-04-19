@@ -10,6 +10,34 @@ SECURE_BOOT_KEY_URL='https://github.com/ublue-os/akmods/raw/main/certs/public_ke
 MOK_ENROLLMENT_PASSWORD="${DUDLEY_MOK_ENROLLMENT_PASSWORD:-$(hexdump -vn 10 -e '/1 "%02x"' /dev/urandom)}"
 MOK_PASSWORD_FILE="/usr/share/dudley-installer/mok-enrollment-password.txt"
 
+# Re-enable the stock Fedora repos for ISO assembly.
+# The base image intentionally ships with all repos disabled, but Titanoboa
+# still needs them later when it installs dracut-live during initramfs creation.
+enable_fedora_iso_repos() {
+	local repo_dirs=(
+		/etc/yum.repos.d
+		/usr/etc/yum.repos.d
+	)
+	local repo_names=(
+		fedora.repo
+		fedora-updates.repo
+	)
+	local repo_dir repo_name repo_path
+
+	for repo_dir in "${repo_dirs[@]}"; do
+		[[ -d "$repo_dir" ]] || continue
+
+		for repo_name in "${repo_names[@]}"; do
+			repo_path="${repo_dir}/${repo_name}"
+			[[ -f "$repo_path" ]] || continue
+
+			sed -i 's/^enabled=0$/enabled=1/g' "$repo_path"
+		done
+	done
+}
+
+enable_fedora_iso_repos
+
 # Configure the live environment for installer-focused use.
 tee /usr/share/glib-2.0/schemas/zz2-org.gnome.shell.gschema.override <<'EOF'
 [org.gnome.shell]
