@@ -265,6 +265,9 @@ jobs:
             --format docker
             --layers
             --tag "${IMAGE_REF}"
+            --build-arg "IMAGE_NAME=${IMAGE_NAME}"
+            --build-arg "IMAGE_TAG=${{ steps.resolve-build-config.outputs.primary_tag }}"
+            --build-arg "IMAGE_REF=${{ env.IMAGE_REGISTRY }}/${IMAGE_NAME}:${{ steps.resolve-build-config.outputs.primary_tag }}"
             --build-arg "SHA_HEAD_SHORT=${GITHUB_SHA}"
             --build-arg "VSCODE_REFRESH_TOKEN=${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
           )

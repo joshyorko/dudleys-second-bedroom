@@ -43,10 +43,15 @@ FROM ${BASE_IMAGE} AS base
 
 # Build arguments
 ARG IMAGE_NAME="dudleys-second-bedroom"
+ARG IMAGE_TAG="latest"
+ARG IMAGE_REF="dudleys-second-bedroom:latest"
 ARG SHA_HEAD_SHORT="unknown"
 
 # Environment variables for build modules
 ENV IMAGE_NAME="${IMAGE_NAME}"
+ENV IMAGE_TAG="${IMAGE_TAG}"
+ENV IMAGE_REF="${IMAGE_REF}"
+ENV BASE_IMAGE="${BASE_IMAGE}"
 ENV BUILD_CONTEXT="/ctx"
 ENV GIT_COMMIT="${SHA_HEAD_SHORT}"
 

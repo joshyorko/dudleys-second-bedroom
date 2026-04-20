@@ -34,7 +34,9 @@ echo "[dudley-versioning] Build Manifest Generation" >&2
 echo "[dudley-versioning] ========================================" >&2
 
 # Get build metadata
-IMAGE_NAME="${IMAGE_NAME:-ghcr.io/joshyorko/dudleys-second-bedroom:latest}"
+IMAGE_NAME="${IMAGE_NAME:-dudleys-second-bedroom}"
+IMAGE_TAG="${IMAGE_TAG:-latest}"
+IMAGE_REF="${IMAGE_REF:-${IMAGE_NAME}:${IMAGE_TAG}}"
 BASE_IMAGE="${BASE_IMAGE:-ghcr.io/ublue-os/bluefin-dx:stable}"
 
 # Get git commit from environment variable (set during build) or fall back to git
@@ -47,14 +49,14 @@ else
 	GIT_COMMIT="unknown"
 fi
 
-echo "[dudley-versioning] Image: $IMAGE_NAME" >&2
+echo "[dudley-versioning] Image: $IMAGE_REF" >&2
 echo "[dudley-versioning] Base: $BASE_IMAGE" >&2
 echo "[dudley-versioning] Commit: $GIT_COMMIT" >&2
 echo "[dudley-versioning]" >&2
 
 # Initialize manifest
 echo "[dudley-versioning] Initializing manifest..." >&2
-manifest=$(init_manifest "$IMAGE_NAME" "$BASE_IMAGE" "$GIT_COMMIT")
+manifest=$(init_manifest "$IMAGE_REF" "$BASE_IMAGE" "$GIT_COMMIT")
 
 # Compute hash for wallpaper hook
 echo "[dudley-versioning] Computing hash for wallpaper hook..." >&2

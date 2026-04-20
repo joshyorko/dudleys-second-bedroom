@@ -21,6 +21,7 @@ SUPPORT_URL="${SUPPORT_URL:-https://github.com/joshyorko/dudleys-second-bedroom/
 BUG_SUPPORT_URL="${BUG_SUPPORT_URL:-https://github.com/joshyorko/dudleys-second-bedroom/issues}"
 CODE_NAME="${CODE_NAME:-Dudley}"
 IMAGE_NAME="${IMAGE_NAME:-dudleys-second-bedroom}"
+IMAGE_TAG="${IMAGE_TAG:-${DEFAULT_TAG:-latest}}"
 IMAGE_VENDOR="${IMAGE_VENDOR:-joshyorko}"
 VERSION="${VERSION:-$(date +%Y%m%d)}"
 
@@ -38,7 +39,8 @@ IMAGE_INFO_DIR="/usr/share/ublue-os"
 mkdir -p "$IMAGE_INFO_DIR"
 
 IMAGE_INFO="$IMAGE_INFO_DIR/image-info.json"
-IMAGE_REF="ostree-image-signed:docker://ghcr.io/$IMAGE_VENDOR/$IMAGE_NAME"
+OCI_IMAGE_REF="${IMAGE_REF:-ghcr.io/$IMAGE_VENDOR/$IMAGE_NAME:$IMAGE_TAG}"
+IMAGE_REF="ostree-image-signed:docker://${OCI_IMAGE_REF}"
 
 # Determine image flavor based on name
 image_flavor="main"
@@ -71,7 +73,7 @@ cat >"$IMAGE_INFO" <<EOF
   "image-flavor": "$image_flavor",
   "image-vendor": "$IMAGE_VENDOR",
   "image-ref": "$IMAGE_REF",
-  "image-tag": "${DEFAULT_TAG:-latest}",
+  "image-tag": "$IMAGE_TAG",
   "base-image-name": "${BASE_IMAGE_NAME:-bluefin-dx}",
   "fedora-version": "$FEDORA_VERSION",
   "kernel-version": "$KERNEL_VERSION",

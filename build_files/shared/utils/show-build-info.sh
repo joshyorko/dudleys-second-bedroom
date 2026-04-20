@@ -53,9 +53,13 @@ display_formatted() {
 	fi
 
 	# Extract build information
-	local build_date build_image base_image git_commit
+	local build_date build_image build_tag base_image git_commit
 	build_date=$(jq -r '.build.date // "unknown"' "$manifest_path")
 	build_image=$(jq -r '.build.image // "unknown"' "$manifest_path")
+	build_tag="unknown"
+	if [[ "$build_image" == *:* ]] && [[ "$build_image" != *@* ]]; then
+		build_tag="${build_image##*:}"
+	fi
 	base_image=$(jq -r '.build.base // "unknown"' "$manifest_path")
 	git_commit=$(jq -r '.build.commit // "unknown"' "$manifest_path")
 
@@ -70,6 +74,7 @@ display_formatted() {
 Build Information:
   Date:   $build_date
   Image:  $build_image
+  Tag:    $build_tag
   Base:   $base_image
   Commit: $git_commit
 

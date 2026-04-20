@@ -12,6 +12,7 @@ EXPECTED_WALLPAPER_COUNT=6
 EXPECTED_OS_ID="${EXPECTED_OS_ID:-bluefin}"
 EXPECTED_VERSION_ID="${EXPECTED_VERSION_ID:-}"
 EXPECTED_VARIANT_ID="${EXPECTED_VARIANT_ID:-}"
+EXPECTED_IMAGE_TAG="${IMAGE_NAME##*:}"
 OS_RELEASE_CONTENT=""
 
 if [[ -d custom_wallpapers ]]; then
@@ -146,6 +147,11 @@ run_check "Dudley just recipes" "podman run --rm ${IMAGE_NAME} test -f /usr/shar
 # Check 8: Image Metadata
 echo ""
 echo "=== Image Metadata ==="
+run_check "build manifest exists" "podman run --rm ${IMAGE_NAME} test -f /etc/dudley/build-manifest.json && echo exists" "exists"
+run_check "build manifest image ref" "podman run --rm ${IMAGE_NAME} cat /etc/dudley/build-manifest.json | jq -r '.build.image'" "^$(escape_regex "${IMAGE_NAME}")$"
+run_check "image-info exists" "podman run --rm ${IMAGE_NAME} test -f /usr/share/ublue-os/image-info.json && echo exists" "exists"
+run_check "image-info tag" "podman run --rm ${IMAGE_NAME} cat /usr/share/ublue-os/image-info.json | jq -r '.\"image-tag\"'" "^$(escape_regex "${EXPECTED_IMAGE_TAG}")$"
+
 IMAGE_SIZE=$(podman inspect "${IMAGE_NAME}" | jq -r '.[0].Size')
 IMAGE_SIZE_GB=$(awk "BEGIN {printf \"%.1f\", ${IMAGE_SIZE} / 1024 / 1024 / 1024}")
 echo "Image size: ${IMAGE_SIZE_GB} GB"

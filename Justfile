@@ -201,6 +201,10 @@ build $target_image=image_name $tag=default_tag:
     #!/usr/bin/env bash
 
     BUILD_ARGS=()
+    resolved_image_name="${target_image##*/}"
+    BUILD_ARGS+=("--build-arg" "IMAGE_NAME=${resolved_image_name}")
+    BUILD_ARGS+=("--build-arg" "IMAGE_TAG=${tag}")
+    BUILD_ARGS+=("--build-arg" "IMAGE_REF=${target_image}:${tag}")
     # Always pass the git commit, even if there are uncommitted changes
     # This ensures build manifest always has commit information
     if git rev-parse --git-dir >/dev/null 2>&1; then
@@ -309,6 +313,40 @@ _build-bib $target_image $tag $type $config: (_rootful_load_image target_image t
     sudo mv -f $BUILDTMP/* output/
     sudo rmdir $BUILDTMP
     sudo chown -R $USER:$USER output/
+
+    artifact_dir="output/artifacts"
+    mkdir -p "${artifact_dir}"
+
+    artifact_stem="$(basename "${target_image}")-${tag}"
+    source_path=""
+    artifact_name=""
+    link_path=""
+
+    case "${type}" in
+        iso)
+            source_path="output/bootiso/install.iso"
+            artifact_name="${artifact_stem}-installer-x86_64.iso"
+            link_path="${source_path}"
+            ;;
+        qcow2)
+            source_path="output/qcow2/disk.qcow2"
+            artifact_name="${artifact_stem}-x86_64.qcow2"
+            link_path="${source_path}"
+            ;;
+        raw)
+            source_path="output/image/disk.raw"
+            artifact_name="${artifact_stem}-x86_64.raw"
+            link_path="${source_path}"
+            ;;
+    esac
+
+    if [[ -n "${source_path}" ]] && [[ -f "${source_path}" ]]; then
+        artifact_path="${artifact_dir}/${artifact_name}"
+        mv -f "${source_path}" "${artifact_path}"
+        ln -sfr "${artifact_path}" "${link_path}"
+        sha256sum "${artifact_path}" | tee "${artifact_path}.sha256"
+        printf 'Artifact ready: %s\nSource image: %s:%s\n' "${artifact_path}" "${target_image}" "${tag}"
+    fi
 
 # Podman builds the image from the Containerfile and creates a bootable image
 # Parameters:
