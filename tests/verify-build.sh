@@ -12,6 +12,8 @@ EXPECTED_WALLPAPER_COUNT=6
 EXPECTED_OS_ID="${EXPECTED_OS_ID:-bluefin}"
 EXPECTED_VERSION_ID="${EXPECTED_VERSION_ID:-}"
 EXPECTED_VARIANT_ID="${EXPECTED_VARIANT_ID:-}"
+EXPECTED_IMAGE_NAME="${IMAGE_NAME##*/}"
+EXPECTED_IMAGE_NAME="${EXPECTED_IMAGE_NAME%:*}"
 EXPECTED_IMAGE_TAG="${IMAGE_NAME##*:}"
 OS_RELEASE_CONTENT=""
 
@@ -84,6 +86,34 @@ run_os_release_check() {
 	return 1
 }
 
+run_manifest_image_check() {
+	local manifest_image
+	local manifest_repo
+	local manifest_name
+	local manifest_tag
+
+	echo -n "Checking build manifest image ref... "
+
+	if ! manifest_image=$(podman run --rm "${IMAGE_NAME}" jq -r '.build.image // "unknown"' /etc/dudley/build-manifest.json 2>&1); then
+		echo -e "${RED}✗${NC} (command failed)"
+		FAILED_CHECKS=$((FAILED_CHECKS + 1))
+		return 1
+	fi
+
+	manifest_repo="${manifest_image##*/}"
+	manifest_name="${manifest_repo%:*}"
+	manifest_tag="${manifest_image##*:}"
+
+	if [[ "${manifest_name}" == "${EXPECTED_IMAGE_NAME}" ]] && [[ "${manifest_tag}" == "${EXPECTED_IMAGE_TAG}" ]]; then
+		echo -e "${GREEN}✓${NC}"
+		return 0
+	fi
+
+	echo -e "${RED}✗${NC} (expected name/tag: ${EXPECTED_IMAGE_NAME}:${EXPECTED_IMAGE_TAG}, got: ${manifest_image})"
+	FAILED_CHECKS=$((FAILED_CHECKS + 1))
+	return 1
+}
+
 # Check 1: Image exists
 echo "=== Image Existence ==="
 run_check "image exists" "podman images -q ${IMAGE_NAME}" ""
@@ -148,7 +178,7 @@ run_check "Dudley just recipes" "podman run --rm ${IMAGE_NAME} test -f /usr/shar
 echo ""
 echo "=== Image Metadata ==="
 run_check "build manifest exists" "podman run --rm ${IMAGE_NAME} test -f /etc/dudley/build-manifest.json && echo exists" "exists"
-run_check "build manifest image ref" "podman run --rm ${IMAGE_NAME} cat /etc/dudley/build-manifest.json | jq -r '.build.image'" "^$(escape_regex "${IMAGE_NAME}")$"
+run_manifest_image_check
 run_check "image-info exists" "podman run --rm ${IMAGE_NAME} test -f /usr/share/ublue-os/image-info.json && echo exists" "exists"
 run_check "image-info tag" "podman run --rm ${IMAGE_NAME} cat /usr/share/ublue-os/image-info.json | jq -r '.\"image-tag\"'" "^$(escape_regex "${EXPECTED_IMAGE_TAG}")$"
 
