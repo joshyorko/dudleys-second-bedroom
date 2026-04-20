@@ -25,6 +25,11 @@ on:
         description: 'Primary publish tag override. Leave blank to auto-use latest for the default base, nvidia for Nvidia bases, or a sanitized variant name for other custom bases.'
         required: false
         type: string
+      build_iso:
+        description: 'Also build the installer ISO after the container image publishes.'
+        required: false
+        default: false
+        type: boolean
 
 env:
   IMAGE_DESC: "My Customized Universal Blue Image"
@@ -381,6 +386,23 @@ jobs:
           fi
           echo "digest=${DIGEST}" >> "$GITHUB_OUTPUT"
           echo "digest_ref=${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}@${DIGEST}" >> "$GITHUB_OUTPUT"
+
+  build_installer_iso:
+    name: Build installer ISO
+    needs: [build_push]
+    if: github.event_name == 'workflow_dispatch' && inputs.build_iso
+
+    permissions:
+      contents: read
+      packages: read
+      id-token: write
+
+    uses: ./.github/workflows/reusable-build-iso.yml
+    with:
+      image_tag: ${{ needs.build_push.outputs.primary_tag }}
+      checkout_ref: ${{ github.sha }}
+      upload_artifacts: true
+    secrets: inherit
 
   # ============================================
   # SUPPLY CHAIN SECURITY JOB

@@ -46,6 +46,11 @@ The test integration follows a multi-stage approach with parallel execution wher
 - Daily schedule (10:05 UTC)
 - Manual dispatch
 
+**Manual dispatch options:**
+- `base_image` to override the upstream base image
+- `image_tag` to force the publish tag
+- `build_iso` to opt into an installer ISO build for that run; defaults to `false`
+
 **Test Stages:**
 
 #### Stage 1: Pre-Build Validation (Fast Fail)
@@ -98,7 +103,6 @@ Only executes if all previous stages pass and the event is not a pull request.
 
 **Triggers:**
 - Manual dispatch
-- Automatic runs after the `main` branch container-image workflow completes successfully
 
 **Test Stages:**
 

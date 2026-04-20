@@ -414,7 +414,7 @@ This repo now follows the current Bluefin-style pattern for installer media: CI 
 
 ## CI installer workflow
 
-The [build-iso.yml](./.github/workflows/build-iso.yml) workflow builds an installer ISO after a successful `main` branch container-image publish, or on manual dispatch. The installer behavior is defined in [iso_files/configure_iso_anaconda.sh](./iso_files/configure_iso_anaconda.sh).
+The [build-iso.yml](./.github/workflows/build-iso.yml) workflow is manual-only. If you want an ISO as part of a manual container-image run, use the `build_iso` toggle in [build.yml](./.github/workflows/build.yml); it defaults to off, so normal pushes to `main` do not start a 6+ GB installer build. The installer behavior is defined in [iso_files/configure_iso_anaconda.sh](./iso_files/configure_iso_anaconda.sh).
 
 Current defaults:
 - build from `ghcr.io/joshyorko/dudleys-second-bedroom:latest`

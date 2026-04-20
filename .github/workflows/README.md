@@ -23,6 +23,7 @@ This directory contains the CI/CD workflows for Dudley's Second Bedroom.
 **Manual dispatch inputs:**
 - `base_image` to switch the upstream image, for example Bluefin DX Nvidia
 - `image_tag` to force the primary publish tag
+- `build_iso` to optionally build the installer ISO after the image publish; defaults to off
 - If `image_tag` is omitted, the workflow keeps default builds on `latest` and auto-separates Nvidia/custom builds onto distinct tags
 
 ### `test.yml` - Comprehensive Test Suite
@@ -45,7 +46,6 @@ This directory contains the CI/CD workflows for Dudley's Second Bedroom.
 
 **Triggers:**
 - Manual dispatch
-- Automatic run after a successful `main` branch container-image publish
 
 **Stages:**
 1. **Reusable Build** - Titanoboa/Anaconda installer build
@@ -109,7 +109,7 @@ test.yml:
   validation ──> unit-tests ──> integration-tests ──> full-test-suite
 
 build-iso.yml:
-  build-container-image ──> build-installer-iso
+  manual-dispatch ──> build-installer-iso
 ```
 
 ## Security
