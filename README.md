@@ -226,7 +226,7 @@ The image includes curated Brewfile configurations for installing additional too
 ### Available Brewfile Categories
 
 - **CLI Tools** (`dudley-cli.Brewfile`): Terminal utilities like `bat`, `eza`, `ripgrep`, `starship`, `zoxide`
-- **Development Tools** (`dudley-dev.Brewfile`): Development environments including VS Code Insiders, Python, Node.js, Ansible, UV
+- **Development Tools** (`dudley-dev.Brewfile`): Development environments including VS Code Insiders, RCC, Action Server, Python, Node.js, Ansible, UV
 - **Fonts** (`dudley-fonts.Brewfile`): Nerd Fonts collection for terminal and code editors
 - **Kubernetes/Cloud-Native** (`dudley-k8s.Brewfile`): kubectl, helm, k9s, kind, and container tools
 

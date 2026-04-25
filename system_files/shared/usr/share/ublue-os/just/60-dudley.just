@@ -38,7 +38,29 @@ dudley action="setup" target="all" mode="":
 
         echo "Installing $(basename "$bundle" .Brewfile) ..."
         brew bundle --file="$brewfile"
+        install_linux_casks "$brewfile"
         echo "✓ $(basename "$bundle" .Brewfile) complete"
+    }
+
+    install_linux_casks() {
+        local brewfile="$1"
+        local cask
+
+        if [[ "$(uname -s)" != "Linux" ]]; then
+            return 0
+        fi
+
+        while IFS= read -r cask; do
+            [[ -n "$cask" ]] || continue
+
+            if brew list --cask "$cask" >/dev/null 2>&1; then
+                echo "✓ $cask already installed"
+                continue
+            fi
+
+            echo "Installing Linux cask $cask ..."
+            brew install --cask "$cask"
+        done < <(sed -nE 's/^[[:space:]]*cask[[:space:]]+"([^"]+)".*/\1/p' "$brewfile")
     }
 
     run_extensions() {
