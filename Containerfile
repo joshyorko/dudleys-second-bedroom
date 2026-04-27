@@ -14,7 +14,7 @@
 # For more information, see: specs/001-implement-modular-build/
 # =============================================================================
 
-ARG BASE_IMAGE="ghcr.io/ublue-os/bluefin-dx:latest@sha256:76f77d962fb6bef02f6a96815f3c6e58cea0b677b7fb711049a7e66ef2b57b99"
+ARG BASE_IMAGE="ghcr.io/ublue-os/bluefin-dx:latest@sha256:17ab644f7bdd02dc8cad0696eb495d5d8fa2df77bd78c10584f2fec87f12a7f6"
 
 # =============================================================================
 # Stage 1: Context Layer (Static Build Files)
