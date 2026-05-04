@@ -172,7 +172,7 @@ run_check "VS Code extensions list" "podman run --rm ${IMAGE_NAME} test -f /usr/
 run_check "VS Code not baked into image" "podman run --rm ${IMAGE_NAME} bash -lc '! command -v code-insiders >/dev/null 2>&1 && echo absent'" "absent"
 run_check "Dudley just recipes" "podman run --rm ${IMAGE_NAME} test -f /usr/share/ublue-os/just/60-dudley.just && echo exists" "exists"
 run_check "Dudley update override" "podman run --rm ${IMAGE_NAME} bash -lc 'grep -F \"^[[:space:]]*LockLayering\" /usr/share/ublue-os/just/update.just >/dev/null && echo fixed'" "fixed"
-run_check "Dudley system flatpak update" "podman run --rm ${IMAGE_NAME} bash -lc 'grep -F \"sudo flatpak update --system --noninteractive -y\" /usr/share/ublue-os/just/update.just >/dev/null && echo fixed'" "fixed"
+run_check "Dudley system flatpak update uses polkit" "podman run --rm ${IMAGE_NAME} bash -lc 'grep -F \"flatpak update -y\" /usr/share/ublue-os/just/update.just >/dev/null && ! grep -E \"sudo[[:space:]]+flatpak[[:space:]]+update\" /usr/share/ublue-os/just/update.just >/dev/null && echo fixed'" "fixed"
 
 # Note: RCC is now installed via Homebrew (ujust dudley brew dev) instead of being baked into the image
 
