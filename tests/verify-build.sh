@@ -171,6 +171,7 @@ echo "=== VS Code Runtime Configuration ==="
 run_check "VS Code extensions list" "podman run --rm ${IMAGE_NAME} test -f /usr/share/ublue-os/vscode-extensions.list && echo exists" "exists"
 run_check "VS Code not baked into image" "podman run --rm ${IMAGE_NAME} bash -lc '! command -v code-insiders >/dev/null 2>&1 && echo absent'" "absent"
 run_check "Dudley just recipes" "podman run --rm ${IMAGE_NAME} test -f /usr/share/ublue-os/just/60-dudley.just && echo exists" "exists"
+run_check "Dudley update override" "podman run --rm ${IMAGE_NAME} bash -lc 'grep -F \"^[[:space:]]*LockLayering\" /usr/share/ublue-os/just/update.just >/dev/null && echo fixed'" "fixed"
 
 # Note: RCC is now installed via Homebrew (ujust dudley brew dev) instead of being baked into the image
 
