@@ -24,11 +24,11 @@ update:
     # rpm-ostree used due to bootc upgrade not supporting local layered packages
     # Updates system Flatpaks
     if flatpak remotes | grep -q system; then
-        flatpak update -y
+        sudo flatpak update --system --noninteractive -y
     fi
     # Update user Flatpaks
     if flatpak remotes | grep -q user; then
-        flatpak update --user -y
+        flatpak update --user --noninteractive -y
     fi
     # Guard Brew if the user does not own brew/doesn't exist
     if [[ -O /var/home/linuxbrew/.linuxbrew/bin/brew ]]; then
