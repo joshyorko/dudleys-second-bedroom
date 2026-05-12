@@ -12,6 +12,7 @@ EXPECTED_WALLPAPER_COUNT=6
 EXPECTED_OS_ID="${EXPECTED_OS_ID:-bluefin}"
 EXPECTED_VERSION_ID="${EXPECTED_VERSION_ID:-}"
 EXPECTED_VARIANT_ID="${EXPECTED_VARIANT_ID:-}"
+EXPECTED_IMAGE_FLAVOR="${EXPECTED_IMAGE_FLAVOR:-dx}"
 EXPECTED_IMAGE_NAME="${IMAGE_NAME##*/}"
 EXPECTED_IMAGE_NAME="${EXPECTED_IMAGE_NAME%:*}"
 EXPECTED_IMAGE_TAG="${IMAGE_NAME##*:}"
@@ -182,6 +183,8 @@ echo "=== Image Metadata ==="
 run_check "build manifest exists" "podman run --rm ${IMAGE_NAME} test -f /etc/dudley/build-manifest.json && echo exists" "exists"
 run_manifest_image_check
 run_check "image-info exists" "podman run --rm ${IMAGE_NAME} test -f /usr/share/ublue-os/image-info.json && echo exists" "exists"
+run_check "image-info flavor preserves base flavor" "podman run --rm ${IMAGE_NAME} jq -r '.\"image-flavor\"' /usr/share/ublue-os/image-info.json" "^$(escape_regex "${EXPECTED_IMAGE_FLAVOR}")$"
+run_check "image-info ref omits tag" "podman run --rm ${IMAGE_NAME} jq -r '.\"image-ref\"' /usr/share/ublue-os/image-info.json" "^ostree-image-signed:docker://[^:]*$"
 run_check "image-info tag" "podman run --rm ${IMAGE_NAME} cat /usr/share/ublue-os/image-info.json | jq -r '.\"image-tag\"'" "^$(escape_regex "${EXPECTED_IMAGE_TAG}")$"
 
 IMAGE_SIZE=$(podman inspect "${IMAGE_NAME}" | jq -r '.[0].Size')

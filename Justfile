@@ -39,6 +39,7 @@ test-unit:
     #!/usr/bin/bash
     set -eoux pipefail
     echo "Running unit tests..."
+    bash tests/test-image-info.sh
     bash tests/test-content-versioning.sh
     bash tests/test-manifest-generation.sh
     echo "✓ Unit tests passed!"

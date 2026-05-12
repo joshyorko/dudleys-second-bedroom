@@ -25,6 +25,46 @@ IMAGE_TAG="${IMAGE_TAG:-${DEFAULT_TAG:-latest}}"
 IMAGE_VENDOR="${IMAGE_VENDOR:-joshyorko}"
 VERSION="${VERSION:-$(date +%Y%m%d)}"
 
+# Normalize image references to the contract Bluefin recipes expect:
+# image-ref is the repository ref without a tag, while image-tag carries the tag.
+normalize_transport_ref() {
+	local ref="$1"
+	ref="${ref#ostree-image-signed:docker://}"
+	ref="${ref#docker://}"
+	printf '%s' "$ref"
+}
+
+strip_ref_tag() {
+	local ref="$1"
+	local digestless="${ref%@*}"
+	local last_component="${digestless##*/}"
+
+	if [[ "$last_component" == *:* ]]; then
+		printf '%s' "${digestless%:*}"
+	else
+		printf '%s' "$digestless"
+	fi
+}
+
+ref_tag() {
+	local ref="$1"
+	local digestless="${ref%@*}"
+	local last_component="${digestless##*/}"
+
+	if [[ "$last_component" == *:* ]]; then
+		printf '%s' "${last_component##*:}"
+	else
+		printf '%s' "$IMAGE_TAG"
+	fi
+}
+
+image_name_from_ref() {
+	local ref="$1"
+	local digestless="${ref%@*}"
+	local last_component="${digestless##*/}"
+	printf '%s' "${last_component%%:*}"
+}
+
 # Logging helper
 log() {
 	local level=$1
@@ -35,19 +75,35 @@ log() {
 log "INFO" "START - Generating image-info.json"
 
 # Create directory for image info
-IMAGE_INFO_DIR="/usr/share/ublue-os"
+IMAGE_INFO_DIR="${IMAGE_INFO_DIR:-/usr/share/ublue-os}"
 mkdir -p "$IMAGE_INFO_DIR"
 
 IMAGE_INFO="$IMAGE_INFO_DIR/image-info.json"
-OCI_IMAGE_REF="${IMAGE_REF:-ghcr.io/$IMAGE_VENDOR/$IMAGE_NAME:$IMAGE_TAG}"
-IMAGE_REF="ostree-image-signed:docker://${OCI_IMAGE_REF}"
+OCI_IMAGE_REF="$(normalize_transport_ref "${IMAGE_REF:-ghcr.io/$IMAGE_VENDOR/$IMAGE_NAME:$IMAGE_TAG}")"
+IMAGE_REPOSITORY_REF="$(strip_ref_tag "$OCI_IMAGE_REF")"
+IMAGE_TAG="$(ref_tag "$OCI_IMAGE_REF")"
+BASE_IMAGE_REF="$(normalize_transport_ref "${BASE_IMAGE:-}")"
+BASE_IMAGE_NAME="${BASE_IMAGE_NAME:-$(image_name_from_ref "$BASE_IMAGE_REF")}"
+if [[ -z "$BASE_IMAGE_NAME" ]]; then
+	BASE_IMAGE_NAME="bluefin-dx"
+fi
 
-# Determine image flavor based on name
-image_flavor="main"
-if [[ "${IMAGE_NAME}" =~ nvidia ]]; then
-	image_flavor="nvidia"
-elif [[ "${IMAGE_NAME}" =~ dx ]]; then
-	image_flavor="dx"
+# Determine image flavor from the custom image name and inherited base image.
+image_flavor="${IMAGE_FLAVOR:-}"
+if [[ -z "$image_flavor" ]]; then
+	if [[ "${IMAGE_NAME}" =~ dx || "${BASE_IMAGE_NAME}" =~ dx || "${BASE_IMAGE_REF}" =~ dx ]]; then
+		image_flavor="dx"
+	else
+		image_flavor="main"
+	fi
+
+	if [[ "${IMAGE_NAME}" =~ nvidia || "${BASE_IMAGE_NAME}" =~ nvidia || "${BASE_IMAGE_REF}" =~ nvidia ]]; then
+		if [[ "$image_flavor" == "dx" ]]; then
+			image_flavor="dx-nvidia"
+		else
+			image_flavor="nvidia"
+		fi
+	fi
 fi
 
 # Get Fedora version if available
@@ -72,9 +128,9 @@ cat >"$IMAGE_INFO" <<EOF
   "image-name": "$IMAGE_NAME",
   "image-flavor": "$image_flavor",
   "image-vendor": "$IMAGE_VENDOR",
-  "image-ref": "$IMAGE_REF",
+  "image-ref": "ostree-image-signed:docker://${IMAGE_REPOSITORY_REF}",
   "image-tag": "$IMAGE_TAG",
-  "base-image-name": "${BASE_IMAGE_NAME:-bluefin-dx}",
+  "base-image-name": "$BASE_IMAGE_NAME",
   "fedora-version": "$FEDORA_VERSION",
   "kernel-version": "$KERNEL_VERSION",
   "build-date": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
@@ -86,11 +142,12 @@ log "INFO" "Generated image-info.json:"
 cat "$IMAGE_INFO"
 
 # Update os-release with custom branding
-if [[ -f /usr/lib/os-release ]]; then
+OS_RELEASE_FILE="${OS_RELEASE_FILE:-/usr/lib/os-release}"
+if [[ -f "$OS_RELEASE_FILE" ]]; then
 	log "INFO" "Updating os-release branding..."
 
 	# Create custom os-release additions
-	cat >>/usr/lib/os-release <<EOF
+	cat >>"$OS_RELEASE_FILE" <<EOF
 
 # Dudley's Second Bedroom customizations
 PRETTY_NAME="${IMAGE_PRETTY_NAME}"
@@ -99,7 +156,7 @@ DOCUMENTATION_URL="${DOCUMENTATION_URL}"
 SUPPORT_URL="${SUPPORT_URL}"
 BUG_REPORT_URL="${BUG_SUPPORT_URL}"
 VARIANT="${IMAGE_NAME}"
-VARIANT_ID="${image_flavor}"
+VARIANT_ID="${BASE_IMAGE_NAME}"
 EOF
 fi
 

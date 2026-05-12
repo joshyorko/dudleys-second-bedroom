@@ -160,3 +160,32 @@ dudley action="setup" target="all" mode="":
             exit 1
             ;;
     esac
+
+# Dudley already inherits from a DX base image, so Bluefin's generic devmode
+# rebase recipe should not synthesize a sibling image name for this repo.
+devmode:
+    @ujust toggle-devmode
+
+toggle-devmode:
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    IMAGE_INFO_FILE="${IMAGE_INFO_FILE:-/usr/share/ublue-os/image-info.json}"
+    image_flavor="$(jq -r '."image-flavor" // ""' "$IMAGE_INFO_FILE")"
+    base_image_name="$(jq -r '."base-image-name" // ""' "$IMAGE_INFO_FILE")"
+
+    if [[ "$image_flavor" =~ dx || "$base_image_name" =~ dx ]]; then
+        echo "Dudley is already built from a developer image."
+        if gum confirm "Install the default development Flatpaks?"; then
+            ADD_DEVMODE=1 ujust install-system-flatpaks 0 1
+        fi
+        if gum confirm "Install extra monospace fonts?"; then
+            brew bundle install --file=/usr/share/ublue-os/homebrew/fonts.Brewfile
+        fi
+        echo "Use ujust dx-group to add your user to the correct groups and complete the installation after rebooting into the development image"
+        exit 0
+    fi
+
+    echo "Dudley is not built from a DX base image."
+    echo "Rebuild with BASE_IMAGE=ghcr.io/ublue-os/bluefin-dx:stable instead of using Bluefin's generic devmode rebase."
+    exit 1
