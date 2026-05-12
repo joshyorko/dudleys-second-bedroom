@@ -18,6 +18,7 @@ declare -a FAILED_TESTS
 
 # Test patterns to run
 TEST_PATTERNS=(
+	"test-image-info.sh"
 	"test-content-versioning.sh"
 	"test-manifest-generation.sh"
 	"test-hook-integration.sh"
