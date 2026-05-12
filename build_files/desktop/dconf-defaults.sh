@@ -28,9 +28,14 @@ main() {
 
 	log "INFO" "START"
 
-	# Add dconf defaults here
-	# For now, this is a placeholder
-	log "INFO" "No additional dconf defaults configured yet"
+	log "INFO" "Updating dconf database for Dudley defaults"
+	if command -v dconf >/dev/null 2>&1; then
+		dconf update || {
+			log "WARNING" "dconf update failed (may not be critical)"
+		}
+	else
+		log "WARNING" "dconf command not found, skipping dconf database update"
+	fi
 
 	local end_time duration
 	end_time=$(date +%s)

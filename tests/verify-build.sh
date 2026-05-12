@@ -174,6 +174,7 @@ run_check "VS Code not baked into image" "podman run --rm ${IMAGE_NAME} bash -lc
 run_check "Dudley just recipes" "podman run --rm ${IMAGE_NAME} test -f /usr/share/ublue-os/just/60-dudley.just && echo exists" "exists"
 run_check "Dudley update override" "podman run --rm ${IMAGE_NAME} bash -lc 'grep -F \"^[[:space:]]*LockLayering\" /usr/share/ublue-os/just/update.just >/dev/null && echo fixed'" "fixed"
 run_check "Dudley system flatpak update uses polkit" "podman run --rm ${IMAGE_NAME} bash -lc 'grep -F \"flatpak update -y\" /usr/share/ublue-os/just/update.just >/dev/null && ! grep -E \"sudo[[:space:]]+flatpak[[:space:]]+update\" /usr/share/ublue-os/just/update.just >/dev/null && echo fixed'" "fixed"
+run_check "Dudley terminal shortcut opens new Ptyxis window" "podman run --rm ${IMAGE_NAME} bash -lc 'grep -F \"command='\\''/usr/bin/ptyxis --new-window'\\''\" /etc/dconf/db/distro.d/99-dudley-terminal-keybindings | wc -l'" "2"
 
 # Note: RCC is now installed via Homebrew (ujust dudley brew dev) instead of being baked into the image
 
