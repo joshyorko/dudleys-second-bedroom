@@ -137,12 +137,19 @@ install_packages() {
 	if [[ ${#packages_to_install[@]} -gt 0 ]]; then
 		log "INFO" "Installing ${#packages_to_install[@]} packages: ${packages_to_install[*]}"
 		if printf '%s\n' "${packages_to_install[@]}" | grep -qx 'google-chrome-stable'; then
-			if [[ -e /opt/google/chrome || -L /opt/google/chrome ]]; then
-				log "WARNING" "Removing pre-existing /opt/google/chrome before installing google-chrome-stable"
-				rm -rf /opt/google/chrome
-			fi
-			if [[ -d /opt/google ]] && [[ -z "$(ls -A /opt/google 2>/dev/null)" ]]; then
-				rmdir /opt/google || true
+			if [[ -L /opt ]]; then
+				log "INFO" "Preparing /opt/google layout for google-chrome-stable on symlinked /opt"
+				mkdir -p /var/opt /usr/lib/opt/google
+				if [[ -e /var/opt/google && ! -L /var/opt/google ]]; then
+					log "WARNING" "Removing pre-existing /var/opt/google before installing google-chrome-stable"
+					rm -rf /var/opt/google
+				fi
+				ln -snf ../../usr/lib/opt/google /var/opt/google
+				mkdir -p /usr/lib/tmpfiles.d
+				printf 'L /var/opt/google - - - - ../../usr/lib/opt/google\n' >/usr/lib/tmpfiles.d/dudley-google-chrome.conf
+			elif [[ -e /opt/google || -L /opt/google ]]; then
+				log "WARNING" "Removing pre-existing /opt/google before installing google-chrome-stable"
+				rm -rf /opt/google
 			fi
 		fi
 		if command -v dnf5 &>/dev/null; then
