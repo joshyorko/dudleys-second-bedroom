@@ -136,6 +136,15 @@ install_packages() {
 	# Install packages
 	if [[ ${#packages_to_install[@]} -gt 0 ]]; then
 		log "INFO" "Installing ${#packages_to_install[@]} packages: ${packages_to_install[*]}"
+		if printf '%s\n' "${packages_to_install[@]}" | grep -qx 'google-chrome-stable'; then
+			if [[ -e /opt/google/chrome || -L /opt/google/chrome ]]; then
+				log "WARNING" "Removing pre-existing /opt/google/chrome before installing google-chrome-stable"
+				rm -rf /opt/google/chrome
+			fi
+			if [[ -d /opt/google ]] && [[ -z "$(ls -A /opt/google 2>/dev/null)" ]]; then
+				rmdir /opt/google || true
+			fi
+		fi
 		if command -v dnf5 &>/dev/null; then
 			dnf5 install -y "${packages_to_install[@]}" || {
 				log "ERROR" "Failed to install packages"
