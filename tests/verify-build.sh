@@ -143,6 +143,7 @@ echo "=== Installed Packages ==="
 run_check "tmux" "podman run --rm ${IMAGE_NAME} rpm -q tmux" "tmux-"
 run_check "curl" "podman run --rm ${IMAGE_NAME} rpm -q curl" "curl-"
 run_check "gcc-c++" "podman run --rm ${IMAGE_NAME} rpm -q gcc-c++" "gcc-c++-"
+run_check "Google Chrome" "podman run --rm ${IMAGE_NAME} rpm -q google-chrome-stable" "google-chrome-stable-"
 
 # Check 5: Custom Branding
 echo ""
