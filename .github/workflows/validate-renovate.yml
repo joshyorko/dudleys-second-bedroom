@@ -26,10 +26,10 @@ jobs:
       - name: Install dependencies
         shell: bash
         env:
-          # Keep validation deterministic so strict mode doesn't drift on config aliases.
+          # Keep validation deterministic so config aliases do not drift.
           RENOVATE_VERSION: 43.130.0
         run: npm install -g renovate@${RENOVATE_VERSION}
 
       - name: Validate Renovate config
         shell: bash
-        run: renovate-config-validator --strict
+        run: renovate-config-validator

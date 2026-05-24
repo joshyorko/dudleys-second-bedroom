@@ -2,6 +2,8 @@
 
 # Dudley's Second Bedroom
 
+> **Deprecated:** Active Dudley image work has moved to [`joshyorko/dudley-os`](https://github.com/joshyorko/dudley-os) for final OS assembly and [`joshyorko/dsb-common`](https://github.com/joshyorko/dsb-common) for shared Dudley payload. This repository remains as legacy migration source material for the older monolithic image.
+
 A step up from the closet under the stairs, but not quite the Room of Requirement yet.
 
 This [Universal Blue](https://github.com/ublue-os/main) image extends the [Bluefin](https://github.com/ublue-os/bluefin) flavor with personalized modifications - your own space that's better than where you started, but with room to grow into something even better.
