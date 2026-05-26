@@ -59,8 +59,8 @@ This directory contains the CI/CD workflows for Dudley's Second Bedroom.
 - Manual dispatch
 
 **Actions:**
-- Deletes images older than 5 days
-- Keeps 5 tagged and 5 untagged images
+- Deletes images older than 1 day
+- Keeps 1 tagged and 1 untagged image
 
 ## Test Integration
 

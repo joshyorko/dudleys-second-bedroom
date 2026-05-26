@@ -8,17 +8,17 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref || github.run_id }}
 
 jobs:
-  delete-older-than-1-days:
+  delete-older-than-1-day:
     runs-on: ubuntu-latest
     permissions:
       packages: write
     steps:
-      - name: Delete Images Older Than 5 Days
+      - name: Delete Images Older Than 1 Day
         uses: dataaxiom/ghcr-cleanup-action@374e2028c8fb93b7219f3771cd405fab95d3dec4 # v1.2.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           packages: dudleys-second-bedroom
           older-than: 1 days
-          delete-orphaned-images: true
+          delete-orphaned-images: false
           keep-n-tagged: 1
           keep-n-untagged: 1
