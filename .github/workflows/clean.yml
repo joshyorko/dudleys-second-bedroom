@@ -8,7 +8,7 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref || github.run_id }}
 
 jobs:
-  delete-older-than-5-days:
+  delete-older-than-1-days:
     runs-on: ubuntu-latest
     permissions:
       packages: write
@@ -18,7 +18,7 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           packages: dudleys-second-bedroom
-          older-than: 5 days
+          older-than: 1 days
           delete-orphaned-images: true
-          keep-n-tagged: 5
-          keep-n-untagged: 5
+          keep-n-tagged: 1
+          keep-n-untagged: 1
